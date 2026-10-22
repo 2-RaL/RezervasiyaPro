@@ -4,14 +4,14 @@ const { parse } = require('url');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.HOSTNAME || 'localhost';
-const port = parseInt(process.env.PORT, 10) || 3000;
+const port = process.env.PORT || 3000;
 
-const app = next({ dev, hostname, port });
+// When running behind Hostinger proxy / CloudLinux / Passenger, don't restrict hostname
+const app = next({ dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  createServer(async (req, res) => {
+  const server = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
@@ -20,7 +20,16 @@ app.prepare().then(() => {
       res.statusCode = 500;
       res.end('Daxili Server Xətası');
     }
-  }).listen(port, () => {
-    console.log(`> Saytadi.com Hostinger üzərində hazırdır: http://${hostname}:${port}`);
   });
+
+  server.listen(port, (err) => {
+    if (err) {
+      console.error('Server listen error:', err);
+      process.exit(1);
+    }
+    console.log(`> RezervasiyaPro Hostinger üzərində hazırdır: port ${port}`);
+  });
+}).catch((err) => {
+  console.error('Next.js prepare error:', err);
+  process.exit(1);
 });

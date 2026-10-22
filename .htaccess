@@ -1,5 +1,10 @@
 # Hostinger LiteSpeed / Apache Reverse Proxy Configuration
 RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+
+# Allow direct access to existing static files
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Reverse Proxy to Next.js App
 RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
