@@ -1,0 +1,111 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id              String         @id @default(uuid())
+  name            String
+  slug            String         @unique
+  sector          String
+  status          TenantStatus   @default(ACTIVE)
+  medicalEnabled  Boolean        @default(false)
+  phone           String?
+  address         String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  services        Service[]
+  staff           Staff[]
+  bookings        Booking[]
+  patients        Patient[]
+
+  @@index([slug])
+}
+
+enum TenantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  nameAz      String
+  nameEn      String
+  duration    Int
+  price       Decimal   @db.Decimal(10, 2)
+  category    String
+  bookings    Booking[]
+
+  @@index([tenantId])
+}
+
+model Staff {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  role        String
+  bookings    Booking[]
+
+  @@index([tenantId])
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerName  String
+  customerPhone String
+  customerFin   String
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  staffId       String
+  staff         Staff         @relation(fields: [staffId], references: [id])
+  date          DateTime      @db.Date
+  timeSlot      String
+  status        BookingStatus @default(CONFIRMED)
+  createdAt     DateTime      @default(now())
+
+  @@unique([tenantId, staffId, date, timeSlot])
+  @@index([tenantId, date])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+model Patient {
+  id          String             @id @default(uuid())
+  tenantId    String
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fullName    String
+  fin         String
+  birthDate   DateTime?
+  bloodGroup  String?
+  allergies   String?
+  encounters  ClinicalEncounter[]
+
+  @@unique([tenantId, fin])
+  @@index([tenantId, fin])
+}
+
+model ClinicalEncounter {
+  id            String    @id @default(uuid())
+  patientId     String
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorName    String
+  diagnosis     String
+  treatment     String
+  prescription  String?
+  encounterDate DateTime @default(now())
+}
