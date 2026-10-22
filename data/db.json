@@ -1,0 +1,182 @@
+{
+  "tenants": [
+    {
+      "id": "tenant-1",
+      "name": "Gözəllik və Estetik Mərkəzi",
+      "slug": "gozellik-merkezi",
+      "sector": "Gözəllik & Qulluq",
+      "status": "ACTIVE",
+      "medicalEnabled": false,
+      "phone": "+994 50 222 33 44",
+      "address": "Bakı şəh., Nizami küç. 45",
+      "createdAt": "2026-10-22T16:43:26.206Z",
+      "updatedAt": "2026-10-22T16:43:26.206Z"
+    },
+    {
+      "id": "tenant-2",
+      "name": "Modern Klinika & Stomatologiya",
+      "slug": "modern-klinika",
+      "sector": "Səhiyyə & Klinika",
+      "status": "ACTIVE",
+      "medicalEnabled": true,
+      "phone": "+994 12 444 55 66",
+      "address": "Bakı şəh., Azadlıq pr. 102",
+      "createdAt": "2026-10-22T16:43:26.206Z",
+      "updatedAt": "2026-10-22T16:43:26.206Z"
+    },
+    {
+      "id": "tenant-3",
+      "name": "VIP Barber Club Baku",
+      "slug": "vip-barber",
+      "sector": "Bərbərxana & Saç",
+      "status": "ACTIVE",
+      "medicalEnabled": false,
+      "phone": "+994 55 777 88 99",
+      "address": "Bakı şəh., 28 May küç. 14",
+      "createdAt": "2026-10-22T16:43:26.206Z",
+      "updatedAt": "2026-10-22T16:43:26.206Z"
+    }
+  ],
+  "services": [
+    {
+      "id": "srv-1",
+      "tenantId": "tenant-1",
+      "nameAz": "Lazer Epilyasiyası (Tam bədən)",
+      "nameEn": "Full Body Laser Hair Removal",
+      "duration": 60,
+      "price": 120,
+      "category": "Kosmetologiya"
+    },
+    {
+      "id": "srv-2",
+      "tenantId": "tenant-1",
+      "nameAz": "Dərinin Dərin Təmizlənməsi (Hydrafacial)",
+      "nameEn": "Deep Cleansing Hydrafacial",
+      "duration": 45,
+      "price": 85,
+      "category": "Kosmetologiya"
+    },
+    {
+      "id": "srv-3",
+      "tenantId": "tenant-2",
+      "nameAz": "Stomatoloji Müayinə və Rentgen",
+      "nameEn": "Dental Examination & X-Ray",
+      "duration": 30,
+      "price": 40,
+      "category": "Stomatologiya"
+    },
+    {
+      "id": "srv-4",
+      "tenantId": "tenant-2",
+      "nameAz": "Diş Ağardılması (Zoom 4)",
+      "nameEn": "Teeth Whitening Zoom 4",
+      "duration": 60,
+      "price": 250,
+      "category": "Stomatologiya"
+    },
+    {
+      "id": "srv-5",
+      "tenantId": "tenant-3",
+      "nameAz": "Klassik Saç Kəsimi və Saqqal Dizaynı",
+      "nameEn": "Classic Haircut & Beard Design",
+      "duration": 45,
+      "price": 35,
+      "category": "Saç & Saqqal"
+    }
+  ],
+  "staff": [
+    {
+      "id": "stf-1",
+      "tenantId": "tenant-1",
+      "name": "Aysel Quliyeva",
+      "role": "Baş Kosmetoloq"
+    },
+    {
+      "id": "stf-2",
+      "tenantId": "tenant-1",
+      "name": "Nərmin Məmmədova",
+      "role": "Lazer Mütəxəssisi"
+    },
+    {
+      "id": "stf-3",
+      "tenantId": "tenant-2",
+      "name": "Dr. Rəşad Əliyev",
+      "role": "Ortodont / Stomatoloq"
+    },
+    {
+      "id": "stf-4",
+      "tenantId": "tenant-2",
+      "name": "Dr. Günel Həsənova",
+      "role": "Terapevt-Stomatoloq"
+    },
+    {
+      "id": "stf-5",
+      "tenantId": "tenant-3",
+      "name": "Kamran Əhmədov",
+      "role": "Top Barber Master"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "bkg-101",
+      "tenantId": "tenant-1",
+      "customerName": "Sevinc Məhərrəmova",
+      "customerPhone": "+994 50 111 22 33",
+      "customerFin": "7ABC123",
+      "serviceId": "srv-1",
+      "staffId": "stf-2",
+      "date": "2026-10-22",
+      "timeSlot": "11:00",
+      "status": "CONFIRMED",
+      "createdAt": "2026-10-22T16:43:26.206Z"
+    },
+    {
+      "id": "bkg-102",
+      "tenantId": "tenant-2",
+      "customerName": "Anar Qasımov",
+      "customerPhone": "+994 55 999 88 77",
+      "customerFin": "5XYZ987",
+      "serviceId": "srv-3",
+      "staffId": "stf-3",
+      "date": "2026-10-22",
+      "timeSlot": "14:30",
+      "status": "CONFIRMED",
+      "createdAt": "2026-10-22T16:43:26.206Z"
+    },
+    {
+      "id": "bkg-103",
+      "tenantId": "tenant-3",
+      "customerName": "Murad Babayev",
+      "customerPhone": "+994 70 333 44 55",
+      "serviceId": "srv-5",
+      "staffId": "stf-5",
+      "date": "2026-10-23",
+      "timeSlot": "16:00",
+      "status": "CONFIRMED",
+      "createdAt": "2026-10-22T16:43:26.206Z"
+    }
+  ],
+  "patients": [
+    {
+      "id": "pat-1",
+      "tenantId": "tenant-2",
+      "fullName": "Anar Qasımov",
+      "fin": "5XYZ987",
+      "birthDate": "1992-05-14",
+      "bloodGroup": "A (II) Rh+",
+      "allergies": "Penisilin allergiyası yoxdur",
+      "encounters": []
+    }
+  ],
+  "encounters": [
+    {
+      "id": "enc-1",
+      "patientId": "pat-1",
+      "doctorName": "Dr. Rəşad Əliyev",
+      "diagnosis": "Karies profilaktikası və ilkin baxış",
+      "treatment": "Rentgen müayinəsi aparıldı, diş minası təmizləndi.",
+      "prescription": "Kalsium tərkibli pasta, antiseptik qələvi yaxalama",
+      "encounterDate": "2026-10-22T16:43:26.206Z"
+    }
+  ]
+}
