@@ -1,6 +1,18 @@
 import fs from 'fs';
 import path from 'path';
-import { Tenant, Service, Staff, Booking, Patient, ClinicalEncounter, BookingStatus, User, UserRole } from './types';
+import { 
+  Tenant, 
+  Service, 
+  Staff, 
+  Booking, 
+  Patient, 
+  ClinicalEncounter, 
+  BookingStatus, 
+  User, 
+  UserRole,
+  CustomerReview,
+  FeedbackSuggestion
+} from './types';
 
 interface DatabaseSchema {
   users: User[];
@@ -10,6 +22,8 @@ interface DatabaseSchema {
   bookings: Booking[];
   patients: Patient[];
   encounters: ClinicalEncounter[];
+  reviews: CustomerReview[];
+  feedbacks: FeedbackSuggestion[];
 }
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -373,6 +387,86 @@ const defaultData: DatabaseSchema = {
       prescription: 'Kalsium tərkibli pasta, antiseptik qələvi yaxalama',
       encounterDate: new Date().toISOString()
     }
+  ],
+  reviews: [
+    {
+      id: 'rev-1',
+      tenantId: 'tenant-1',
+      tenantName: 'Gözəllik və Estetik Mərkəzi',
+      customerName: 'Günay Əliyeva',
+      customerPhone: '+994 50 234 56 78',
+      rating: 5,
+      comment: 'Lazer epilyasiyası xidmətindən çox razı qaldım. Heyət çox peşəkardır, mütləq tövsiyə edirəm!',
+      serviceName: 'Lazer Epilyasiyası (Tam bədən)',
+      createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+    },
+    {
+      id: 'rev-2',
+      tenantId: 'tenant-2',
+      tenantName: 'Modern Klinika & Stomatologiya',
+      customerName: 'Kənan Məmmədov',
+      customerPhone: '+994 55 987 65 43',
+      rating: 5,
+      comment: 'Həkim çox diqqətli idi, müayinə və rentgen sürətli və ağrısız keçdi.',
+      serviceName: 'Stomatoloji Müayinə və Rentgen',
+      createdAt: new Date(Date.now() - 86400000 * 3).toISOString()
+    },
+    {
+      id: 'rev-3',
+      tenantId: 'tenant-3',
+      tenantName: 'VIP Barber Club Baku',
+      customerName: 'Fərid Həsənov',
+      customerPhone: '+994 70 333 22 11',
+      rating: 5,
+      comment: 'Əla usta, saç və saqqal dizaynı tam istədiyim kimi oldu. Qulluq yüksək səviyyədədir.',
+      serviceName: 'Klassik Saç Kəsimi və Saqqal Dizaynı',
+      createdAt: new Date(Date.now() - 86400000).toISOString()
+    },
+    {
+      id: 'rev-4',
+      tenantId: 'tenant-osteopat',
+      tenantName: 'Osteopat.az - Manuel Terapiya və Reabilitasiya',
+      customerName: 'Leyla Rüstəmova',
+      customerPhone: '+994 50 555 44 33',
+      rating: 5,
+      comment: 'Onurğa ağrılarım ilk seansdan sonra xeyli yüngülləşdi. Həkimin manual terapiyası möcüzədir!',
+      serviceName: 'Onurğa və Oynaqlarda Manuel Terapiya',
+      createdAt: new Date().toISOString()
+    }
+  ],
+  feedbacks: [
+    {
+      id: 'fb-1',
+      tenantId: 'tenant-1',
+      tenantName: 'Gözəllik və Estetik Mərkəzi',
+      userId: 'usr-admin-gozellik',
+      userName: 'Aysel Xanım (Gözəllik Admini)',
+      userRole: 'ADMIN',
+      type: 'FEATURE',
+      subject: 'SMS Xatırlatma inteqrasiyası',
+      message: 'Müştərilərə rezervasiyadan 2 saat əvvəl avtomatik SMS xatırlatması göndərilməsi çox faydalı olardı.',
+      priority: 'HIGH',
+      status: 'IN_REVIEW',
+      adminNote: 'Növbəti yenilənmə planına daxil edildi.',
+      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000).toISOString()
+    },
+    {
+      id: 'fb-2',
+      tenantId: 'tenant-2',
+      tenantName: 'Modern Klinika & Stomatologiya',
+      userId: 'usr-admin-klinika',
+      userName: 'Dr. Rəşad Əliyev (Klinika Admini)',
+      userRole: 'ADMIN',
+      type: 'IMPROVEMENT',
+      subject: 'Pasiyent kartında qan qrupunun tez görünməsi',
+      message: 'Pasiyentin qan qrupu və allergiyası rezervasiya vərəqəsində də dərhal çıxsa çox rahat olardı.',
+      priority: 'MEDIUM',
+      status: 'RESOLVED',
+      adminNote: 'FİN tibbi kartına əlavə edildi.',
+      createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+      updatedAt: new Date(Date.now() - 86400000 * 2).toISOString()
+    }
   ]
 };
 
@@ -395,6 +489,8 @@ function readDb(): DatabaseSchema {
       bookings: parsed.bookings || defaultData.bookings,
       patients: parsed.patients || defaultData.patients,
       encounters: parsed.encounters || defaultData.encounters,
+      reviews: parsed.reviews || defaultData.reviews,
+      feedbacks: parsed.feedbacks || defaultData.feedbacks,
     };
   } catch (err) {
     console.error('DataStore read error, using fallback in-memory:', err);
@@ -489,7 +585,8 @@ export function createService(data: Omit<Service, 'id'>): Service {
     ...data,
     id: 'srv-' + Date.now(),
     duration: Number(data.duration) || 30,
-    price: Number(data.price) || 0
+    price: Number(data.price) || 0,
+    isActive: data.isActive !== undefined ? data.isActive : true
   };
   db.services.push(newService);
   writeDb(db);
@@ -500,7 +597,12 @@ export function updateService(id: string, data: Partial<Service>): Service | nul
   const db = readDb();
   const index = db.services.findIndex(s => s.id === id);
   if (index === -1) return null;
-  db.services[index] = { ...db.services[index], ...data };
+  db.services[index] = { 
+    ...db.services[index], 
+    ...data,
+    ...(data.duration !== undefined ? { duration: Number(data.duration) } : {}),
+    ...(data.price !== undefined ? { price: Number(data.price) } : {})
+  };
   writeDb(db);
   return db.services[index];
 }
@@ -829,4 +931,90 @@ export function getDashboardStats(tenantId?: string | null) {
 export function resetDemoData(): void {
   writeDb(defaultData);
 }
+
+// ── CUSTOMER REVIEWS & QUALITY API ────────────────────────────────────
+export function getReviews(tenantId?: string): CustomerReview[] {
+  const db = readDb();
+  let list = db.reviews || [];
+  if (tenantId && tenantId !== 'all') {
+    list = list.filter(r => r.tenantId === tenantId);
+  }
+  return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export function createReview(data: Omit<CustomerReview, 'id' | 'createdAt'>): CustomerReview {
+  const db = readDb();
+  if (!db.reviews) db.reviews = [];
+  const tenant = db.tenants.find(t => t.id === data.tenantId);
+  const newReview: CustomerReview = {
+    ...data,
+    id: 'rev-' + Date.now(),
+    tenantName: data.tenantName || (tenant ? tenant.name : 'Müəssisə'),
+    rating: Math.max(1, Math.min(5, Number(data.rating) || 5)),
+    createdAt: new Date().toISOString()
+  };
+  db.reviews.unshift(newReview);
+  writeDb(db);
+  return newReview;
+}
+
+export function deleteReview(id: string): boolean {
+  const db = readDb();
+  if (!db.reviews) return false;
+  const initialLen = db.reviews.length;
+  db.reviews = db.reviews.filter(r => r.id !== id);
+  writeDb(db);
+  return db.reviews.length < initialLen;
+}
+
+// ── FEEDBACKS & SUGGESTIONS API (SUPER ADMIN) ──────────────────────────
+export function getFeedbacks(tenantId?: string): FeedbackSuggestion[] {
+  const db = readDb();
+  let list = db.feedbacks || [];
+  if (tenantId && tenantId !== 'all') {
+    list = list.filter(f => f.tenantId === tenantId);
+  }
+  return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export function createFeedback(data: Omit<FeedbackSuggestion, 'id' | 'createdAt' | 'updatedAt'>): FeedbackSuggestion {
+  const db = readDb();
+  if (!db.feedbacks) db.feedbacks = [];
+  const tenant = db.tenants.find(t => t.id === data.tenantId);
+  const newFeedback: FeedbackSuggestion = {
+    ...data,
+    id: 'fb-' + Date.now(),
+    tenantName: data.tenantName || (tenant ? tenant.name : 'Filial'),
+    status: data.status || 'PENDING',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  db.feedbacks.unshift(newFeedback);
+  writeDb(db);
+  return newFeedback;
+}
+
+export function updateFeedback(id: string, data: Partial<FeedbackSuggestion>): FeedbackSuggestion | null {
+  const db = readDb();
+  if (!db.feedbacks) return null;
+  const index = db.feedbacks.findIndex(f => f.id === id);
+  if (index === -1) return null;
+  db.feedbacks[index] = {
+    ...db.feedbacks[index],
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+  writeDb(db);
+  return db.feedbacks[index];
+}
+
+export function deleteFeedback(id: string): boolean {
+  const db = readDb();
+  if (!db.feedbacks) return false;
+  const initialLen = db.feedbacks.length;
+  db.feedbacks = db.feedbacks.filter(f => f.id !== id);
+  writeDb(db);
+  return db.feedbacks.length < initialLen;
+}
+
 

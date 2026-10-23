@@ -49,7 +49,9 @@ export async function POST(request: Request) {
       nameEn: body.nameEn || body.nameAz,
       duration: Number(body.duration) || 30,
       price: Number(body.price) || 0,
-      category: body.category || 'Ümumi'
+      category: body.category || 'Ümumi',
+      isActive: body.isActive !== undefined ? body.isActive : true,
+      description: body.description || ''
     });
 
     return NextResponse.json({ success: true, service });

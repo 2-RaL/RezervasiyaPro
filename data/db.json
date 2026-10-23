@@ -430,5 +430,85 @@
       "prescription": "Kalsium tərkibli pasta, antiseptik qələvi yaxalama",
       "encounterDate": "2026-10-23T04:02:11.321Z"
     }
+  ],
+  "reviews": [
+    {
+      "id": "rev-1",
+      "tenantId": "tenant-1",
+      "tenantName": "Gözəllik və Estetik Mərkəzi",
+      "customerName": "Günay Əliyeva",
+      "customerPhone": "+994 50 234 56 78",
+      "rating": 5,
+      "comment": "Lazer epilyasiyası xidmətindən çox razı qaldım. Heyət çox peşəkardır, mütləq tövsiyə edirəm!",
+      "serviceName": "Lazer Epilyasiyası (Tam bədən)",
+      "createdAt": "2026-10-21T10:15:00.000Z"
+    },
+    {
+      "id": "rev-2",
+      "tenantId": "tenant-2",
+      "tenantName": "Modern Klinika & Stomatologiya",
+      "customerName": "Kənan Məmmədov",
+      "customerPhone": "+994 55 987 65 43",
+      "rating": 5,
+      "comment": "Həkim çox diqqətli idi, müayinə və rentgen sürətli və ağrısız keçdi.",
+      "serviceName": "Stomatoloji Müayinə və Rentgen",
+      "createdAt": "2026-10-20T14:30:00.000Z"
+    },
+    {
+      "id": "rev-3",
+      "tenantId": "tenant-3",
+      "tenantName": "VIP Barber Club Baku",
+      "customerName": "Fərid Həsənov",
+      "customerPhone": "+994 70 333 22 11",
+      "rating": 5,
+      "comment": "Əla usta, saç və saqqal dizaynı tam istədiyim kimi oldu. Qulluq yüksək səviyyədədir.",
+      "serviceName": "Klassik Saç Kəsimi və Saqqal Dizaynı",
+      "createdAt": "2026-10-22T18:20:00.000Z"
+    },
+    {
+      "id": "rev-4",
+      "tenantId": "tenant-osteopat",
+      "tenantName": "Osteopat.az - Manuel Terapiya və Reabilitasiya",
+      "customerName": "Leyla Rüstəmova",
+      "customerPhone": "+994 50 555 44 33",
+      "rating": 5,
+      "comment": "Onurğa ağrılarım ilk seansdan sonra xeyli yüngülləşdi. Həkimin manual terapiyası möcüzədir!",
+      "serviceName": "Onurğa və Oynaqlarda Manuel Terapiya",
+      "createdAt": "2026-10-23T08:45:00.000Z"
+    }
+  ],
+  "feedbacks": [
+    {
+      "id": "fb-1",
+      "tenantId": "tenant-1",
+      "tenantName": "Gözəllik və Estetik Mərkəzi",
+      "userId": "usr-admin-gozellik",
+      "userName": "Aysel Xanım (Gözəllik Admini)",
+      "userRole": "ADMIN",
+      "type": "FEATURE",
+      "subject": "SMS Xatırlatma inteqrasiyası",
+      "message": "Müştərilərə rezervasiyadan 2 saat əvvəl avtomatik SMS xatırlatması göndərilməsi çox faydalı olardı.",
+      "priority": "HIGH",
+      "status": "IN_REVIEW",
+      "adminNote": "Növbəti yenilənmə planına daxil edildi.",
+      "createdAt": "2026-10-21T12:00:00.000Z",
+      "updatedAt": "2026-10-22T09:30:00.000Z"
+    },
+    {
+      "id": "fb-2",
+      "tenantId": "tenant-2",
+      "tenantName": "Modern Klinika & Stomatologiya",
+      "userId": "usr-admin-klinika",
+      "userName": "Dr. Rəşad Əliyev (Klinika Admini)",
+      "userRole": "ADMIN",
+      "type": "IMPROVEMENT",
+      "subject": "Pasiyent kartında qan qrupunun tez görünməsi",
+      "message": "Pasiyentin qan qrupu və allergiyası rezervasiya vərəqəsində də dərhal çıxsa çox rahat olardı.",
+      "priority": "MEDIUM",
+      "status": "RESOLVED",
+      "adminNote": "FİN tibbi kartına əlavə edildi.",
+      "createdAt": "2026-10-19T11:20:00.000Z",
+      "updatedAt": "2026-10-20T16:00:00.000Z"
+    }
   ]
 }

@@ -16,9 +16,14 @@ import {
   CalendarCheck,
   ShieldCheck,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Star,
+  MessageSquare,
+  Send,
+  ThumbsUp,
+  Check
 } from 'lucide-react';
-import { Tenant, Service, Staff } from '../../lib/types';
+import { Tenant, Service, Staff, CustomerReview } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
 
 export default function TenantBookingPage({ params }: { params: { slug: string } }) {
@@ -40,11 +45,34 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const [submitting, setSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
 
+  // Quality & Reviews state
+  const [reviews, setReviews] = useState<CustomerReview[]>([]);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [reviewName, setReviewName] = useState<string>('');
+  const [reviewPhone, setReviewPhone] = useState<string>('');
+  const [reviewServiceName, setReviewServiceName] = useState<string>('');
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
+  const [reviewSuccess, setReviewSuccess] = useState<boolean>(false);
+
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '12:00', '12:30', '14:00', '14:30', '15:00', '15:30',
     '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
   ];
+
+  const loadReviews = async (tenantId: string) => {
+    try {
+      const res = await fetch(`/api/reviews?tenantId=${tenantId}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.reviews)) {
+        setReviews(data.reviews);
+      }
+    } catch (e) {
+      console.error('Failed to load reviews:', e);
+    }
+  };
 
   useEffect(() => {
     async function loadTenant() {
@@ -54,12 +82,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         const data = await res.json();
         if (data.success && data.tenant) {
           setTenant(data.tenant);
-          if (data.tenant.services && data.tenant.services.length > 0) {
-            setSelectedServiceId(data.tenant.services[0].id);
+          const activeServices = (data.tenant.services || []).filter((s: Service) => s.isActive !== false);
+          if (activeServices.length > 0) {
+            setSelectedServiceId(activeServices[0].id);
+            setReviewServiceName(activeServices[0].nameAz);
           }
           if (data.tenant.staff && data.tenant.staff.length > 0) {
             setSelectedStaffId(data.tenant.staff[0].id);
           }
+          loadReviews(data.tenant.id);
         } else {
           setError(data.error || 'Müəssisə tapılmadı');
         }
@@ -71,6 +102,47 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     }
     loadTenant();
   }, [params.slug]);
+
+  // Submit Quality Review
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenant) return;
+    if (!reviewName.trim() || !reviewComment.trim()) {
+      alert('Zəhmət olmasa adınızı və rəyinizi qeyd edin.');
+      return;
+    }
+
+    try {
+      setReviewSubmitting(true);
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: tenant.id,
+          tenantName: tenant.name,
+          customerName: reviewName.trim(),
+          customerPhone: reviewPhone.trim(),
+          serviceName: reviewServiceName.trim() || undefined,
+          rating: reviewRating,
+          comment: reviewComment.trim()
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setReviewSuccess(true);
+        setReviewComment('');
+        loadReviews(tenant.id);
+        setTimeout(() => setReviewSuccess(false), 5000);
+      } else {
+        alert(data.error || 'Rəy göndərilmədi');
+      }
+    } catch (err) {
+      alert('Rəy göndərilərkən xəta baş verdi');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,12 +380,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {tenant.services?.map(srv => {
+                {tenant.services?.filter(srv => srv.isActive !== false).map(srv => {
                   const isSelected = selectedServiceId === srv.id;
                   return (
                     <div
                       key={srv.id}
-                      onClick={() => setSelectedServiceId(srv.id)}
+                      onClick={() => {
+                        setSelectedServiceId(srv.id);
+                        setReviewServiceName(srv.nameAz);
+                      }}
                       className={`cursor-pointer rounded-2xl p-4 border transition-all ${
                         isSelected 
                           ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
@@ -503,6 +578,233 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             </div>
           </form>
         )}
+
+        {/* ═══════════ KEYFİYYƏT ÖLÇÜMÜ & MÜŞTƏRİ RƏYLƏRİ BÖLMƏSİ ═══════════ */}
+        <section id="keyfiyyet-rey" className="mt-16 pt-10 border-t border-slate-200 dark:border-slate-800">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm transition-colors">
+            
+            {/* Header & Quality Score */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <span>Xidmət Keyfiyyəti & Müştəri Məmnuniyyəti</span>
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                  Xidməti Qiymətləndirin və Rəy Bildirin
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
+                  {tenant.name} filialı üçün təəssüratınızı və balınızı qeyd edin. Sizin rəyiniz xidmət səviyyəsinin yüksəldilməsinə xidmət edir.
+                </p>
+              </div>
+
+              {/* Dynamic Overall Rating Pill */}
+              <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-center shrink-0 min-w-[170px]">
+                <div className="flex items-center justify-center gap-1.5 text-3xl font-black text-slate-900 dark:text-white">
+                  <span>
+                    {reviews.length > 0 
+                      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                      : '5.0'}
+                  </span>
+                  <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+                </div>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  {reviews.length} müştəri qiymətləndirməsi
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive Rating Form */}
+            <form onSubmit={handleReviewSubmit} className="mt-8 space-y-6">
+              
+              {/* Star Selection Row */}
+              <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+                  Xidmət Balı (Ulduz Seçin) *
+                </label>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const isFilled = (hoverRating || reviewRating) >= star;
+                      return (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className="p-1 rounded-lg transition-transform hover:scale-125 focus:outline-none"
+                          title={`${star} ulduz`}
+                        >
+                          <Star
+                            className={`w-8 h-8 transition-colors ${
+                              isFilled 
+                                ? 'fill-amber-400 text-amber-500 drop-shadow-sm' 
+                                : 'text-slate-300 dark:text-slate-600'
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Rating Description Label */}
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
+                    {(hoverRating || reviewRating) === 5 && '⭐⭐⭐⭐⭐ 5/5 — Əla və Mükəmməl!'}
+                    {(hoverRating || reviewRating) === 4 && '⭐⭐⭐⭐ 4/5 — Çox Yaxşı Xidmət'}
+                    {(hoverRating || reviewRating) === 3 && '⭐⭐⭐ 3/5 — Qənaətbəxş / Orta'}
+                    {(hoverRating || reviewRating) === 2 && '⭐⭐ 2/5 — Zəif Təcrübə'}
+                    {(hoverRating || reviewRating) === 1 && '⭐ 1/5 — Çox Zəif / Narazıyam'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Input Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Adınız və Soyadınız *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Məs: Günel Əhmədova"
+                    value={reviewName}
+                    onChange={(e) => setReviewName(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Mobil Nömrəniz (İstəyə bağlı)
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+994 50 123 45 67"
+                    value={reviewPhone}
+                    onChange={(e) => setReviewPhone(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Xidmət / Prosedur
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Məs: Həkim qəbulu, Saç kəsimi..."
+                    value={reviewServiceName}
+                    onChange={(e) => setReviewServiceName(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Review Textarea */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Rəy və Təəssüratınız *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Göstərilən xidmət, həkim/usta diqqəti, vaxtında qəbul və s. barədə fikirlərinizi qeyd edin..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm leading-relaxed"
+                />
+              </div>
+
+              {/* Submit button & feedback message */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{reviewSubmitting ? 'Göndərilir...' : 'Rəyi və Balı Təsdiqlə'}</span>
+                </button>
+
+                {reviewSuccess && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-semibold animate-in fade-in">
+                    <Check className="w-4 h-4 text-emerald-500" />
+                    <span>Təşəkkür edirik! Rəyiniz qeydə alındı və xidmət keyfiyyətinin yüksəldilməsinə töhfə verir.</span>
+                  </div>
+                )}
+              </div>
+            </form>
+
+            {/* List of Existing Reviews */}
+            {reviews.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
+                <h4 className="text-base font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-indigo-500" />
+                  <span>Müştərilərin Real Rəyləri ({reviews.length})</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {reviews.map((r) => (
+                    <div
+                      key={r.id}
+                      className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs flex items-center justify-center">
+                              {r.customerName.charAt(0)}
+                            </div>
+                            <div>
+                              <h5 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+                                {r.customerName}
+                              </h5>
+                              {r.serviceName && (
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  {r.serviceName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {[1, 2, 3, 4, 5].map((st) => (
+                              <Star
+                                key={st}
+                                className={`w-3.5 h-3.5 ${
+                                  st <= r.rating 
+                                    ? 'fill-amber-400 text-amber-400' 
+                                    : 'text-slate-300 dark:text-slate-600'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                          "{r.comment}"
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2 text-[10px] text-slate-400 dark:text-slate-500">
+                        {new Date(r.createdAt).toLocaleDateString('az-AZ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </section>
+
       </div>
     </div>
   );

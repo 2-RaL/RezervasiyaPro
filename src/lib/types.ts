@@ -43,6 +43,8 @@ export interface Service {
   duration: number; // in minutes
   price: number; // in AZN
   category: string;
+  isActive?: boolean; // Xidmətin aktiv və ya bloklanmış olması
+  description?: string;
 }
 
 export interface Staff {
@@ -90,3 +92,39 @@ export interface ClinicalEncounter {
   prescription?: string | null;
   encounterDate: string;
 }
+
+// Xidmət Keyfiyyəti və Müştəri Rəyləri
+export interface CustomerReview {
+  id: string;
+  tenantId: string;
+  tenantName?: string;
+  customerName: string;
+  customerPhone?: string;
+  rating: number; // 1 - 5 ulduz
+  comment: string;
+  serviceName?: string;
+  createdAt: string;
+}
+
+// Super Adminə Rəy və Təklif Bildirişləri
+export type FeedbackType = 'FEATURE' | 'IMPROVEMENT' | 'BUG' | 'COMPLAINT' | 'OTHER';
+export type FeedbackStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
+export type FeedbackPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface FeedbackSuggestion {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  type: FeedbackType;
+  subject: string;
+  message: string;
+  priority: FeedbackPriority;
+  status: FeedbackStatus;
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

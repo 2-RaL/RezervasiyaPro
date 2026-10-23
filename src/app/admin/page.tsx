@@ -33,10 +33,16 @@ import {
   DollarSign,
   Upload,
   Image as ImageIcon,
-  Camera
+  Camera,
+  Star,
+  Lightbulb
 } from 'lucide-react';
-import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole } from '../../lib/types';
+import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
+import { getSectorInfo } from '../../lib/sectorUtils';
+import QualityReviewsTab from './components/QualityReviewsTab';
+import FeedbacksTab from './components/FeedbacksTab';
+import ServicesManagementTab from './components/ServicesManagementTab';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -47,7 +53,7 @@ export default function AdminDashboardPage() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'bookings' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'settings'
+    'overview' | 'bookings' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'quality' | 'feedbacks' | 'settings'
   >('overview');
 
   // Data states
@@ -58,6 +64,8 @@ export default function AdminDashboardPage() {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [reviews, setReviews] = useState<CustomerReview[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -230,13 +238,15 @@ export default function AdminDashboardPage() {
     try {
       setLoading(true);
 
-      const [statsRes, tenantsRes, bookingsRes, servicesRes, staffRes, patientsRes] = await Promise.all([
-        fetch('/api/admin/stats').then(r => r.json()),
-        fetch('/api/admin/tenants').then(r => r.json()),
-        fetch('/api/admin/bookings').then(r => r.json()),
-        fetch('/api/admin/services').then(r => r.json()),
-        fetch('/api/admin/staff').then(r => r.json()),
-        fetch('/api/admin/patients').then(r => r.json())
+      const [statsRes, tenantsRes, bookingsRes, servicesRes, staffRes, patientsRes, reviewsRes, feedbacksRes] = await Promise.all([
+        fetch('/api/admin/stats').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/admin/tenants').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/admin/bookings').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/admin/services').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/admin/staff').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/admin/patients').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/reviews' + (user.role !== 'SUPER_ADMIN' && user.tenantId ? `?tenantId=${user.tenantId}` : '')).then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/admin/feedbacks').then(r => r.json()).catch(() => ({ success: false }))
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -268,6 +278,8 @@ export default function AdminDashboardPage() {
       if (servicesRes.success) setServices(servicesRes.services || []);
       if (staffRes.success) setStaffList(staffRes.staff || []);
       if (patientsRes.success) setPatients(patientsRes.patients || []);
+      if (reviewsRes.success) setReviews(reviewsRes.reviews || []);
+      if (feedbacksRes.success) setFeedbacks(feedbacksRes.feedbacks || []);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -639,6 +651,22 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleDeleteReview = async (id: string) => {
+    if (!confirm('Bu rəyi silmək istədiyinizdən əminsiniz?')) return;
+    try {
+      const res = await fetch(`/api/reviews?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Rəy silindi');
+        loadData();
+      } else {
+        alert(data.error || 'Silinmədi');
+      }
+    } catch {
+      alert('Silinmədi');
+    }
+  };
+
   // Medical Encounter
   const handleCreateEncounter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -717,6 +745,11 @@ export default function AdminDashboardPage() {
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const isCompanyAdmin = currentUser?.role === 'ADMIN';
 
+  const currentSectorTenant = isSuperAdmin
+    ? (bookingTenantFilter !== 'all' ? tenants.find(t => t.id === bookingTenantFilter) : tenants[0])
+    : tenants.find(t => t.id === currentUser?.tenantId);
+  const sectorInfo = getSectorInfo(currentSectorTenant?.sector);
+
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Toast Notification */}
@@ -741,7 +774,7 @@ export default function AdminDashboardPage() {
                   Rezervasiya<span className="text-indigo-600 dark:text-indigo-400">Pro</span>
                 </span>
                 <span className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold">
-                  {isSuperAdmin ? 'Super Admin Panel' : 'Şirkət Admin Paneli'}
+                  {isSuperAdmin ? 'Super Admin Panel' : `${sectorInfo.label}`}
                 </span>
               </div>
             </Link>
@@ -773,7 +806,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <CalendarCheck className="w-4 h-4" />
-                <span>Rezervasiyalar</span>
+                <span>{sectorInfo.bookingsLabel}</span>
               </div>
               <span
                 className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
@@ -874,7 +907,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <Briefcase className="w-4 h-4" />
-                <span>Xidmətlər və Qiymətlər</span>
+                <span>{sectorInfo.servicesLabel}</span>
               </div>
               <span
                 className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
@@ -897,7 +930,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <Users className="w-4 h-4" />
-                <span>Mütəxəssislər / İşçilər</span>
+                <span>{sectorInfo.staffLabel}</span>
               </div>
               <span
                 className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
@@ -924,6 +957,54 @@ export default function AdminDashboardPage() {
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300">
                 FİN
+              </span>
+            </button>
+
+            {/* NEW: Xidmət Keyfiyyəti (Customer Reviews & Star Ratings) */}
+            <button
+              onClick={() => setActiveTab('quality')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'quality'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <span>Xidmət Keyfiyyəti</span>
+              </div>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'quality'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-300'
+                }`}
+              >
+                {reviews.length}
+              </span>
+            </button>
+
+            {/* NEW: Rəy və Təkliflər (Feedbacks to Super Admin) */}
+            <button
+              onClick={() => setActiveTab('feedbacks')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'feedbacks'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Lightbulb className="w-4 h-4 text-indigo-500" />
+                <span>{isSuperAdmin ? 'Daxil Olan Təkliflər' : 'Super Adminə Təklif'}</span>
+              </div>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'feedbacks'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300'
+                }`}
+              >
+                {feedbacks.length}
               </span>
             </button>
 
@@ -965,15 +1046,23 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-bold text-slate-900 dark:text-white capitalize">
               {activeTab === 'overview' && 'Sistemin Ümumi Göstəriciləri'}
-              {activeTab === 'bookings' && 'Rezervasiyaların İdarə Edilməsi'}
+              {activeTab === 'bookings' && sectorInfo.bookingsLabel}
               {activeTab === 'tenants' && 'Şirkət və Filialların İdarəsi (Super Admin)'}
               {activeTab === 'users' && 'Sistem İstifadəçiləri və Rollar (Super Admin)'}
               {activeTab === 'editor' && 'Şirkət Redaktoru İdarəetməsi (1 Redaktor Limiti)'}
-              {activeTab === 'services' && 'Xidmətlər və Qiymət Tarifləri'}
-              {activeTab === 'staff' && 'İşçi Heyəti və Mütəxəssislər'}
+              {activeTab === 'services' && sectorInfo.servicesLabel}
+              {activeTab === 'staff' && sectorInfo.staffLabel}
               {activeTab === 'medical' && 'Tibbi Qeydiyyat və FİN Xəstəlik Tarixçəsi'}
+              {activeTab === 'quality' && 'Xidmət Keyfiyyəti və Müştəri Rəyləri'}
+              {activeTab === 'feedbacks' && (isSuperAdmin ? 'Daxil Olan Rəy və Təkliflər' : 'Super Adminə Rəy və Təklif')}
               {activeTab === 'settings' && (isSuperAdmin ? 'Sistem Parametrləri' : 'Şirkət və Səhifə Tənzimləmələri')}
             </h1>
+
+            {/* Dynamic Sector Badge */}
+            <div className={`hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl border text-xs font-bold ${sectorInfo.badge}`}>
+              <sectorInfo.icon className="w-4 h-4" />
+              <span>{sectorInfo.label}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -1039,13 +1128,47 @@ export default function AdminDashboardPage() {
           {/* ═══════════ TAB 1: OVERVIEW ═══════════ */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-in fade-in duration-200">
+              
+              {/* Sector Specific Hero Banner */}
+              <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
+                <div className="relative z-10">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 ${sectorInfo.badge}`}>
+                    <sectorInfo.icon className="w-4 h-4" />
+                    <span>{sectorInfo.label}</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                    {currentSectorTenant?.name || 'Müəssisə İdarəetmə Paneli'}
+                  </h2>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl">
+                    {sectorInfo.servicesDesc}. {sectorInfo.bookingsDesc}.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
+                  <button
+                    onClick={() => setActiveTab('services')}
+                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-xs font-bold text-white transition-all flex items-center gap-2"
+                  >
+                    <Briefcase className="w-4 h-4 text-indigo-300" />
+                    <span>{sectorInfo.servicesLabel}</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('quality')}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-xs font-bold text-white shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
+                  >
+                    <Star className="w-4 h-4 fill-white" />
+                    <span>Xidmət Keyfiyyəti ({reviews.length})</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Stat Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 relative overflow-hidden shadow-sm transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        {isSuperAdmin ? 'Bütün Rezervasiyalar' : 'Şirkət Rezervasiyaları'}
+                        {isSuperAdmin ? 'Bütün Rezervasiyalar' : sectorInfo.bookingsLabel}
                       </p>
                       <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
                         {stats?.totalBookings || 0}
@@ -1084,7 +1207,7 @@ export default function AdminDashboardPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Xidmət Sayı
+                        {sectorInfo.servicesLabel}
                       </p>
                       <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
                         {stats?.totalServicesCount || 0}
@@ -1103,7 +1226,7 @@ export default function AdminDashboardPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        {isSuperAdmin ? 'Aktiv Filiallar' : 'Mütəxəssis Sayı'}
+                        {isSuperAdmin ? 'Aktiv Filiallar' : sectorInfo.staffLabel}
                       </p>
                       <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
                         {isSuperAdmin ? stats?.activeTenantsCount || 0 : stats?.totalStaffCount || 0}
@@ -1114,7 +1237,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    {isSuperAdmin ? 'Sistemə qoşulmuş müəssisələr' : 'Xidmət göstərən həkim və işçilər'}
+                    {isSuperAdmin ? 'Sistemə qoşulmuş müəssisələr' : `Xidmət göstərən ${sectorInfo.staffTerm.toLowerCase()} heyəti`}
                   </div>
                 </div>
               </div>
@@ -1732,59 +1855,38 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ═══════════ TAB 6: SERVICES ═══════════ */}
+          {/* ═══════════ TAB 6: SERVICES MANAGEMENT (FULL FEATURES) ═══════════ */}
           {activeTab === 'services' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Xidmət Tarifləri və Kateqoriyalar</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Müştərilərin rezervasiya zamanı seçəcəyi xidmət paketləri
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsServiceModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Yeni Xidmət Əlavə Et</span>
-                </button>
-              </div>
+            <ServicesManagementTab
+              services={services}
+              tenants={tenants}
+              currentUser={currentUser}
+              sectorInfo={sectorInfo}
+              onRefresh={() => loadData()}
+              showToast={showToast}
+            />
+          )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {services.map(s => (
-                  <div
-                    key={s.id}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm transition-colors flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300">
-                          {s.category}
-                        </span>
-                        <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                          {s.price} ₼
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{s.nameAz}</h4>
-                      <p className="text-xs text-slate-400 italic mb-3">{s.nameEn}</p>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Müddət: <b>{s.duration} dəqiqə</b>
-                      </div>
-                    </div>
+          {/* ═══════════ TAB: QUALITY & REVIEWS (XİDMƏT KEYFİYYƏTİ) ═══════════ */}
+          {activeTab === 'quality' && (
+            <QualityReviewsTab
+              reviews={reviews}
+              tenants={tenants}
+              currentUser={currentUser}
+              onDeleteReview={handleDeleteReview}
+              showToast={showToast}
+            />
+          )}
 
-                    <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/10 flex justify-end">
-                      <button
-                        onClick={() => handleDeleteService(s.id)}
-                        className="text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-semibold p-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* ═══════════ TAB: FEEDBACKS & SUGGESTIONS (RƏY VƏ TƏKLİFLƏR) ═══════════ */}
+          {activeTab === 'feedbacks' && (
+            <FeedbacksTab
+              feedbacks={feedbacks}
+              tenants={tenants}
+              currentUser={currentUser}
+              onRefresh={() => loadData()}
+              showToast={showToast}
+            />
           )}
 
           {/* ═══════════ TAB 7: STAFF ═══════════ */}
