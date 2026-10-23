@@ -48,6 +48,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
   const [submitting, setSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
+  const [confirmedWhatsAppNotification, setConfirmedWhatsAppNotification] = useState<any | null>(null);
   const [bookingError, setBookingError] = useState<{ message: string; isBlocked?: boolean } | null>(null);
 
   // Booked slots tracking
@@ -374,6 +375,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
       const data = await res.json();
       if (data.success && data.booking) {
         setConfirmedBooking(data.booking);
+        if (data.whatsappNotification) {
+          setConfirmedWhatsAppNotification(data.whatsappNotification);
+        }
         setBookingError(null);
       } else {
         const isBlocked = Boolean(data.blocked || res.status === 403);
@@ -639,6 +643,58 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               </div>
             </div>
 
+            {/* ─── AVTOMATİK WHATSAPP BİLDİRİŞİ ─── */}
+            {confirmedWhatsAppNotification && confirmedWhatsAppNotification.enabled && (
+              <div className="max-w-md mx-auto mb-8 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/30 text-left shadow-lg relative overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/30">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+                        {lang === 'ru' ? 'WhatsApp Уведомление' : (lang === 'en' ? 'WhatsApp Notification' : 'Avtomatik WhatsApp Bildirişi')}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                        {confirmedWhatsAppNotification.isWhatsAppValid ? 'Aktiv Nömrə' : 'Mobil Format'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                      {lang === 'ru'
+                        ? 'Сообщение с подтверждением времени подготовлено для отправки на ваш номер:'
+                        : (lang === 'en'
+                          ? 'Confirmation message with your booking time is ready for your number:'
+                          : 'Rezervasiya saatınız qeyd olunaraq nömrəniz üçün rəsmi bildiriş mesajı hazırlandı:')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Mesaj qutusu */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/20 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium mb-3.5 shadow-sm">
+                  💬 &ldquo;{confirmedWhatsAppNotification.message}&rdquo;
+                </div>
+
+                {/* Düymə */}
+                <a
+                  href={confirmedWhatsAppNotification.waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                  </svg>
+                  <span>
+                    {lang === 'ru' 
+                      ? 'Открыть и отправить в WhatsApp' 
+                      : (lang === 'en' ? 'Open & Confirm via WhatsApp' : 'WhatsApp ilə Mesajı Aç və Təsdiqlə')}
+                  </span>
+                </a>
+              </div>
+            )}
+
             {/* Direct support / WhatsApp links on confirmation */}
             <div className="max-w-md mx-auto mb-8 p-4 rounded-2xl bg-indigo-50/50 dark:bg-white/5 border border-indigo-100 dark:border-white/10 text-center">
               <p className="text-xs text-slate-600 dark:text-slate-300 mb-3 font-medium">
@@ -687,6 +743,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <button
                 onClick={() => {
                   setConfirmedBooking(null);
+                  setConfirmedWhatsAppNotification(null);
                   setCustomerName('');
                   setCustomerPhone('+994 ');
                   setCustomerFin('');

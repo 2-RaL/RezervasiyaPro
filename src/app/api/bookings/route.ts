@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createBooking, getBookings, isCustomerBlocked, getServices, getStaff, isTimeOverlapping } from '../../../lib/dataStore';
+import { createBooking, getBookings, isCustomerBlocked, getServices, getStaff, isTimeOverlapping, getTenantById } from '../../../lib/dataStore';
+import { prepareWhatsAppBookingNotification } from '../../../lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,10 +110,26 @@ export async function POST(request: Request) {
       clientIp
     });
 
+    const tenant = getTenantById(body.tenantId);
+    const tenantName = tenant?.name || 'Müəssisə';
+    const whatsappNotification = prepareWhatsAppBookingNotification({
+      tenantName,
+      tenantWhatsApp: tenant?.whatsapp,
+      tenantPhone: tenant?.phone,
+      notificationEnabled: tenant?.whatsappNotificationEnabled !== false,
+      customTemplate: tenant?.whatsappTemplate,
+      customerPhone: rawPhone,
+      customerName: rawName,
+      timeSlot: body.timeSlot,
+      date: body.date,
+      serviceName: service?.nameAz
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Rezervasiyanız uğurla qeydə alındı!',
-      booking
+      booking,
+      whatsappNotification
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

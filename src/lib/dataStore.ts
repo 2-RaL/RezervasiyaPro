@@ -573,6 +573,17 @@ export function getTenantBySlug(slug: string): Tenant | null {
   };
 }
 
+export function getTenantById(id: string): Tenant | null {
+  const db = readDb();
+  const t = db.tenants.find(x => x.id === id);
+  if (!t) return null;
+  return {
+    ...t,
+    services: db.services.filter(s => s.tenantId === t.id),
+    staff: db.staff.filter(s => s.tenantId === t.id)
+  };
+}
+
 export function createTenant(data: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>): Tenant {
   const db = readDb();
   const newTenant: Tenant = {

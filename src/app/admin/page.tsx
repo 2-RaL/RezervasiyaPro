@@ -48,6 +48,7 @@ import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole
 import ThemeToggle from '../../components/ThemeToggle';
 import LanguageSelector from '../../components/LanguageSelector';
 import { getSectorInfo } from '../../lib/sectorUtils';
+import { DEFAULT_WHATSAPP_TEMPLATE, formatWhatsAppMessage } from '../../lib/whatsapp';
 import QualityReviewsTab from './components/QualityReviewsTab';
 import FeedbacksTab from './components/FeedbacksTab';
 import ServicesManagementTab from './components/ServicesManagementTab';
@@ -106,6 +107,8 @@ export default function AdminDashboardPage() {
     coverImage: '',
     logo: '',
     whatsapp: '',
+    whatsappNotificationEnabled: true,
+    whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE,
     instagram: '',
     facebook: '',
     tiktok: '',
@@ -170,6 +173,8 @@ export default function AdminDashboardPage() {
     coverImage: '',
     logo: '',
     whatsapp: '',
+    whatsappNotificationEnabled: true,
+    whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE,
     instagram: '',
     facebook: '',
     tiktok: '',
@@ -252,6 +257,8 @@ export default function AdminDashboardPage() {
     coverImage: '',
     logo: '',
     whatsapp: '',
+    whatsappNotificationEnabled: true,
+    whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE,
     instagram: '',
     facebook: '',
     tiktok: '',
@@ -365,6 +372,8 @@ export default function AdminDashboardPage() {
             coverImage: myT.coverImage || '',
             logo: myT.logo || '',
             whatsapp: myT.whatsapp || '',
+            whatsappNotificationEnabled: myT.whatsappNotificationEnabled !== false,
+            whatsappTemplate: myT.whatsappTemplate || DEFAULT_WHATSAPP_TEMPLATE,
             instagram: myT.instagram || '',
             facebook: myT.facebook || '',
             tiktok: myT.tiktok || '',
@@ -588,6 +597,8 @@ export default function AdminDashboardPage() {
           coverImage: '',
           logo: '',
           whatsapp: '',
+          whatsappNotificationEnabled: true,
+          whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE,
           instagram: '',
           facebook: '',
           tiktok: '',
@@ -634,6 +645,8 @@ export default function AdminDashboardPage() {
       coverImage: t.coverImage || '',
       logo: t.logo || '',
       whatsapp: t.whatsapp || '',
+      whatsappNotificationEnabled: t.whatsappNotificationEnabled !== false,
+      whatsappTemplate: t.whatsappTemplate || DEFAULT_WHATSAPP_TEMPLATE,
       instagram: t.instagram || '',
       facebook: t.facebook || '',
       tiktok: t.tiktok || '',
@@ -704,6 +717,8 @@ export default function AdminDashboardPage() {
           coverImage: companySettingsData.coverImage || null,
           logo: companySettingsData.logo || null,
           whatsapp: companySettingsData.whatsapp || null,
+          whatsappNotificationEnabled: companySettingsData.whatsappNotificationEnabled !== false,
+          whatsappTemplate: companySettingsData.whatsappTemplate || null,
           instagram: companySettingsData.instagram || null,
           facebook: companySettingsData.facebook || null,
           tiktok: companySettingsData.tiktok || null,
@@ -2725,6 +2740,106 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
+                  {/* ─── AVTOMATİK WHATSAPP REZERVASİYA BİLDİRİŞİ TƏNZİMLƏMƏLƏRİ ─── */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/30 space-y-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-500/20 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20">
+                          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-900 dark:text-white block">
+                            Avtomatik WhatsApp Rezervasiya Mesajı
+                          </label>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Rezervasiya edildikdə müştərinin WhatsApp nömrəsinə göndərilən avtomatik təsdiq mətni
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="compWhatsAppEnabled"
+                          checked={companySettingsData.whatsappNotificationEnabled}
+                          onChange={(e) => setCompanySettingsData({ ...companySettingsData, whatsappNotificationEnabled: e.target.checked })}
+                          className="w-4 h-4 rounded border-slate-300 dark:border-white/10 text-emerald-600 focus:ring-0 cursor-pointer"
+                        />
+                        <label htmlFor="compWhatsAppEnabled" className="text-xs font-bold text-emerald-700 dark:text-emerald-300 cursor-pointer">
+                          Bildiriş Aktiv Olsun
+                        </label>
+                      </div>
+                    </div>
+
+                    {companySettingsData.whatsappNotificationEnabled && (
+                      <div className="space-y-3 pt-1">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              WhatsApp Mesaj Mətni (Şablon):
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setCompanySettingsData({ ...companySettingsData, whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE })}
+                              className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold hover:underline"
+                            >
+                              Standart mətni bərpa et
+                            </button>
+                          </div>
+                          <textarea
+                            rows={3}
+                            value={companySettingsData.whatsappTemplate}
+                            onChange={(e) => setCompanySettingsData({ ...companySettingsData, whatsappTemplate: e.target.value })}
+                            placeholder={DEFAULT_WHATSAPP_TEMPLATE}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white leading-relaxed focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+
+                        {/* Dəyişən etiketləri */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                          <span className="font-semibold text-slate-500 dark:text-slate-400">Dinamik teqlər (əlavə etmək üçün klikləyin):</span>
+                          {[
+                            { tag: '{timeSlot}', label: 'Rezervasiya Saatı' },
+                            { tag: '{tenantName}', label: 'Şirkət Adı' },
+                            { tag: '{customerName}', label: 'Müştəri Adı' },
+                            { tag: '{date}', label: 'Tarix' },
+                          ].map(t => (
+                            <button
+                              key={t.tag}
+                              type="button"
+                              onClick={() => {
+                                const current = companySettingsData.whatsappTemplate || '';
+                                if (!current.includes(t.tag)) {
+                                  setCompanySettingsData({ ...companySettingsData, whatsappTemplate: current + ' ' + t.tag });
+                                }
+                              }}
+                              className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono hover:bg-emerald-500/20 transition-colors"
+                            >
+                              {t.tag} ({t.label})
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Canlı Önizləmə */}
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/20 shadow-sm">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block mb-1">
+                            Müştəriyə göndəriləcək canlı nümunə:
+                          </span>
+                          <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                            💬 &ldquo;{formatWhatsAppMessage(companySettingsData.whatsappTemplate, {
+                              tenantName: companySettingsData.name || 'Şirkətin Adı',
+                              timeSlot: '14:30',
+                              customerName: 'Samir Əliyev',
+                              date: '2026-10-25'
+                            })}&rdquo;
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* ─── YUXARI PANEL ÖRTÜK ŞƏKLİ (COVER BANNER) ─── */}
                   <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
                     <div className="flex items-center justify-between">
@@ -3306,6 +3421,75 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* ─── AVTOMATİK WHATSAPP REZERVASİYA BİLDİRİŞİ ─── */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-emerald-500/20 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Avtomatik WhatsApp Bildirişi
+                      </label>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Rezervasiya bitdikdə müştəriyə vaxt bildirişi
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="newTenantWhatsAppEnabled"
+                      checked={newTenantData.whatsappNotificationEnabled}
+                      onChange={(e) => setNewTenantData({ ...newTenantData, whatsappNotificationEnabled: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-white/10 text-emerald-600 focus:ring-0 cursor-pointer"
+                    />
+                    <label htmlFor="newTenantWhatsAppEnabled" className="text-xs font-bold text-emerald-700 dark:text-emerald-300 cursor-pointer">
+                      Aktiv Olsun
+                    </label>
+                  </div>
+                </div>
+
+                {newTenantData.whatsappNotificationEnabled && (
+                  <div className="space-y-2.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          Mesaj Mətni (Şablon):
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setNewTenantData({ ...newTenantData, whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE })}
+                          className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold hover:underline"
+                        >
+                          Standart mətni bərpa et
+                        </button>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={newTenantData.whatsappTemplate}
+                        onChange={(e) => setNewTenantData({ ...newTenantData, whatsappTemplate: e.target.value })}
+                        placeholder={DEFAULT_WHATSAPP_TEMPLATE}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white leading-relaxed focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/20 text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                      💬 &ldquo;{formatWhatsAppMessage(newTenantData.whatsappTemplate, {
+                        tenantName: newTenantData.name || 'Şirkətin Adı',
+                        timeSlot: '14:30',
+                        customerName: 'Samir Əliyev',
+                        date: '2026-10-25'
+                      })}&rdquo;
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* ─── YUXARI PANEL ÖRTÜK ŞƏKLİ (COVER BANNER) ─── */}
               <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
@@ -3625,6 +3809,100 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* ─── AVTOMATİK WHATSAPP REZERVASİYA BİLDİRİŞİ ─── */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-emerald-500/20 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Avtomatik WhatsApp Bildirişi
+                      </label>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Müştəri rezervasiya etdikdə göndəriləcək bildiriş şablonu
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="editTenantWhatsAppEnabled"
+                      checked={editTenantData.whatsappNotificationEnabled}
+                      onChange={(e) => setEditTenantData({ ...editTenantData, whatsappNotificationEnabled: e.target.checked })}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-white/10 text-emerald-600 focus:ring-0 cursor-pointer"
+                    />
+                    <label htmlFor="editTenantWhatsAppEnabled" className="text-xs font-bold text-emerald-700 dark:text-emerald-300 cursor-pointer">
+                      Aktiv Olsun
+                    </label>
+                  </div>
+                </div>
+
+                {editTenantData.whatsappNotificationEnabled && (
+                  <div className="space-y-2.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          Mesaj Mətni (Şablon):
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setEditTenantData({ ...editTenantData, whatsappTemplate: DEFAULT_WHATSAPP_TEMPLATE })}
+                          className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold hover:underline"
+                        >
+                          Standart mətni bərpa et
+                        </button>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={editTenantData.whatsappTemplate}
+                        onChange={(e) => setEditTenantData({ ...editTenantData, whatsappTemplate: e.target.value })}
+                        placeholder={DEFAULT_WHATSAPP_TEMPLATE}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white leading-relaxed focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* Dəyişən etiketləri */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                      <span className="font-semibold text-slate-500 dark:text-slate-400">Dinamik teqlər:</span>
+                      {[
+                        { tag: '{timeSlot}', label: 'Saat' },
+                        { tag: '{tenantName}', label: 'Şirkət' },
+                        { tag: '{customerName}', label: 'Müştəri' },
+                        { tag: '{date}', label: 'Tarix' },
+                      ].map(t => (
+                        <button
+                          key={t.tag}
+                          type="button"
+                          onClick={() => {
+                            const current = editTenantData.whatsappTemplate || '';
+                            if (!current.includes(t.tag)) {
+                              setEditTenantData({ ...editTenantData, whatsappTemplate: current + ' ' + t.tag });
+                            }
+                          }}
+                          className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono hover:bg-emerald-500/20 transition-colors"
+                        >
+                          {t.tag} ({t.label})
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/20 text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                      💬 &ldquo;{formatWhatsAppMessage(editTenantData.whatsappTemplate, {
+                        tenantName: editTenantData.name || 'Şirkətin Adı',
+                        timeSlot: '14:30',
+                        customerName: 'Samir Əliyev',
+                        date: '2026-10-25'
+                      })}&rdquo;
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* ─── ŞƏKİL VƏ LOQO YÜKLƏNMƏSİ ─── */}

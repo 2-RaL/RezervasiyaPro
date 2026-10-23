@@ -32,6 +32,8 @@ export interface Tenant {
   coverImage?: string | null; // Yuxarı panel üçün örtük şəkli (Banner)
   logo?: string | null;       // Sol tərəf üçün loqo şəkli
   whatsapp?: string | null;   // WhatsApp nömrəsi və ya linki
+  whatsappNotificationEnabled?: boolean; // Avtomatik WhatsApp bildirişinin aktiv olması
+  whatsappTemplate?: string | null;      // Avtomatik WhatsApp bildiriş şablonu
   instagram?: string | null;  // Instagram profili və ya linki
   facebook?: string | null;   // Facebook səhifəsi
   tiktok?: string | null;     // TikTok profili
