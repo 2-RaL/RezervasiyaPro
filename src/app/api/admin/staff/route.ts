@@ -43,13 +43,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Filial, mütəxəssis adı və vəzifəsi tələb olunur' }, { status: 400 });
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId || tenantId
+    };
+
     const staffMember = createStaff({
       tenantId,
       name: body.name,
       role: body.role,
       serviceIds: Array.isArray(body.serviceIds) ? body.serviceIds : [],
       slotDuration: body.slotDuration ? Number(body.slotDuration) : undefined
-    });
+    }, actor);
 
     return NextResponse.json({ success: true, staff: staffMember });
   } catch (error: any) {
@@ -74,7 +81,14 @@ export async function PATCH(request: Request) {
       updates.slotDuration = updates.slotDuration ? Number(updates.slotDuration) : undefined;
     }
 
-    const updated = updateStaff(id, updates);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
+    const updated = updateStaff(id, updates, actor);
     if (!updated) {
       return NextResponse.json({ success: false, error: 'İşçi tapılmadı' }, { status: 404 });
     }
@@ -98,7 +112,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
     }
 
-    const success = deleteStaff(id);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
+    const success = deleteStaff(id, actor);
     return NextResponse.json({ success });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

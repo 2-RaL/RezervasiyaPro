@@ -169,3 +169,40 @@ export interface FeedbackSuggestion {
   updatedAt: string;
 }
 
+// ── AUDIT & ACTIVITY LOG (FƏALİYYƏT CƏDVƏLİ VƏ GERİ QAYTARMA) ─────────────
+export type ActivityActionType =
+  | 'SERVICE_CREATE'
+  | 'SERVICE_UPDATE'
+  | 'SERVICE_DELETE'
+  | 'STAFF_CREATE'
+  | 'STAFF_UPDATE'
+  | 'STAFF_DELETE'
+  | 'BOOKING_CREATE'
+  | 'BOOKING_UPDATE'
+  | 'BOOKING_CANCEL'
+  | 'BOOKING_DELETE'
+  | 'CUSTOMER_BLOCK'
+  | 'CUSTOMER_UNBLOCK'
+  | 'PATIENT_CREATE'
+  | 'PATIENT_DELETE';
+
+export interface ActivityLog {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  tenantId?: string | null;
+  tenantName?: string;
+  actionType: ActivityActionType;
+  entityType: 'SERVICE' | 'STAFF' | 'BOOKING' | 'CUSTOMER' | 'PATIENT';
+  entityId: string;
+  entityName: string;
+  description: string;
+  snapshotBefore?: any;
+  snapshotAfter?: any;
+  isReverted?: boolean;
+  revertedAt?: string;
+  revertedBy?: string;
+}
+

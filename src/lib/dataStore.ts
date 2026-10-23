@@ -12,9 +12,18 @@ import {
   UserRole,
   CustomerReview,
   FeedbackSuggestion,
-  BlockedCustomer
+  BlockedCustomer,
+  ActivityLog,
+  ActivityActionType
 } from './types';
 import { hashPassword, verifyPassword, isPasswordHashed, sanitizeUser } from './security';
+
+export interface ActorInfo {
+  id: string;
+  name: string;
+  role: UserRole;
+  tenantId?: string | null;
+}
 
 interface DatabaseSchema {
   users: User[];
@@ -27,6 +36,7 @@ interface DatabaseSchema {
   reviews: CustomerReview[];
   feedbacks: FeedbackSuggestion[];
   blockedCustomers?: BlockedCustomer[];
+  activityLogs?: ActivityLog[];
 }
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -482,7 +492,54 @@ const defaultData: DatabaseSchema = {
       updatedAt: new Date(Date.now() - 86400000 * 2).toISOString()
     }
   ],
-  blockedCustomers: []
+  blockedCustomers: [],
+  activityLogs: [
+    {
+      id: 'act-101',
+      timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+      userId: 'usr-admin-gozellik',
+      userName: 'Aysel Xanım',
+      userRole: 'ADMIN',
+      tenantId: 'tenant-1',
+      tenantName: 'Gözəllik və Estetik Mərkəzi',
+      actionType: 'SERVICE_CREATE',
+      entityType: 'SERVICE',
+      entityId: 'srv-1',
+      entityName: 'Saç kəsimi və forma',
+      description: 'Yeni xidmət əlavə edildi: "Saç kəsimi və forma" (30 AZN)',
+      isReverted: false
+    },
+    {
+      id: 'act-102',
+      timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+      userId: 'usr-editor-gozellik',
+      userName: 'Nərmin Məmmədova',
+      userRole: 'EDITOR',
+      tenantId: 'tenant-1',
+      tenantName: 'Gözəllik və Estetik Mərkəzi',
+      actionType: 'STAFF_CREATE',
+      entityType: 'STAFF',
+      entityId: 'stf-1',
+      entityName: 'Günel Əliyeva',
+      description: 'Yeni mütəxəssis əlavə edildi: "Günel Əliyeva" (Stilist)',
+      isReverted: false
+    },
+    {
+      id: 'act-103',
+      timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
+      userId: 'usr-super',
+      userName: 'Super Administrator',
+      userRole: 'SUPER_ADMIN',
+      tenantId: 'tenant-2',
+      tenantName: 'Baku Medical Plaza',
+      actionType: 'SERVICE_CREATE',
+      entityType: 'SERVICE',
+      entityId: 'srv-5',
+      entityName: 'Kardioloq Qəbulu',
+      description: 'Yeni tibbi xidmət əlavə edildi: "Kardioloq Qəbulu" (60 AZN)',
+      isReverted: false
+    }
+  ]
 };
 
 function readDb(): DatabaseSchema {
@@ -519,6 +576,7 @@ function readDb(): DatabaseSchema {
       reviews: parsed.reviews || defaultData.reviews,
       feedbacks: parsed.feedbacks || defaultData.feedbacks,
       blockedCustomers: parsed.blockedCustomers || defaultData.blockedCustomers || [],
+      activityLogs: parsed.activityLogs || defaultData.activityLogs || []
     };
 
     if (hasUnhashed) {
@@ -628,7 +686,7 @@ export function getServices(tenantId?: string): Service[] {
   return db.services;
 }
 
-export function createService(data: Omit<Service, 'id'>): Service {
+export function createService(data: Omit<Service, 'id'>, actor?: ActorInfo): Service {
   const db = readDb();
   const newService: Service = {
     ...data,
@@ -639,13 +697,26 @@ export function createService(data: Omit<Service, 'id'>): Service {
   };
   db.services.push(newService);
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: 'SERVICE_CREATE',
+      entityType: 'SERVICE',
+      entityId: newService.id,
+      entityName: newService.nameAz,
+      description: `Yeni xidmət əlavə edildi: "${newService.nameAz}" (${newService.price} AZN)`,
+      tenantId: newService.tenantId,
+      snapshotAfter: newService
+    });
+  }
   return newService;
 }
 
-export function updateService(id: string, data: Partial<Service>): Service | null {
+export function updateService(id: string, data: Partial<Service>, actor?: ActorInfo): Service | null {
   const db = readDb();
   const index = db.services.findIndex(s => s.id === id);
   if (index === -1) return null;
+  const snapshotBefore = { ...db.services[index] };
   db.services[index] = { 
     ...db.services[index], 
     ...data,
@@ -653,14 +724,42 @@ export function updateService(id: string, data: Partial<Service>): Service | nul
     ...(data.price !== undefined ? { price: Number(data.price) } : {})
   };
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: 'SERVICE_UPDATE',
+      entityType: 'SERVICE',
+      entityId: id,
+      entityName: db.services[index].nameAz,
+      description: `Xidmət redaktə edildi: "${db.services[index].nameAz}"`,
+      tenantId: db.services[index].tenantId,
+      snapshotBefore,
+      snapshotAfter: { ...db.services[index] }
+    });
+  }
   return db.services[index];
 }
 
-export function deleteService(id: string): boolean {
+export function deleteService(id: string, actor?: ActorInfo): boolean {
   const db = readDb();
+  const target = db.services.find(s => s.id === id);
+  if (!target) return false;
+  const snapshotBefore = { ...target };
   const len = db.services.length;
   db.services = db.services.filter(s => s.id !== id);
   writeDb(db);
+  if (actor && snapshotBefore) {
+    logActivity({
+      actor,
+      actionType: 'SERVICE_DELETE',
+      entityType: 'SERVICE',
+      entityId: id,
+      entityName: snapshotBefore.nameAz,
+      description: `Xidmət silindi: "${snapshotBefore.nameAz}"`,
+      tenantId: snapshotBefore.tenantId,
+      snapshotBefore
+    });
+  }
   return db.services.length < len;
 }
 
@@ -671,7 +770,7 @@ export function getStaff(tenantId?: string): Staff[] {
   return db.staff;
 }
 
-export function createStaff(data: Omit<Staff, 'id'>): Staff {
+export function createStaff(data: Omit<Staff, 'id'>, actor?: ActorInfo): Staff {
   const db = readDb();
   const newStaff: Staff = {
     ...data,
@@ -681,27 +780,68 @@ export function createStaff(data: Omit<Staff, 'id'>): Staff {
   };
   db.staff.push(newStaff);
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: 'STAFF_CREATE',
+      entityType: 'STAFF',
+      entityId: newStaff.id,
+      entityName: newStaff.name,
+      description: `Yeni mütəxəssis əlavə edildi: "${newStaff.name}" (${newStaff.role})`,
+      tenantId: newStaff.tenantId,
+      snapshotAfter: newStaff
+    });
+  }
   return newStaff;
 }
 
-export function updateStaff(id: string, data: Partial<Staff>): Staff | null {
+export function updateStaff(id: string, data: Partial<Staff>, actor?: ActorInfo): Staff | null {
   const db = readDb();
   const index = db.staff.findIndex(s => s.id === id);
   if (index === -1) return null;
+  const snapshotBefore = { ...db.staff[index] };
   db.staff[index] = { 
     ...db.staff[index], 
     ...data,
     ...(data.slotDuration !== undefined ? { slotDuration: data.slotDuration ? Number(data.slotDuration) : undefined } : {})
   };
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: 'STAFF_UPDATE',
+      entityType: 'STAFF',
+      entityId: id,
+      entityName: db.staff[index].name,
+      description: `Mütəxəssis məlumatları redaktə edildi: "${db.staff[index].name}"`,
+      tenantId: db.staff[index].tenantId,
+      snapshotBefore,
+      snapshotAfter: { ...db.staff[index] }
+    });
+  }
   return db.staff[index];
 }
 
-export function deleteStaff(id: string): boolean {
+export function deleteStaff(id: string, actor?: ActorInfo): boolean {
   const db = readDb();
+  const target = db.staff.find(s => s.id === id);
+  if (!target) return false;
+  const snapshotBefore = { ...target };
   const len = db.staff.length;
   db.staff = db.staff.filter(s => s.id !== id);
   writeDb(db);
+  if (actor && snapshotBefore) {
+    logActivity({
+      actor,
+      actionType: 'STAFF_DELETE',
+      entityType: 'STAFF',
+      entityId: id,
+      entityName: snapshotBefore.name,
+      description: `Mütəxəssis silindi: "${snapshotBefore.name}"`,
+      tenantId: snapshotBefore.tenantId,
+      snapshotBefore
+    });
+  }
   return db.staff.length < len;
 }
 
@@ -800,7 +940,7 @@ export function toggleCustomerBlock(params: {
   blocked: boolean;
   reason?: string;
   adminName?: string;
-}): boolean {
+}, actor?: ActorInfo): boolean {
   const db = readDb();
   if (!db.blockedCustomers) db.blockedCustomers = [];
   const cleanPhone = normalizePhone(params.phone);
@@ -823,7 +963,7 @@ export function toggleCustomerBlock(params: {
       noShowCount: 3,
       isManual: true,
       blockedAt: new Date().toISOString(),
-      blockedBy: params.adminName || 'Admin'
+      blockedBy: params.adminName || (actor ? actor.name : 'Admin')
     };
     if (existingIndex >= 0) {
       db.blockedCustomers[existingIndex] = item;
@@ -849,6 +989,20 @@ export function toggleCustomerBlock(params: {
     });
   }
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: params.blocked ? 'CUSTOMER_BLOCK' : 'CUSTOMER_UNBLOCK',
+      entityType: 'CUSTOMER',
+      entityId: cleanPhone || cleanFin || ip || 'cust',
+      entityName: params.customerName || params.phone || 'Müştəri',
+      description: params.blocked 
+        ? `Müştəri bloklandı: ${params.customerName || params.phone || 'Nömrə'}`
+        : `Müştəri blokdan çıxarıldı: ${params.customerName || params.phone || 'Nömrə'}`,
+      snapshotBefore: { phone: params.phone, fin: params.fin, ip: params.ip, customerName: params.customerName, blocked: !params.blocked },
+      snapshotAfter: { phone: params.phone, fin: params.fin, ip: params.ip, customerName: params.customerName, blocked: params.blocked }
+    });
+  }
   return true;
 }
 
@@ -945,10 +1099,11 @@ export function updateBooking(id: string, updates: {
   status?: BookingStatus;
   customerScore?: number;
   adminNotes?: string;
-}): Booking | null {
+}, actor?: ActorInfo): Booking | null {
   const db = readDb();
   const index = db.bookings.findIndex(b => b.id === id);
   if (index === -1) return null;
+  const snapshotBefore = { ...db.bookings[index] };
   
   if (updates.status !== undefined) {
     db.bookings[index].status = updates.status;
@@ -963,7 +1118,7 @@ export function updateBooking(id: string, updates: {
           customerName: b.customerName,
           blocked: true,
           reason: '3 dəfə rezervasiyaya gəlinmədiyi üçün avtomatik bloklandı'
-        });
+        }, actor);
       }
     }
   }
@@ -975,18 +1130,49 @@ export function updateBooking(id: string, updates: {
   }
   
   writeDb(db);
+  if (actor) {
+    const isCancel = updates.status === 'CANCELLED';
+    logActivity({
+      actor,
+      actionType: isCancel ? 'BOOKING_CANCEL' : 'BOOKING_UPDATE',
+      entityType: 'BOOKING',
+      entityId: id,
+      entityName: `${snapshotBefore.customerName} (${snapshotBefore.date} ${snapshotBefore.timeSlot})`,
+      description: isCancel 
+        ? `Rezervasiya ləğv edildi: ${snapshotBefore.customerName} (${snapshotBefore.timeSlot})`
+        : `Rezervasiya statusu dəyişdirildi (${updates.status || 'yeniləndi'}): ${snapshotBefore.customerName}`,
+      tenantId: snapshotBefore.tenantId,
+      snapshotBefore,
+      snapshotAfter: { ...db.bookings[index] }
+    });
+  }
   return db.bookings[index];
 }
 
-export function updateBookingStatus(id: string, status: BookingStatus): Booking | null {
-  return updateBooking(id, { status });
+export function updateBookingStatus(id: string, status: BookingStatus, actor?: ActorInfo): Booking | null {
+  return updateBooking(id, { status }, actor);
 }
 
-export function deleteBooking(id: string): boolean {
+export function deleteBooking(id: string, actor?: ActorInfo): boolean {
   const db = readDb();
+  const target = db.bookings.find(b => b.id === id);
+  if (!target) return false;
+  const snapshotBefore = { ...target };
   const len = db.bookings.length;
   db.bookings = db.bookings.filter(b => b.id !== id);
   writeDb(db);
+  if (actor && snapshotBefore) {
+    logActivity({
+      actor,
+      actionType: 'BOOKING_DELETE',
+      entityType: 'BOOKING',
+      entityId: id,
+      entityName: `${snapshotBefore.customerName} (${snapshotBefore.date})`,
+      description: `Rezervasiya silindi: ${snapshotBefore.customerName} (${snapshotBefore.date} ${snapshotBefore.timeSlot})`,
+      tenantId: snapshotBefore.tenantId,
+      snapshotBefore
+    });
+  }
   return db.bookings.length < len;
 }
 
@@ -1369,6 +1555,233 @@ export function deleteFeedback(id: string): boolean {
   db.feedbacks = db.feedbacks.filter(f => f.id !== id);
   writeDb(db);
   return db.feedbacks.length < initialLen;
+}
+
+// ── AUDIT & ACTIVITY LOG (FƏALİYYƏT CƏDVƏLİ VƏ GERİ QAYTARMA SİSTEMİ) ──
+export function logActivity(params: {
+  actor: ActorInfo;
+  actionType: ActivityActionType;
+  entityType: 'SERVICE' | 'STAFF' | 'BOOKING' | 'CUSTOMER' | 'PATIENT';
+  entityId: string;
+  entityName: string;
+  description: string;
+  tenantId?: string | null;
+  tenantName?: string;
+  snapshotBefore?: any;
+  snapshotAfter?: any;
+}): ActivityLog {
+  const db = readDb();
+  if (!db.activityLogs) db.activityLogs = [];
+
+  const tenant = params.tenantId ? db.tenants.find(t => t.id === params.tenantId) : null;
+  const newLog: ActivityLog = {
+    id: 'act-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+    timestamp: new Date().toISOString(),
+    userId: params.actor.id,
+    userName: params.actor.name,
+    userRole: params.actor.role,
+    tenantId: params.tenantId || params.actor.tenantId || null,
+    tenantName: params.tenantName || (tenant ? tenant.name : 'Bütün Sistem'),
+    actionType: params.actionType,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    entityName: params.entityName,
+    description: params.description,
+    snapshotBefore: params.snapshotBefore ? JSON.parse(JSON.stringify(params.snapshotBefore)) : undefined,
+    snapshotAfter: params.snapshotAfter ? JSON.parse(JSON.stringify(params.snapshotAfter)) : undefined,
+    isReverted: false
+  };
+
+  db.activityLogs.unshift(newLog);
+  if (db.activityLogs.length > 500) {
+    db.activityLogs = db.activityLogs.slice(0, 500);
+  }
+  writeDb(db);
+  return newLog;
+}
+
+export function getActivityLogs(tenantId?: string | null): ActivityLog[] {
+  const db = readDb();
+  let list = db.activityLogs || [];
+  if (tenantId && tenantId !== 'all') {
+    list = list.filter(l => !l.tenantId || l.tenantId === tenantId);
+  }
+  return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+export function revertActivity(logId: string, performedBy: ActorInfo): {
+  success: boolean;
+  message: string;
+  log?: ActivityLog;
+} {
+  const db = readDb();
+  if (!db.activityLogs) return { success: false, message: 'Fəaliyyət qeydləri tapılmadı' };
+
+  const logIndex = db.activityLogs.findIndex(l => l.id === logId);
+  if (logIndex === -1) return { success: false, message: 'Fəaliyyət tapılmadı' };
+
+  const targetLog = db.activityLogs[logIndex];
+  if (targetLog.isReverted) {
+    return { success: false, message: 'Bu əməliyyat artıq geri qaytarılıb' };
+  }
+
+  let revertSummary = '';
+
+  switch (targetLog.actionType) {
+    case 'SERVICE_DELETE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'Bərpa üçün ilkin məlumat tapılmadı' };
+      }
+      const existing = db.services.find(s => s.id === targetLog.entityId);
+      if (existing) {
+        return { success: false, message: 'Bu xidmət artıq sistemdə mövcuddur' };
+      }
+      db.services.push(targetLog.snapshotBefore);
+      revertSummary = `Silinmiş xidmət ("${targetLog.entityName}") təkrar bərpa edildi`;
+      break;
+    }
+
+    case 'SERVICE_CREATE': {
+      const idx = db.services.findIndex(s => s.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.services.splice(idx, 1);
+        revertSummary = `Əlavə edilmiş xidmət ("${targetLog.entityName}") sistemdən silindi`;
+      } else {
+        revertSummary = `Xidmət artıq silinib`;
+      }
+      break;
+    }
+
+    case 'SERVICE_UPDATE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'İlkin xidmət məlumatı tapılmadı' };
+      }
+      const idx = db.services.findIndex(s => s.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.services[idx] = { ...targetLog.snapshotBefore };
+        revertSummary = `Xidmətin ("${targetLog.entityName}") ilkin parametrləri bərpa edildi`;
+      } else {
+        db.services.push(targetLog.snapshotBefore);
+        revertSummary = `Xidmət ilkin parametrlərlə təkrar bərpa edildi`;
+      }
+      break;
+    }
+
+    case 'STAFF_DELETE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'Bərpa üçün ilkin işçi məlumatı tapılmadı' };
+      }
+      const existing = db.staff.find(st => st.id === targetLog.entityId);
+      if (existing) {
+        return { success: false, message: 'Bu mütəxəssis artıq sistemdə mövcuddur' };
+      }
+      db.staff.push(targetLog.snapshotBefore);
+      revertSummary = `Silinmiş mütəxəssis ("${targetLog.entityName}") bərpa edildi`;
+      break;
+    }
+
+    case 'STAFF_CREATE': {
+      const idx = db.staff.findIndex(st => st.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.staff.splice(idx, 1);
+        revertSummary = `Əlavə edilmiş mütəxəssis ("${targetLog.entityName}") sistemdən ləğv edildi`;
+      } else {
+        revertSummary = `Mütəxəssis artıq bazada yoxdur`;
+      }
+      break;
+    }
+
+    case 'STAFF_UPDATE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'İlkin işçi məlumatı tapılmadı' };
+      }
+      const idx = db.staff.findIndex(st => st.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.staff[idx] = { ...targetLog.snapshotBefore };
+        revertSummary = `Mütəxəssisin ("${targetLog.entityName}") əvvəlki məlumatları bərpa edildi`;
+      } else {
+        db.staff.push(targetLog.snapshotBefore);
+        revertSummary = `Mütəxəssis ilkin vəziyyətdə bərpa olundu`;
+      }
+      break;
+    }
+
+    case 'BOOKING_DELETE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'İlkin rezervasiya məlumatı tapılmadı' };
+      }
+      db.bookings.push(targetLog.snapshotBefore);
+      revertSummary = `Silinmiş rezervasiya (${targetLog.entityName}) bərpa olundu`;
+      break;
+    }
+
+    case 'BOOKING_CANCEL':
+    case 'BOOKING_UPDATE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'İlkin rezervasiya məlumatı tapılmadı' };
+      }
+      const idx = db.bookings.findIndex(b => b.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.bookings[idx] = { ...targetLog.snapshotBefore };
+        revertSummary = `Rezervasiya statusu (${targetLog.snapshotBefore.status || 'əvvəlki'}) bərpa olundu`;
+      } else {
+        db.bookings.push(targetLog.snapshotBefore);
+        revertSummary = `Rezervasiya yenidən qeydiyyata alındı`;
+      }
+      break;
+    }
+
+    case 'CUSTOMER_BLOCK': {
+      if (db.blockedCustomers) {
+        db.blockedCustomers = db.blockedCustomers.filter(b => b.id !== targetLog.entityId && b.phone !== targetLog.entityId);
+      }
+      revertSummary = `Müştərinin bloku ləğv edildi`;
+      break;
+    }
+
+    case 'CUSTOMER_UNBLOCK': {
+      if (targetLog.snapshotBefore) {
+        if (!db.blockedCustomers) db.blockedCustomers = [];
+        db.blockedCustomers.push(targetLog.snapshotBefore);
+      }
+      revertSummary = `Müştəri təkrar bloklandı`;
+      break;
+    }
+
+    default:
+      return { success: false, message: 'Bu növ əməliyyat geri qaytarıla bilməz' };
+  }
+
+  targetLog.isReverted = true;
+  targetLog.revertedAt = new Date().toISOString();
+  targetLog.revertedBy = performedBy.name;
+
+  const revertAuditLog: ActivityLog = {
+    id: 'act-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+    timestamp: new Date().toISOString(),
+    userId: performedBy.id,
+    userName: performedBy.name,
+    userRole: performedBy.role,
+    tenantId: targetLog.tenantId,
+    tenantName: targetLog.tenantName,
+    actionType: targetLog.actionType,
+    entityType: targetLog.entityType,
+    entityId: targetLog.entityId,
+    entityName: targetLog.entityName,
+    description: `${performedBy.name} tərəfindən '${targetLog.description}' əməliyyatı ləğv edildi və geri qaytarıldı. (${revertSummary})`,
+    isReverted: true,
+    revertedAt: new Date().toISOString(),
+    revertedBy: performedBy.name
+  };
+
+  db.activityLogs.unshift(revertAuditLog);
+  writeDb(db);
+
+  return {
+    success: true,
+    message: revertSummary || 'Əməliyyat uğurla geri qaytarıldı',
+    log: targetLog
+  };
 }
 
 

@@ -76,6 +76,13 @@ export async function PATCH(request: Request) {
 
     const body = await request.json();
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
     // Toggle customer block directly
     if (body.action === 'toggleBlock') {
       const { phone, fin, ip, customerName, blocked, reason } = body;
@@ -87,7 +94,7 @@ export async function PATCH(request: Request) {
         blocked: Boolean(blocked),
         reason: reason || (blocked ? 'Admin tərəfindən əl ilə bloklandı' : undefined),
         adminName: currentUser.fullName
-      });
+      }, actor);
       return NextResponse.json({ success: true, message: blocked ? 'Müştəri bloklandı' : 'Müştəri blokdan çıxarıldı' });
     }
 
@@ -100,7 +107,7 @@ export async function PATCH(request: Request) {
       ...(status ? { status: status as BookingStatus } : {}),
       ...(customerScore !== undefined ? { customerScore: Number(customerScore) } : {}),
       ...(adminNotes !== undefined ? { adminNotes: String(adminNotes) } : {})
-    });
+    }, actor);
 
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Rezervasiya tapılmadı' }, { status: 404 });
@@ -125,7 +132,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
     }
 
-    const success = deleteBooking(id);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
+    const success = deleteBooking(id, actor);
     return NextResponse.json({ success });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

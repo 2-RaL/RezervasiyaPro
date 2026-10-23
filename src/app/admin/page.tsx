@@ -42,17 +42,25 @@ import {
   ShieldAlert,
   FileText,
   HeartPulse,
-  Clock
+  Clock,
+  BarChart3,
+  History,
+  Printer,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
-import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion } from '../../lib/types';
+import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion, ActivityLog } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
 import LanguageSelector from '../../components/LanguageSelector';
 import { getSectorInfo } from '../../lib/sectorUtils';
 import { DEFAULT_WHATSAPP_TEMPLATE, formatWhatsAppMessage } from '../../lib/whatsapp';
+import { exportBookingsToCSV, printBookingsReport } from '../../lib/exportUtils';
 import QualityReviewsTab from './components/QualityReviewsTab';
 import FeedbacksTab from './components/FeedbacksTab';
 import ServicesManagementTab from './components/ServicesManagementTab';
 import UsersManagementTab from './components/UsersManagementTab';
+import ReportsAnalyticsTab from './components/ReportsAnalyticsTab';
+import ActivityLogsTab from './components/ActivityLogsTab';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -63,7 +71,7 @@ export default function AdminDashboardPage() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'bookings' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'quality' | 'feedbacks' | 'settings'
+    'overview' | 'bookings' | 'reports' | 'activity' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'quality' | 'feedbacks' | 'settings'
   >('overview');
 
   // Data states
@@ -1188,6 +1196,54 @@ export default function AdminDashboardPage() {
               </span>
             </button>
 
+            {/* Hesabatlar və Analitika (Reports & Charts) */}
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'reports'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <BarChart3 className="w-4 h-4 text-emerald-500" />
+                <span>Hesabatlar & Qrafik</span>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'reports'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                }`}
+              >
+                Analitika
+              </span>
+            </button>
+
+            {/* Fəaliyyət Cədvəli və Audit Log (Geri Qaytarma) */}
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'activity'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <History className="w-4 h-4 text-amber-500" />
+                <span>Fəaliyyət Cədvəli</span>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'activity'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                }`}
+              >
+                Geri Al
+              </span>
+            </button>
+
             {/* Super Admin Tab: Səhifələr və Şirkətlər */}
             {isSuperAdmin && (
               <button
@@ -1416,6 +1472,8 @@ export default function AdminDashboardPage() {
             <h1 className="text-lg font-bold text-slate-900 dark:text-white capitalize">
               {activeTab === 'overview' && 'Sistemin Ümumi Göstəriciləri'}
               {activeTab === 'bookings' && sectorInfo.bookingsLabel}
+              {activeTab === 'reports' && 'Rezervasiya və Hərəkətlənmə Hesabatı'}
+              {activeTab === 'activity' && 'Fəaliyyət Cədvəli və Audit Jurnalı (Geri Qaytarma)'}
               {activeTab === 'tenants' && 'Şirkət və Filialların İdarəsi (Super Admin)'}
               {activeTab === 'users' && 'Sistem İstifadəçiləri və Rollar (Super Admin)'}
               {activeTab === 'editor' && 'Şirkət Redaktoru İdarəetməsi (1 Redaktor Limiti)'}
@@ -1771,8 +1829,33 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
 
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold self-end md:self-auto">
-                  Cəmi tapıldı: <span className="text-indigo-600 dark:text-indigo-400">{filteredBookings.length}</span> rezervasiya
+                <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold mr-1">
+                    Cəmi: <span className="text-indigo-600 dark:text-indigo-400 font-bold">{filteredBookings.length}</span>
+                  </span>
+
+                  {/* Excel Endir Düyməsi */}
+                  <button
+                    onClick={() => exportBookingsToCSV(filteredBookings, `Rezervasiyalar_${new Date().toISOString().split('T')[0]}.csv`)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.02]"
+                    title="Seçilmiş rezervasiyaları Excel (.csv) kimi endir"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Excel Endir</span>
+                  </button>
+
+                  {/* PDF / Çap Et Düyməsi */}
+                  <button
+                    onClick={() => printBookingsReport(filteredBookings, {
+                      title: 'Rezervasiyalar Hesabatı',
+                      tenantName: isSuperAdmin ? (bookingTenantFilter === 'all' ? 'Bütün Filiallar' : (tenants.find(t => t.id === bookingTenantFilter)?.name || 'Filial')) : (tenants.find(t => t.id === currentUser?.tenantId)?.name || 'Şirkət')
+                    })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.02]"
+                    title="A4 formatında çap et və ya PDF kimi saxla"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>PDF / Çap</span>
+                  </button>
                 </div>
               </div>
 
@@ -1941,6 +2024,31 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ═══════════ TAB: HESABATLAR VƏ ANALİTİKA (REPORTS) ═══════════ */}
+          {activeTab === 'reports' && (
+            <ReportsAnalyticsTab
+              bookings={bookings}
+              services={services}
+              staff={staffList}
+              reviews={reviews}
+              tenants={tenants}
+              isSuperAdmin={isSuperAdmin}
+              currentUser={currentUser}
+              selectedTenantId={bookingTenantFilter}
+              onSelectTenantId={setBookingTenantFilter}
+            />
+          )}
+
+          {/* ═══════════ TAB: FƏALİYYƏT CƏDVƏLİ VƏ AUDİT JURNALI (ACTIVITY LOG) ═══════════ */}
+          {activeTab === 'activity' && (
+            <ActivityLogsTab
+              currentUser={currentUser}
+              isSuperAdmin={isSuperAdmin}
+              onDataRefresh={loadData}
+              showToast={showToast}
+            />
           )}
 
           {/* ═══════════ TAB 3: TENANTS (SUPER ADMIN ONLY) ═══════════ */}

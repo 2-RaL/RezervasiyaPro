@@ -43,6 +43,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Filial, xidmət adı və qiymət tələb olunur' }, { status: 400 });
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId || tenantId
+    };
+
     const service = createService({
       tenantId,
       nameAz: body.nameAz,
@@ -57,7 +64,7 @@ export async function POST(request: Request) {
       description: body.description || '',
       descriptionRu: body.descriptionRu || '',
       descriptionEn: body.descriptionEn || ''
-    });
+    }, actor);
 
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
@@ -78,7 +85,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
     }
 
-    const updated = updateService(id, updates);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
+    const updated = updateService(id, updates, actor);
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Xidmət tapılmadı' }, { status: 404 });
     }
@@ -102,7 +116,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
     }
 
-    const success = deleteService(id);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
+    const success = deleteService(id, actor);
     return NextResponse.json({ success });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
