@@ -17,22 +17,10 @@ const dataFilePath = path.join(dataDir, 'db.json');
 const defaultData: DatabaseSchema = {
   tenants: [
     {
-      id: 'tenant-osteopat',
-      name: 'Osteopat.az - Manuel Terapiya və Reabilitasiya Mərkəzi',
-      slug: 'osteopat',
-      sector: 'Osteopatiya & Səhiyyə',
-      status: 'ACTIVE',
-      medicalEnabled: true,
-      phone: '+994 50 700 80 90',
-      address: 'Bakı şəh., Zərifə Əliyeva küç. 24',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
       id: 'tenant-1',
       name: 'Gözəllik və Estetik Mərkəzi',
       slug: 'gozellik-merkezi',
-      sector: 'Gözəllik & Qulluq',
+      sector: 'Gözəllik & Kosmetologiya',
       status: 'ACTIVE',
       medicalEnabled: false,
       phone: '+994 50 222 33 44',
@@ -44,7 +32,7 @@ const defaultData: DatabaseSchema = {
       id: 'tenant-2',
       name: 'Modern Klinika & Stomatologiya',
       slug: 'modern-klinika',
-      sector: 'Səhiyyə & Klinika',
+      sector: 'Səhiyyə & Diaqnostika',
       status: 'ACTIVE',
       medicalEnabled: true,
       phone: '+994 12 444 55 66',
@@ -56,61 +44,64 @@ const defaultData: DatabaseSchema = {
       id: 'tenant-3',
       name: 'VIP Barber Club Baku',
       slug: 'vip-barber',
-      sector: 'Bərbərxana & Saç',
+      sector: 'Bərbərxana & Stil',
       status: 'ACTIVE',
       medicalEnabled: false,
       phone: '+994 55 777 88 99',
       address: 'Bakı şəh., 28 May küç. 14',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'tenant-4',
+      name: 'ProAuto Təmir & Detailing Mərkəzi',
+      slug: 'avto-servis',
+      sector: 'Avtomobil & Detailing',
+      status: 'ACTIVE',
+      medicalEnabled: false,
+      phone: '+994 50 333 44 22',
+      address: 'Bakı şəh., Babək pr. 58',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'tenant-5',
+      name: 'Grand Fitness & Yoga Studiyası',
+      slug: 'fit-studio',
+      sector: 'İdman & Fitnes',
+      status: 'ACTIVE',
+      medicalEnabled: false,
+      phone: '+994 12 598 00 11',
+      address: 'Bakı şəh., Fəvvarələr meydanı 12',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'tenant-6',
+      name: 'Zirvə Tədris & İnkişaf Mərkəzi',
+      slug: 'tedris-merkezi',
+      sector: 'Təhsil & Fərdi Dərslər',
+      status: 'ACTIVE',
+      medicalEnabled: false,
+      phone: '+994 50 888 12 34',
+      address: 'Bakı şəh., Cəfər Cabbarlı küç. 28',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'tenant-osteopat',
+      name: 'Osteopat.az - Manuel Terapiya və Reabilitasiya Mərkəzi',
+      slug: 'osteopat',
+      sector: 'Reabilitasiya & Osteopatiya',
+      status: 'ACTIVE',
+      medicalEnabled: true,
+      phone: '+994 50 700 80 90',
+      address: 'Bakı şəh., Zərifə Əliyeva küç. 24',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }
   ],
   services: [
-    {
-      id: 'srv-ost-1',
-      tenantId: 'tenant-osteopat',
-      nameAz: 'Osteopatik İlkin Müayinə və Diaqnostika',
-      nameEn: 'Osteopathic Initial Examination & Diagnosis',
-      duration: 60,
-      price: 80,
-      category: 'Müayinə'
-    },
-    {
-      id: 'srv-ost-2',
-      tenantId: 'tenant-osteopat',
-      nameAz: 'Onurğa və Oynaqlarda Manuel Terapiya',
-      nameEn: 'Spine & Joint Manual Therapy',
-      duration: 45,
-      price: 60,
-      category: 'Manuel Terapiya'
-    },
-    {
-      id: 'srv-ost-3',
-      tenantId: 'tenant-osteopat',
-      nameAz: 'Skolioz və Kifoz Korreksiyası (Fizioterapiya)',
-      nameEn: 'Scoliosis & Kyphosis Correction',
-      duration: 45,
-      price: 50,
-      category: 'Reabilitasiya'
-    },
-    {
-      id: 'srv-ost-4',
-      tenantId: 'tenant-osteopat',
-      nameAz: 'Kəskin Bel və Boyun Ağrılarının Aradan Qaldırılması',
-      nameEn: 'Acute Neck & Back Pain Relief',
-      duration: 40,
-      price: 70,
-      category: 'Ağrı Müalicəsi'
-    },
-    {
-      id: 'srv-ost-5',
-      tenantId: 'tenant-osteopat',
-      nameAz: 'Müalicəvi Bərpa Massajı',
-      nameEn: 'Medical Recovery Massage',
-      duration: 50,
-      price: 55,
-      category: 'Massaj'
-    },
     {
       id: 'srv-1',
       tenantId: 'tenant-1',
@@ -155,27 +146,63 @@ const defaultData: DatabaseSchema = {
       duration: 45,
       price: 35,
       category: 'Saç & Saqqal'
+    },
+    {
+      id: 'srv-auto-1',
+      tenantId: 'tenant-4',
+      nameAz: 'Kompleks Detailing & Keramika Qoruma',
+      nameEn: 'Complex Detailing & Ceramic Coating',
+      duration: 180,
+      price: 200,
+      category: 'Detailing'
+    },
+    {
+      id: 'srv-auto-2',
+      tenantId: 'tenant-4',
+      nameAz: 'Kompüter Diaqnostikası və Texniki Baxış',
+      nameEn: 'Computer Diagnostics & Inspection',
+      duration: 45,
+      price: 40,
+      category: 'Diaqnostika'
+    },
+    {
+      id: 'srv-fit-1',
+      tenantId: 'tenant-5',
+      nameAz: 'Fərdi Məşqçi ilə Personal Training',
+      nameEn: 'Personal Training Session',
+      duration: 60,
+      price: 50,
+      category: 'Fərdi Məşq'
+    },
+    {
+      id: 'srv-edu-1',
+      tenantId: 'tenant-6',
+      nameAz: 'Fərdi IELTS / TOEFL İmtahan Hazırlığı',
+      nameEn: 'One-on-One IELTS / TOEFL Prep',
+      duration: 90,
+      price: 40,
+      category: 'Xarici Dil'
+    },
+    {
+      id: 'srv-ost-1',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Osteopatik İlkin Müayinə və Diaqnostika',
+      nameEn: 'Osteopathic Initial Examination & Diagnosis',
+      duration: 60,
+      price: 80,
+      category: 'Müayinə'
+    },
+    {
+      id: 'srv-ost-2',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Onurğa və Oynaqlarda Manuel Terapiya',
+      nameEn: 'Spine & Joint Manual Therapy',
+      duration: 45,
+      price: 60,
+      category: 'Manuel Terapiya'
     }
   ],
   staff: [
-    {
-      id: 'stf-ost-1',
-      tenantId: 'tenant-osteopat',
-      name: 'Dr. Elmir Məmmədov',
-      role: 'Baş Həkim-Osteopat'
-    },
-    {
-      id: 'stf-ost-2',
-      tenantId: 'tenant-osteopat',
-      name: 'Dr. Leyla Rəhimova',
-      role: 'Fizioterapevt / Reabilitoloq'
-    },
-    {
-      id: 'stf-ost-3',
-      tenantId: 'tenant-osteopat',
-      name: 'Tural Əliyev',
-      role: 'Manuel Terapevt'
-    },
     {
       id: 'stf-1',
       tenantId: 'tenant-1',
@@ -205,6 +232,30 @@ const defaultData: DatabaseSchema = {
       tenantId: 'tenant-3',
       name: 'Kamran Əhmədov',
       role: 'Top Barber Master'
+    },
+    {
+      id: 'stf-auto-1',
+      tenantId: 'tenant-4',
+      name: 'Elçin Qasımov',
+      role: 'Baş Detailing Ustası'
+    },
+    {
+      id: 'stf-fit-1',
+      tenantId: 'tenant-5',
+      name: 'Murad Əliyev',
+      role: 'Sertifikatlı Fitnes Təlimçisi'
+    },
+    {
+      id: 'stf-edu-1',
+      tenantId: 'tenant-6',
+      name: 'Nigar Əhmədova',
+      role: 'IELTS Baş Təlimçi (C2)'
+    },
+    {
+      id: 'stf-ost-1',
+      tenantId: 'tenant-osteopat',
+      name: 'Dr. Elmir Məmmədov',
+      role: 'Baş Həkim-Osteopat'
     }
   ],
   bookings: [

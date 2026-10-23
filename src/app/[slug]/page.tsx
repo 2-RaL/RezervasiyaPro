@@ -157,10 +157,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
           </Link>
 
           <Link
-            href="/admin"
+            href="/login"
             className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl transition-all"
           >
-            <span>Admin Panel</span>
+            <span>Giriş</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -311,7 +311,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm">2</div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Mütəxəssis / Həkim Seçimi</h3>
-                  <p className="text-xs text-slate-400">Qəbulunda olmaq istədiyiniz mütəxəssisi seçin</p>
+                  <p className="text-xs text-slate-400">Xidmət almaq istədiyiniz mütəxəssisi seçin</p>
                 </div>
               </div>
 

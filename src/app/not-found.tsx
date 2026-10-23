@@ -32,11 +32,11 @@ export default function NotFound() {
           </Link>
 
           <Link
-            href="/admin"
+            href="/login"
             className="w-full inline-flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 font-semibold text-sm transition-all"
           >
             <SlidersHorizontal className="w-4 h-4" />
-            <span>Admin Panelə Daxil Ol</span>
+            <span>Sistemə Giriş</span>
           </Link>
         </div>
 
