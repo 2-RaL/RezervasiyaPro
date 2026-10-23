@@ -174,32 +174,59 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl mb-8 shadow-xl relative overflow-hidden transition-colors">
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
+          {/* Cover Banner Image at the Top */}
+          {tenant.coverImage && (
+            <div className="relative h-44 sm:h-60 -mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-6 overflow-hidden border-b border-slate-200 dark:border-white/10 group">
+              <img
+                src={tenant.coverImage}
+                alt={`${tenant.name} örtük banneri`}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-500/30">
-                  {tenant.sector}
-                </span>
-                {tenant.medicalEnabled && (
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200 dark:border-emerald-500/30">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Tibbi İnteqrasiya
+            <div className="flex items-start sm:items-center gap-4">
+              {/* Logo on the Left Side */}
+              {tenant.logo ? (
+                <img
+                  src={tenant.logo}
+                  alt={`${tenant.name} loqosu`}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-xl shrink-0 bg-white dark:bg-slate-800"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center shrink-0">
+                  <Building2 className="w-8 h-8" />
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-500/30">
+                    {tenant.sector}
                   </span>
+                  {tenant.medicalEnabled && (
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200 dark:border-emerald-500/30">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Tibbi İnteqrasiya
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{tenant.name}</h1>
+                {tenant.address && (
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-slate-400" />
+                    <span>{tenant.address}</span>
+                  </p>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{tenant.name}</h1>
-              {tenant.address && (
-                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  <span>{tenant.address}</span>
-                </p>
-              )}
             </div>
 
             {tenant.phone && (
               <a
                 href={`tel:${tenant.phone}`}
-                className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all"
+                className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all shrink-0"
               >
                 <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                 <span>{tenant.phone}</span>

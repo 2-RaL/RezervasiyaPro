@@ -41,6 +41,8 @@ interface TenantDisplay {
   sectorCategory: 'beauty' | 'health' | 'barber' | 'auto' | 'fitness' | 'education';
   phone: string;
   address: string;
+  coverImage?: string;
+  logo?: string;
   featuredServices: { name: string; price: number; duration: number }[];
   accentColor: string;
 }
@@ -55,6 +57,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 50 222 33 44',
     address: 'Bakı şəh., Nizami küç. 45',
     accentColor: 'from-pink-500 to-rose-600',
+    coverImage: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Lazer Epilyasiyası (Tam bədən)', price: 120, duration: 60 },
       { name: 'Dərinin Dərin Təmizlənməsi (Hydrafacial)', price: 85, duration: 45 },
@@ -69,6 +73,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 12 444 55 66',
     address: 'Bakı şəh., Azadlıq pr. 102',
     accentColor: 'from-blue-500 to-indigo-600',
+    coverImage: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Stomatoloji Müayinə və Rentgen', price: 40, duration: 30 },
       { name: 'Diş Ağardılması (Zoom 4)', price: 250, duration: 60 },
@@ -83,6 +89,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 55 777 88 99',
     address: 'Bakı şəh., 28 May küç. 14',
     accentColor: 'from-amber-500 to-orange-600',
+    coverImage: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Klassik Saç Kəsimi və Saqqal Dizaynı', price: 35, duration: 45 },
       { name: 'V.I.P Qulluq & Baş Masajı', price: 50, duration: 60 },
@@ -97,6 +105,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 50 333 44 22',
     address: 'Bakı şəh., Babək pr. 58',
     accentColor: 'from-cyan-500 to-blue-600',
+    coverImage: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Kompleks Detailing & Keramika Qoruma', price: 200, duration: 180 },
       { name: 'Kompüter Diaqnostikası və Texniki Baxış', price: 40, duration: 45 },
@@ -111,6 +121,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 12 598 00 11',
     address: 'Bakı şəh., Fəvvarələr meydanı 12',
     accentColor: 'from-emerald-500 to-teal-600',
+    coverImage: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Fərdi Məşqçi ilə Personal Training', price: 50, duration: 60 },
       { name: 'Hatha Yoga və Dərin Nəfəs Dərsi', price: 30, duration: 60 },
@@ -125,6 +137,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 50 888 12 34',
     address: 'Bakı şəh., Cəfər Cabbarlı küç. 28',
     accentColor: 'from-purple-500 to-indigo-600',
+    coverImage: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Fərdi IELTS / TOEFL İmtahan Hazırlığı', price: 40, duration: 90 },
       { name: 'Veb və Proqramlaşdırma Praktiki Dərsi', price: 50, duration: 90 },
@@ -139,6 +153,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
     phone: '+994 50 700 80 90',
     address: 'Bakı şəh., Zərifə Əliyeva küç. 24',
     accentColor: 'from-teal-500 to-emerald-600',
+    coverImage: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
+    logo: 'https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=400&q=80',
     featuredServices: [
       { name: 'Osteopatik İlkin Müayinə və Diaqnostika', price: 80, duration: 60 },
       { name: 'Onurğa və Oynaqlarda Manuel Terapiya', price: 60, duration: 45 },
@@ -426,53 +442,85 @@ export default function HomePage() {
             {filteredTenants.map((item) => (
               <div 
                 key={item.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-7 flex flex-col justify-between hover:border-indigo-500/60 dark:hover:border-indigo-500/60 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group"
+                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between hover:border-indigo-500/60 dark:hover:border-indigo-500/60 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group"
               >
                 <div>
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-3 py-1 rounded-full border border-indigo-200/60 dark:border-indigo-800/60">
-                      {item.sector}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      Aktiv
-                    </span>
+                  {/* Top Cover Banner */}
+                  <div className="relative h-36 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    {item.coverImage ? (
+                      <img 
+                        src={item.coverImage} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-r ${item.accentColor} opacity-80`} />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    
+                    {/* Badges on Banner */}
+                    <div className="absolute top-3 inset-x-3 flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-white bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                        {item.sector}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-xs text-white bg-emerald-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                        Aktiv
+                      </span>
+                    </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
-                    {item.name}
-                  </h3>
-
-                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-6">
-                    <MapPin className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.address}</span>
-                  </p>
-
-                  {/* Featured Services Preview */}
-                  <div className="space-y-2.5 mb-6">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Populyar Xidmətlər:</div>
-                    {item.featuredServices.map((srv, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
-                        <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[200px]">{srv.name}</span>
-                        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                          <span>{srv.price} ₼</span>
-                          <span className="text-[10px] text-slate-400 font-normal">({srv.duration} dəq)</span>
-                        </div>
+                  {/* Card Content & Left Logo */}
+                  <div className="p-6 pt-0">
+                    {/* Logo on the Left overlapping Cover Banner */}
+                    <div className="flex items-end justify-between -mt-9 mb-4 relative z-10">
+                      <div className="w-16 h-16 rounded-2xl border-4 border-white dark:border-slate-900 bg-white dark:bg-slate-800 shadow-md overflow-hidden flex items-center justify-center shrink-0">
+                        {item.logo ? (
+                          <img src={item.logo} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full bg-gradient-to-tr ${item.accentColor} flex items-center justify-center text-white font-bold text-lg`}>
+                            {item.name.charAt(0)}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    </div>
+
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
+                      {item.name}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-5">
+                      <MapPin className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
+                      <span>{item.address}</span>
+                    </p>
+
+                    {/* Featured Services Preview */}
+                    <div className="space-y-2 mb-6">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Populyar Xidmətlər:</div>
+                      {item.featuredServices.map((srv, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
+                          <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[190px]">{srv.name}</span>
+                          <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white shrink-0">
+                            <span>{srv.price} ₼</span>
+                            <span className="text-[10px] text-slate-400 font-normal">({srv.duration} dəq)</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 {/* Card Action Link */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                  <Link
-                    href={`/${item.slug}`}
-                    className="w-full py-3 px-4 rounded-xl bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 hover:text-white dark:hover:text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group-hover:shadow-md"
-                  >
-                    <span>Rezervasiya Et</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
+                <div className="p-6 pt-0">
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                    <Link
+                      href={`/${item.slug}`}
+                      className="w-full py-3 px-4 rounded-xl bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 hover:text-white dark:hover:text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group-hover:shadow-md"
+                    >
+                      <span>Rezervasiya Et</span>
+                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

@@ -30,7 +30,10 @@ import {
   Mail,
   AlertCircle,
   ExternalLink,
-  DollarSign
+  DollarSign,
+  Upload,
+  Image as ImageIcon,
+  Camera
 } from 'lucide-react';
 import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -91,8 +94,13 @@ export default function AdminDashboardPage() {
     phone: '+994 ',
     address: 'Bakı şəh.',
     medicalEnabled: false,
-    assignedAdminId: ''
+    assignedAdminId: '',
+    coverImage: '',
+    logo: ''
   });
+
+  const [tenantImageError, setTenantImageError] = useState<{ cover?: string; logo?: string }>({});
+  const [companyImageError, setCompanyImageError] = useState<{ cover?: string; logo?: string }>({});
 
   const [newUserData, setNewUserData] = useState({
     username: '',
@@ -137,8 +145,54 @@ export default function AdminDashboardPage() {
     phone: '',
     address: '',
     sector: '',
-    medicalEnabled: false
+    medicalEnabled: false,
+    coverImage: '',
+    logo: ''
   });
+
+  // Image validation and upload handler
+  const handleValidateAndUploadImage = (
+    file: File,
+    type: 'cover' | 'logo',
+    onSuccess: (dataUrl: string) => void,
+    onError: (err: string) => void
+  ) => {
+    const isCover = type === 'cover';
+    const maxKB = isCover ? 1024 : 512;
+    const maxW = isCover ? 1920 : 800;
+    const maxH = isCover ? 1080 : 800;
+    const label = isCover ? 'Yuxarı panel örtük şəkli' : 'Loqo şəkli';
+
+    // 1. Check size in KB
+    const fileSizeKB = Math.round(file.size / 1024);
+    if (fileSizeKB > maxKB) {
+      onError(`${label}: Faylın həcmi çox böyükdür (${fileSizeKB} KB). Qoyulan limit: maksimum ${maxKB} KB.`);
+      return;
+    }
+
+    // 2. Read as data URL and verify pixel dimensions
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const img = new window.Image();
+      img.onload = () => {
+        if (img.width > maxW || img.height > maxH) {
+          onError(`${label}: Şəklin ölçüləri (${img.width}x${img.height} px) limiti aşır! Maksimum icazə verilən ölçü: ${maxW}x${maxH} px.`);
+          return;
+        }
+        onError('');
+        onSuccess(dataUrl);
+      };
+      img.onerror = () => {
+        onError('Şəkil faylı oxuna bilmədi. Zəhmət olmasa düzgün formatda (JPG, PNG, WebP) şəkil seçin.');
+      };
+      img.src = dataUrl;
+    };
+    reader.onerror = () => {
+      onError('Fayl oxunarkən xəta baş verdi.');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -197,7 +251,9 @@ export default function AdminDashboardPage() {
             phone: myT.phone || '',
             address: myT.address || '',
             sector: myT.sector || 'Gözəllik & Kosmetologiya',
-            medicalEnabled: Boolean(myT.medicalEnabled)
+            medicalEnabled: Boolean(myT.medicalEnabled),
+            coverImage: myT.coverImage || '',
+            logo: myT.logo || ''
           });
         }
 
@@ -330,6 +386,7 @@ export default function AdminDashboardPage() {
       if (data.success) {
         showToast('Yeni şirkət/filial uğurla yaradıldı');
         setIsTenantModalOpen(false);
+        setTenantImageError({});
         setNewTenantData({
           name: '',
           slug: '',
@@ -337,7 +394,9 @@ export default function AdminDashboardPage() {
           phone: '+994 ',
           address: 'Bakı şəh.',
           medicalEnabled: false,
-          assignedAdminId: ''
+          assignedAdminId: '',
+          coverImage: '',
+          logo: ''
         });
         loadData();
         loadUsers();
@@ -399,7 +458,9 @@ export default function AdminDashboardPage() {
           phone: companySettingsData.phone,
           address: companySettingsData.address,
           sector: companySettingsData.sector,
-          medicalEnabled: companySettingsData.medicalEnabled
+          medicalEnabled: companySettingsData.medicalEnabled,
+          coverImage: companySettingsData.coverImage || null,
+          logo: companySettingsData.logo || null
         })
       });
       const data = await res.json();
@@ -1324,27 +1385,68 @@ export default function AdminDashboardPage() {
                 {tenants.map(t => (
                   <div
                     key={t.id}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 relative flex flex-col justify-between shadow-sm transition-colors"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden relative flex flex-col justify-between shadow-sm transition-colors group"
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
-                          {t.sector}
-                        </span>
-                        <button
-                          onClick={() => handleToggleTenantStatus(t)}
-                          className={`text-xs font-bold px-2 py-0.5 rounded-full border transition-all ${
-                            t.status === 'ACTIVE'
-                              ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
-                              : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 hover:bg-rose-100'
-                          }`}
-                        >
-                          {t.status === 'ACTIVE' ? 'Aktiv' : 'Dayandırılıb'}
-                        </button>
-                      </div>
+                      {/* Company Cover Banner */}
+                      {t.coverImage ? (
+                        <div className="h-28 w-full relative overflow-hidden bg-slate-100 dark:bg-slate-800">
+                          <img
+                            src={t.coverImage}
+                            alt={`${t.name} banner`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="absolute top-3 right-3 z-10">
+                            <button
+                              onClick={() => handleToggleTenantStatus(t)}
+                              className={`text-xs font-bold px-2 py-0.5 rounded-full border transition-all ${
+                                t.status === 'ACTIVE'
+                                  ? 'bg-emerald-500/90 text-white border-emerald-400 hover:bg-emerald-600'
+                                  : 'bg-rose-500/90 text-white border-rose-400 hover:bg-rose-600'
+                              }`}
+                            >
+                              {t.status === 'ACTIVE' ? 'Aktiv' : 'Dayandırılıb'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-14 w-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 relative p-3 flex justify-end items-start border-b border-slate-100 dark:border-white/5">
+                          <button
+                            onClick={() => handleToggleTenantStatus(t)}
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full border transition-all ${
+                              t.status === 'ACTIVE'
+                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
+                                : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 hover:bg-rose-100'
+                            }`}
+                          >
+                            {t.status === 'ACTIVE' ? 'Aktiv' : 'Dayandırılıb'}
+                          </button>
+                        </div>
+                      )}
 
-                      <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t.name}</h4>
-                      <p className="text-xs font-mono text-indigo-600 dark:text-indigo-400 mb-3">Slug: /{t.slug}</p>
+                      <div className="p-5">
+                        {/* Company Logo & Sector Header */}
+                        <div className="flex items-center gap-3 mb-3">
+                          {t.logo ? (
+                            <img
+                              src={t.logo}
+                              alt={`${t.name} logo`}
+                              className={`w-12 h-12 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-md shrink-0 bg-white dark:bg-slate-800 ${t.coverImage ? '-mt-9 z-10' : ''}`}
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center shrink-0 ${t.coverImage ? '-mt-8 z-10 bg-white dark:bg-slate-800' : ''}`}>
+                              <Building2 className="w-5 h-5" />
+                            </div>
+                          )}
+
+                          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                            {t.sector}
+                          </span>
+                        </div>
+
+                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t.name}</h4>
+                        <p className="text-xs font-mono text-indigo-600 dark:text-indigo-400 mb-3">Slug: /{t.slug}</p>
 
                       {/* Assigned Admin user badge */}
                       <div className="mb-3 p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-xs">
@@ -1396,8 +1498,9 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
+                  <div className="p-5 pt-0 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
                       <Link
                         href={`/${t.slug}`}
                         target="_blank"
@@ -1923,6 +2026,146 @@ export default function AdminDashboardPage() {
                     </label>
                   </div>
 
+                  {/* ─── YUXARI PANEL ÖRTÜK ŞƏKLİ (COVER BANNER) ─── */}
+                  <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <span>Yuxarı Panel Şəkli (Örtük Banneri)</span>
+                      </label>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                        Maks. 1024 KB (1 MB)
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
+                      <span>📐 Maks. Ölçü: <b>1920 × 1080 px</b></span>
+                      <span>•</span>
+                      <span>Tövsiyə olunan format: <b>1200 × 400 px</b></span>
+                    </div>
+
+                    {companyImageError.cover && (
+                      <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-600 dark:text-rose-300 flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                        <span>{companyImageError.cover}</span>
+                      </div>
+                    )}
+
+                    {companySettingsData.coverImage ? (
+                      <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-white/15 h-36 group">
+                        <img
+                          src={companySettingsData.coverImage}
+                          alt="Şirkət örtük şəkli"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCompanySettingsData({ ...companySettingsData, coverImage: '' })}
+                            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1 shadow-lg"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Şəkli Sil</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all text-center">
+                        <Upload className="w-5 h-5 text-indigo-500 mb-1" />
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Yuxarı Panel üçün Örtük Şəkli Seçin</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WebP • Maks. 1024 KB & 1920x1080 px</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleValidateAndUploadImage(
+                                file,
+                                'cover',
+                                (dataUrl) => setCompanySettingsData(prev => ({ ...prev, coverImage: dataUrl })),
+                                (err) => setCompanyImageError(prev => ({ ...prev, cover: err }))
+                              );
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* ─── SOL TƏRƏF LOQOSU (LOGO) ─── */}
+                  <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Sol Tərəf Loqosu (Logo)</span>
+                      </label>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+                        Maks. 512 KB
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
+                      <span>📐 Maks. Ölçü: <b>800 × 800 px</b></span>
+                      <span>•</span>
+                      <span>Tövsiyə olunan format: <b>400 × 400 px kvadrat</b></span>
+                    </div>
+
+                    {companyImageError.logo && (
+                      <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-600 dark:text-rose-300 flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                        <span>{companyImageError.logo}</span>
+                      </div>
+                    )}
+
+                    {companySettingsData.logo ? (
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/15 shrink-0 shadow-md">
+                          <img
+                            src={companySettingsData.logo}
+                            alt="Şirkət loqosu"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCompanySettingsData({ ...companySettingsData, logo: '' })}
+                          className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white dark:bg-rose-500/10 dark:hover:bg-rose-500 text-xs font-semibold flex items-center gap-1 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Loqonu Sil</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-3 p-3.5 border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-emerald-500 dark:hover:border-emerald-400 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all">
+                        <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-700 dark:text-slate-300">Sol Tərəf üçün Loqo Seçin</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WebP • Maks. 512 KB & 800x800 px</div>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleValidateAndUploadImage(
+                                file,
+                                'logo',
+                                (dataUrl) => setCompanySettingsData(prev => ({ ...prev, logo: dataUrl })),
+                                (err) => setCompanyImageError(prev => ({ ...prev, logo: err }))
+                              );
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
                     className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-2"
@@ -2110,7 +2353,7 @@ export default function AdminDashboardPage() {
       {/* ═══════════ MODAL 2: NEW TENANT (SUPER ADMIN ONLY) ═══════════ */}
       {isTenantModalOpen && isSuperAdmin && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Yeni Şirkət / Filial Yarat</h3>
               <button onClick={() => setIsTenantModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
@@ -2221,6 +2464,146 @@ export default function AdminDashboardPage() {
                 <label htmlFor="medEnabled" className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold cursor-pointer">
                   Tibbi Modul Aktiv Olsun (FİN ilə pasiyent bazası)
                 </label>
+              </div>
+
+              {/* ─── YUXARI PANEL ÖRTÜK ŞƏKLİ (COVER BANNER) ─── */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Yuxarı Panel Şəkli (Örtük Banneri)</span>
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                    Maks. 1024 KB (1 MB)
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
+                  <span>📐 Maks. Ölçü: <b>1920 × 1080 px</b></span>
+                  <span>•</span>
+                  <span>Tövsiyə olunan format: <b>1200 × 400 px</b></span>
+                </div>
+
+                {tenantImageError.cover && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-600 dark:text-rose-300 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <span>{tenantImageError.cover}</span>
+                  </div>
+                )}
+
+                {newTenantData.coverImage ? (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-white/15 h-32 group">
+                    <img
+                      src={newTenantData.coverImage}
+                      alt="Örtük önizləməsi"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setNewTenantData({ ...newTenantData, coverImage: '' })}
+                        className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1 shadow-lg"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Şəkli Sil</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all text-center">
+                    <Upload className="w-5 h-5 text-indigo-500 mb-1" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Yuxarı Panel üçün Örtük Şəkli Seçin</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WebP • Maks. 1024 KB & 1920x1080 px</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleValidateAndUploadImage(
+                            file,
+                            'cover',
+                            (dataUrl) => setNewTenantData(prev => ({ ...prev, coverImage: dataUrl })),
+                            (err) => setTenantImageError(prev => ({ ...prev, cover: err }))
+                          );
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* ─── SOL TƏRƏF LOQOSU (LOGO) ─── */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Sol Tərəf Loqosu (Logo)</span>
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+                    Maks. 512 KB
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
+                  <span>📐 Maks. Ölçü: <b>800 × 800 px</b></span>
+                  <span>•</span>
+                  <span>Tövsiyə olunan format: <b>400 × 400 px kvadrat</b></span>
+                </div>
+
+                {tenantImageError.logo && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-600 dark:text-rose-300 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <span>{tenantImageError.logo}</span>
+                  </div>
+                )}
+
+                {newTenantData.logo ? (
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/15 shrink-0 shadow-md">
+                      <img
+                        src={newTenantData.logo}
+                        alt="Loqo önizləməsi"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewTenantData({ ...newTenantData, logo: '' })}
+                      className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white dark:bg-rose-500/10 dark:hover:bg-rose-500 text-xs font-semibold flex items-center gap-1 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Loqonu Sil</span>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-3 p-3 border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-emerald-500 dark:hover:border-emerald-400 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">Sol Tərəf üçün Loqo Seçin</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WebP • Maks. 512 KB & 800x800 px</div>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleValidateAndUploadImage(
+                            file,
+                            'logo',
+                            (dataUrl) => setNewTenantData(prev => ({ ...prev, logo: dataUrl })),
+                            (err) => setTenantImageError(prev => ({ ...prev, logo: err }))
+                          );
+                        }
+                      }}
+                    />
+                  </label>
+                )}
               </div>
 
               <div className="pt-3 flex justify-end gap-2">

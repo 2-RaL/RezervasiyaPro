@@ -26,6 +26,8 @@ export interface Tenant {
   medicalEnabled: boolean;
   phone?: string | null;
   address?: string | null;
+  coverImage?: string | null; // Yuxarı panel üçün örtük şəkli (Banner)
+  logo?: string | null;       // Sol tərəf üçün loqo şəkli
   createdAt: string;
   updatedAt: string;
   services?: Service[];

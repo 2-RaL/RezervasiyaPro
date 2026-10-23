@@ -65,7 +65,9 @@ export async function POST(request: Request) {
       status: body.status || 'ACTIVE',
       medicalEnabled: Boolean(body.medicalEnabled),
       phone: body.phone || null,
-      address: body.address || null
+      address: body.address || null,
+      coverImage: body.coverImage || null,
+      logo: body.logo || null
     });
 
     // Rule 3: Super Admin can assign this new company to an Admin user

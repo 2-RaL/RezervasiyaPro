@@ -61,6 +61,8 @@
       "medicalEnabled": false,
       "phone": "+994 50 222 33 44",
       "address": "Bakı şəh., Nizami küç. 45",
+      "coverImage": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -73,6 +75,8 @@
       "medicalEnabled": true,
       "phone": "+994 12 444 55 66",
       "address": "Bakı şəh., Azadlıq pr. 102",
+      "coverImage": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -85,6 +89,8 @@
       "medicalEnabled": false,
       "phone": "+994 55 777 88 99",
       "address": "Bakı şəh., 28 May küç. 14",
+      "coverImage": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -97,6 +103,8 @@
       "medicalEnabled": false,
       "phone": "+994 50 333 44 22",
       "address": "Bakı şəh., Babək pr. 58",
+      "coverImage": "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -109,6 +117,8 @@
       "medicalEnabled": false,
       "phone": "+994 12 598 00 11",
       "address": "Bakı şəh., Fəvvarələr meydanı 12",
+      "coverImage": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -121,6 +131,8 @@
       "medicalEnabled": false,
       "phone": "+994 50 888 12 34",
       "address": "Bakı şəh., Cəfər Cabbarlı küç. 28",
+      "coverImage": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -133,6 +145,8 @@
       "medicalEnabled": true,
       "phone": "+994 50 700 80 90",
       "address": "Bakı şəh., Zərifə Əliyeva küç. 24",
+      "coverImage": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+      "logo": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=400&q=80",
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     }
