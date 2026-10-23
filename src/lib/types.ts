@@ -31,6 +31,11 @@ export interface Tenant {
   address?: string | null;
   coverImage?: string | null; // Yuxarı panel üçün örtük şəkli (Banner)
   logo?: string | null;       // Sol tərəf üçün loqo şəkli
+  whatsapp?: string | null;   // WhatsApp nömrəsi və ya linki
+  instagram?: string | null;  // Instagram profili və ya linki
+  facebook?: string | null;   // Facebook səhifəsi
+  tiktok?: string | null;     // TikTok profili
+  telegram?: string | null;   // Telegram kanalı və ya istifadəçi adı
   createdAt: string;
   updatedAt: string;
   services?: Service[];

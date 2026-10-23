@@ -36,7 +36,8 @@ import {
   Camera,
   Star,
   Lightbulb,
-  Edit2
+  Edit2,
+  Sparkles
 } from 'lucide-react';
 import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -106,7 +107,12 @@ export default function AdminDashboardPage() {
     medicalEnabled: false,
     assignedAdminId: '',
     coverImage: '',
-    logo: ''
+    logo: '',
+    whatsapp: '',
+    instagram: '',
+    facebook: '',
+    tiktok: '',
+    telegram: ''
   });
 
   const [tenantImageError, setTenantImageError] = useState<{ cover?: string; logo?: string }>({});
@@ -178,7 +184,12 @@ export default function AdminDashboardPage() {
     sector: '',
     medicalEnabled: false,
     coverImage: '',
-    logo: ''
+    logo: '',
+    whatsapp: '',
+    instagram: '',
+    facebook: '',
+    tiktok: '',
+    telegram: ''
   });
 
   // Image validation and upload handler
@@ -286,7 +297,12 @@ export default function AdminDashboardPage() {
             sector: myT.sector || 'Gözəllik & Kosmetologiya',
             medicalEnabled: Boolean(myT.medicalEnabled),
             coverImage: myT.coverImage || '',
-            logo: myT.logo || ''
+            logo: myT.logo || '',
+            whatsapp: myT.whatsapp || '',
+            instagram: myT.instagram || '',
+            facebook: myT.facebook || '',
+            tiktok: myT.tiktok || '',
+            telegram: myT.telegram || ''
           });
         }
 
@@ -431,7 +447,12 @@ export default function AdminDashboardPage() {
           medicalEnabled: false,
           assignedAdminId: '',
           coverImage: '',
-          logo: ''
+          logo: '',
+          whatsapp: '',
+          instagram: '',
+          facebook: '',
+          tiktok: '',
+          telegram: ''
         });
         loadData();
         loadUsers();
@@ -495,7 +516,12 @@ export default function AdminDashboardPage() {
           sector: companySettingsData.sector,
           medicalEnabled: companySettingsData.medicalEnabled,
           coverImage: companySettingsData.coverImage || null,
-          logo: companySettingsData.logo || null
+          logo: companySettingsData.logo || null,
+          whatsapp: companySettingsData.whatsapp || null,
+          instagram: companySettingsData.instagram || null,
+          facebook: companySettingsData.facebook || null,
+          tiktok: companySettingsData.tiktok || null,
+          telegram: companySettingsData.telegram || null
         })
       });
       const data = await res.json();
@@ -2138,6 +2164,76 @@ export default function AdminDashboardPage() {
                     </label>
                   </div>
 
+                  {/* ─── SOSİAL MEDİA VƏ ƏLAQƏ LOGOLARI ─── */}
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 space-y-3">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-emerald-500" />
+                      <span>Sosial Media & Əlaqə Linkləri (Rezervasiya Səhifəsində Görünür)</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                          WhatsApp Nömrəsi və ya Linki
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="məs. +994 50 700 80 90"
+                          value={companySettingsData.whatsapp}
+                          onChange={(e) => setCompanySettingsData({ ...companySettingsData, whatsapp: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                          Instagram İstifadəçi Adı və ya Linki
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="məs. osteopat.az"
+                          value={companySettingsData.instagram}
+                          onChange={(e) => setCompanySettingsData({ ...companySettingsData, instagram: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                          Facebook Səhifəsi
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="məs. osteopat.az"
+                          value={companySettingsData.facebook}
+                          onChange={(e) => setCompanySettingsData({ ...companySettingsData, facebook: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                          TikTok Profili
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="məs. @osteopat.az"
+                          value={companySettingsData.tiktok}
+                          onChange={(e) => setCompanySettingsData({ ...companySettingsData, tiktok: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                          Telegram Kanalı / Linki
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="məs. osteopat_az"
+                          value={companySettingsData.telegram}
+                          onChange={(e) => setCompanySettingsData({ ...companySettingsData, telegram: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* ─── YUXARI PANEL ÖRTÜK ŞƏKLİ (COVER BANNER) ─── */}
                   <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10">
                     <div className="flex items-center justify-between">
@@ -2475,14 +2571,27 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaxt</label>
-                  <input
-                    type="time"
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Vaxt</label>
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-1.5 py-0.5 rounded">
+                      24 Saatlıq
+                    </span>
+                  </div>
+                  <select
                     required
                     value={newBookingData.timeSlot}
                     onChange={(e) => setNewBookingData({ ...newBookingData, timeSlot: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
-                  />
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono"
+                  >
+                    {[
+                      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+                      '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+                      '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'
+                    ].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -2620,6 +2729,76 @@ export default function AdminDashboardPage() {
                 <label htmlFor="medEnabled" className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold cursor-pointer">
                   Tibbi Modul Aktiv Olsun (FİN ilə pasiyent bazası)
                 </label>
+              </div>
+
+              {/* ─── SOSİAL MEDİA VƏ ƏLAQƏ LOGOLARI ─── */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 space-y-2.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-emerald-500" />
+                  <span>Sosial Media & Əlaqə Linkləri</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      WhatsApp Nömrəsi
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="məs. +994 50 700 80 90"
+                      value={newTenantData.whatsapp}
+                      onChange={(e) => setNewTenantData({ ...newTenantData, whatsapp: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Instagram İstifadəçi Adı
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="məs. osteopat.az"
+                      value={newTenantData.instagram}
+                      onChange={(e) => setNewTenantData({ ...newTenantData, instagram: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Facebook Səhifəsi
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="məs. osteopat.az"
+                      value={newTenantData.facebook}
+                      onChange={(e) => setNewTenantData({ ...newTenantData, facebook: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      TikTok Profili
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="məs. @osteopat.az"
+                      value={newTenantData.tiktok}
+                      onChange={(e) => setNewTenantData({ ...newTenantData, tiktok: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                      Telegram Kanalı
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="məs. osteopat_az"
+                      value={newTenantData.telegram}
+                      onChange={(e) => setNewTenantData({ ...newTenantData, telegram: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* ─── YUXARI PANEL ÖRTÜK ŞƏKLİ (COVER BANNER) ─── */}

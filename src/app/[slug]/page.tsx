@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Calendar, 
@@ -59,11 +59,76 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
   const [reviewSuccess, setReviewSuccess] = useState<boolean>(false);
 
+  // 24 saatlıq tam rejim üzrə vaxt cədvəli (08:00 - 23:00)
   const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+    '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'
   ];
+
+  const [timeFilter, setTimeFilter] = useState<'ALL' | 'MORNING' | 'AFTERNOON' | 'EVENING'>('ALL');
+
+  const filteredTimeSlots = useMemo(() => {
+    return timeSlots.filter(t => {
+      const hour = parseInt(t.split(':')[0], 10);
+      if (timeFilter === 'MORNING') return hour >= 8 && hour < 12;
+      if (timeFilter === 'AFTERNOON') return hour >= 12 && hour < 17;
+      if (timeFilter === 'EVENING') return hour >= 17 && hour <= 23;
+      return true;
+    });
+  }, [timeFilter]);
+
+  // Sosial media və WhatsApp yönləndirmə keçidləri
+  const getCleanPhone = (phone?: string | null) => {
+    if (!phone) return '';
+    return phone.replace(/\D/g, '');
+  };
+
+  const getWhatsAppUrl = () => {
+    if (!tenant) return '#';
+    const waNumber = tenant.whatsapp ? getCleanPhone(tenant.whatsapp) : getCleanPhone(tenant.phone);
+    if (!waNumber) return '#';
+    const text = encodeURIComponent(`Salam, ${tenant.name} üçün rezervasiya ilə bağlı müraciət edirəm.`);
+    return `https://wa.me/${waNumber}?text=${text}`;
+  };
+
+  const getInstagramUrl = () => {
+    if (!tenant) return '#';
+    if (tenant.instagram) {
+      if (tenant.instagram.startsWith('http')) return tenant.instagram;
+      return `https://instagram.com/${tenant.instagram.replace('@', '')}`;
+    }
+    return `https://instagram.com/${tenant.slug}`;
+  };
+
+  const getFacebookUrl = () => {
+    if (!tenant) return '#';
+    if (tenant.facebook) {
+      if (tenant.facebook.startsWith('http')) return tenant.facebook;
+      return `https://facebook.com/${tenant.facebook}`;
+    }
+    return `https://facebook.com/${tenant.slug}`;
+  };
+
+  const getTikTokUrl = () => {
+    if (!tenant) return '#';
+    if (tenant.tiktok) {
+      if (tenant.tiktok.startsWith('http')) return tenant.tiktok;
+      const handle = tenant.tiktok.startsWith('@') ? tenant.tiktok : `@${tenant.tiktok}`;
+      return `https://tiktok.com/${handle}`;
+    }
+    return `https://tiktok.com/@${tenant.slug}`;
+  };
+
+  const getTelegramUrl = () => {
+    if (!tenant) return '#';
+    if (tenant.telegram) {
+      if (tenant.telegram.startsWith('http')) return tenant.telegram;
+      return `https://t.me/${tenant.telegram.replace('@', '')}`;
+    }
+    return `https://t.me/${tenant.slug}`;
+  };
 
   // Real-time input handlers: strictly letters for name, strictly digits for phone
   const handleCustomerNameChange = (val: string) => {
@@ -371,15 +436,86 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               </div>
             </div>
 
-            {tenant.phone && (
-              <a
-                href={`tel:${tenant.phone}`}
-                className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all shrink-0"
-              >
-                <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                <span>{tenant.phone}</span>
-              </a>
-            )}
+            <div className="flex flex-col items-start sm:items-end gap-2.5 shrink-0">
+              {tenant.phone && (
+                <a
+                  href={`tel:${tenant.phone}`}
+                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all shadow-sm"
+                >
+                  <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                  <span>{tenant.phone}</span>
+                </a>
+              )}
+
+              {/* Sosial Media və WhatsApp loqoları */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* WhatsApp Logo Button */}
+                <a
+                  href={getWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="WhatsApp ilə birbaşa əlaqə"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-transform hover:scale-105 active:scale-95"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                  </svg>
+                  <span>WhatsApp</span>
+                </a>
+
+                {/* Instagram Logo */}
+                <a
+                  href={getInstagramUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Instagram səhifəsi"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-md shadow-rose-500/25 transition-transform hover:scale-110 active:scale-95"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                  </svg>
+                </a>
+
+                {/* Facebook Logo */}
+                <a
+                  href={getFacebookUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Facebook səhifəsi"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#1877F2] text-white shadow-md shadow-blue-500/25 transition-transform hover:scale-110 active:scale-95"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                </a>
+
+                {/* TikTok Logo */}
+                <a
+                  href={getTikTokUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="TikTok profili"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-900 dark:bg-white/10 hover:bg-black text-white border border-slate-700/30 transition-transform hover:scale-110 active:scale-95"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.52a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.2a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.05a8.28 8.28 0 0 0 4.76 1.48V7.08a4.84 4.84 0 0 1-1-.39z"/>
+                  </svg>
+                </a>
+
+                {/* Telegram Logo */}
+                <a
+                  href={getTelegramUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Telegram kanalı"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#229ED9] text-white shadow-md shadow-sky-500/25 transition-transform hover:scale-110 active:scale-95"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -419,6 +555,46 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="flex justify-between items-center text-sm pt-1">
                 <span className="text-slate-500 dark:text-slate-400">Qiymət:</span>
                 <span className="font-extrabold text-slate-900 dark:text-white text-base">{selectedService?.price} AZN</span>
+              </div>
+            </div>
+
+            {/* Direct support / WhatsApp links on confirmation */}
+            <div className="max-w-md mx-auto mb-8 p-4 rounded-2xl bg-indigo-50/50 dark:bg-white/5 border border-indigo-100 dark:border-white/10 text-center">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-3 font-medium">
+                Rezervasiya ilə bağlı əlavə sualınız və ya dəyişiklik istəyiniz olarsa, bizimlə əlaqə saxlaya bilərsiniz:
+              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <a
+                  href={getWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all hover:scale-105"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
+                  </svg>
+                  <span>WhatsApp ilə Əlaqə</span>
+                </a>
+                {tenant?.phone && (
+                  <a
+                    href={`tel:${tenant.phone}`}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-800 dark:text-white text-xs font-bold transition-all"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Zəng Et</span>
+                  </a>
+                )}
+                <a
+                  href={getInstagramUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white text-xs font-bold transition-all hover:scale-105"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                  </svg>
+                  <span>Instagram</span>
+                </a>
               </div>
             </div>
 
@@ -560,8 +736,17 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 </div>
 
                 <div className="sm:col-span-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Mövcud Saatlar</label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <span>Mövcud Saatlar</span>
+                      </label>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                        24 Saatlıq Rejim
+                      </span>
+                    </div>
+
                     <div className="flex items-center gap-3 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Boş
@@ -572,8 +757,57 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {timeSlots.map(time => {
+                  {/* Vaxt Filtrləri (24 saatlıq) */}
+                  <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setTimeFilter('ALL')}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        timeFilter === 'ALL'
+                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      Bütün Saatlar (24H)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimeFilter('MORNING')}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        timeFilter === 'MORNING'
+                          ? 'bg-amber-500 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      Səhər (08:00 - 12:00)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimeFilter('AFTERNOON')}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        timeFilter === 'AFTERNOON'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      Günorta (12:00 - 17:00)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimeFilter('EVENING')}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        timeFilter === 'EVENING'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                      }`}
+                    >
+                      Axşam (17:00 - 23:00)
+                    </button>
+                  </div>
+
+                  {/* 24-Saatlıq Slotlar Qridi */}
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto pr-1">
+                    {filteredTimeSlots.map(time => {
                       const isBooked = bookedSlots.some(
                         b => b.timeSlot === time && (!selectedStaffId || b.staffId === selectedStaffId)
                       );
@@ -601,7 +835,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           onClick={() => setSelectedTime(time)}
                           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                             isSelected
-                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400'
                               : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
                           }`}
                         >
@@ -609,6 +843,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         </button>
                       );
                     })}
+                  </div>
+
+                  {/* Seçilmiş saat göstəricisi */}
+                  <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-white/5">
+                    <span className="text-slate-500">Seçilmiş vaxt:</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/20">
+                      {selectedTime} (24 saatlıq rejim)
+                    </span>
                   </div>
                 </div>
               </div>

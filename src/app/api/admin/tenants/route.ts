@@ -67,7 +67,12 @@ export async function POST(request: Request) {
       phone: body.phone || null,
       address: body.address || null,
       coverImage: body.coverImage || null,
-      logo: body.logo || null
+      logo: body.logo || null,
+      whatsapp: body.whatsapp || null,
+      instagram: body.instagram || null,
+      facebook: body.facebook || null,
+      tiktok: body.tiktok || null,
+      telegram: body.telegram || null
     });
 
     // Rule 3: Super Admin can assign this new company to an Admin user

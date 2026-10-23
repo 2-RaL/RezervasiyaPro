@@ -102,7 +102,7 @@ export default function QualityReviewsTab({
 
     const rows = filteredReviews.map(r => [
       `"${r.id}"`,
-      `"${new Date(r.createdAt).toLocaleString('az-AZ')}"`,
+      `"${new Date(r.createdAt).toLocaleString('az-AZ', { hour12: false })}"`,
       `"${(r.tenantName || '').replace(/"/g, '""')}"`,
       `"${(r.customerName || '').replace(/"/g, '""')}"`,
       `"${(r.customerPhone || '').replace(/"/g, '""')}"`,
@@ -362,7 +362,7 @@ export default function QualityReviewsTab({
               <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 dark:border-white/5 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span>{new Date(rev.createdAt).toLocaleString('az-AZ')}</span>
+                  <span>{new Date(rev.createdAt).toLocaleString('az-AZ', { hour12: false })}</span>
                 </span>
 
                 <button

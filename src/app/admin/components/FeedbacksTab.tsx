@@ -322,7 +322,7 @@ export default function FeedbacksTab({
                 </span>
                 <span className="flex items-center gap-1.5 text-slate-400">
                   <Clock className="w-3.5 h-3.5" />
-                  <span>{new Date(item.createdAt).toLocaleString('az-AZ')}</span>
+                  <span>{new Date(item.createdAt).toLocaleString('az-AZ', { hour12: false })}</span>
                 </span>
               </div>
 
