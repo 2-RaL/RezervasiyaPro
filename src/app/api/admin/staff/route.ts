@@ -47,7 +47,8 @@ export async function POST(request: Request) {
       tenantId,
       name: body.name,
       role: body.role,
-      serviceIds: Array.isArray(body.serviceIds) ? body.serviceIds : []
+      serviceIds: Array.isArray(body.serviceIds) ? body.serviceIds : [],
+      slotDuration: body.slotDuration ? Number(body.slotDuration) : undefined
     });
 
     return NextResponse.json({ success: true, staff: staffMember });
@@ -67,6 +68,10 @@ export async function PATCH(request: Request) {
     const { id, ...updates } = body;
     if (!id) {
       return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
+    }
+
+    if (updates.slotDuration !== undefined) {
+      updates.slotDuration = updates.slotDuration ? Number(updates.slotDuration) : undefined;
     }
 
     const updated = updateStaff(id, updates);

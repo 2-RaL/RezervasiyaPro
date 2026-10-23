@@ -41,7 +41,8 @@ import {
   UserX,
   ShieldAlert,
   FileText,
-  HeartPulse
+  HeartPulse,
+  Clock
 } from 'lucide-react';
 import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -206,11 +207,13 @@ export default function AdminDashboardPage() {
     name: string;
     role: string;
     serviceIds: string[];
+    slotDuration?: number;
   }>({
     tenantId: '',
     name: '',
     role: 'Mütəxəssis',
-    serviceIds: []
+    serviceIds: [],
+    slotDuration: undefined
   });
 
   const [isEditStaffModalOpen, setIsEditStaffModalOpen] = useState(false);
@@ -220,12 +223,14 @@ export default function AdminDashboardPage() {
     role: string;
     tenantId: string;
     serviceIds: string[];
+    slotDuration?: number;
   }>({
     id: '',
     name: '',
     role: '',
     tenantId: '',
-    serviceIds: []
+    serviceIds: [],
+    slotDuration: undefined
   });
 
   const [newEncounterData, setNewEncounterData] = useState({
@@ -855,7 +860,8 @@ export default function AdminDashboardPage() {
           tenantId: tenants[0]?.id || '',
           name: '',
           role: 'Mütəxəssis',
-          serviceIds: []
+          serviceIds: [],
+          slotDuration: undefined
         });
         loadData();
       } else {
@@ -2284,10 +2290,17 @@ export default function AdminDashboardPage() {
                         {st.name.charAt(0)}
                       </div>
                       <h4 className="font-bold text-slate-900 dark:text-white text-sm">{st.name}</h4>
-                      <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">{st.role}</p>
+                      {/* Slot Duration / Interval Badge */}
+                      <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Vaxt Aralığı:</span>
+                        <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {st.slotDuration ? (st.slotDuration >= 60 ? `${st.slotDuration % 60 === 0 ? st.slotDuration / 60 : (st.slotDuration / 60).toFixed(1)} saat (${st.slotDuration} dəq)` : `${st.slotDuration} dəq`) : 'Xidmət standartı'}
+                        </span>
+                      </div>
 
                       {/* Requirement 4: Show Assigned Services */}
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/5">
+                      <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-white/5">
                         <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5">
                           Təhkim Olunan Xidmətlər:
                         </span>
@@ -2319,7 +2332,8 @@ export default function AdminDashboardPage() {
                             name: st.name,
                             role: st.role,
                             tenantId: st.tenantId,
-                            serviceIds: st.serviceIds || []
+                            serviceIds: st.serviceIds || [],
+                            slotDuration: st.slotDuration
                           });
                           setIsEditStaffModalOpen(true);
                         }}
@@ -3042,27 +3056,41 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Vaxt</label>
-                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-1.5 py-0.5 rounded">
-                      24 Saatlıq
-                    </span>
-                  </div>
-                  <select
-                    required
-                    value={newBookingData.timeSlot}
-                    onChange={(e) => setNewBookingData({ ...newBookingData, timeSlot: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono"
-                  >
-                    {[
-                      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-                      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-                      '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
-                      '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'
-                    ].map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
+                  {(() => {
+                    const selSrv = services.find(s => s.id === newBookingData.serviceId);
+                    const selStf = staffList.find(st => st.id === newBookingData.staffId);
+                    const activeInt = (selStf?.slotDuration && selStf.slotDuration > 0) ? selStf.slotDuration : (selSrv?.duration || 30);
+                    const dynamicSlots: string[] = [];
+                    for (let m = 8 * 60; m <= 23 * 60; m += activeInt) {
+                      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+                      const mm = String(m % 60).padStart(2, '0');
+                      dynamicSlots.push(`${hh}:${mm}`);
+                    }
+                    const intLabel = activeInt >= 60 ? (activeInt % 60 === 0 ? `${activeInt / 60} saat` : `${(activeInt / 60).toFixed(1)} saat`) : `${activeInt} dəq`;
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Vaxt ({intLabel})
+                          </label>
+                          <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-1.5 py-0.5 rounded">
+                            24 Saatlıq
+                          </span>
+                        </div>
+                        <select
+                          required
+                          value={newBookingData.timeSlot}
+                          onChange={(e) => setNewBookingData({ ...newBookingData, timeSlot: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono"
+                        >
+                          {dynamicSlots.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -3855,15 +3883,42 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Müddət (dəq)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Müddət (dəq)</label>
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                      {newServiceData.duration >= 60 ? `${Math.floor(newServiceData.duration / 60)} saat ${newServiceData.duration % 60 ? (newServiceData.duration % 60) + ' dəq' : ''}` : `${newServiceData.duration} dəq`}
+                    </span>
+                  </div>
                   <input
                     type="number"
                     required
                     min={5}
                     value={newServiceData.duration}
                     onChange={(e) => setNewServiceData({ ...newServiceData, duration: Number(e.target.value) })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white mb-1.5"
                   />
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      { label: '30 dəq', value: 30 },
+                      { label: '45 dəq', value: 45 },
+                      { label: '1 saat', value: 60 },
+                      { label: '1.5 saat', value: 90 },
+                      { label: '2 saat', value: 120 }
+                    ].map(p => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setNewServiceData({ ...newServiceData, duration: p.value })}
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          newServiceData.duration === p.value
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -3988,6 +4043,35 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                  <span>Rezervasiya Vaxt Aralığı</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                    {newStaffData.slotDuration ? (newStaffData.slotDuration >= 60 ? `${newStaffData.slotDuration % 60 === 0 ? newStaffData.slotDuration / 60 : (newStaffData.slotDuration / 60).toFixed(1)} saat (${newStaffData.slotDuration} dəq)` : `${newStaffData.slotDuration} dəq`) : 'Xidmət standartı'}
+                  </span>
+                </label>
+                <select
+                  value={newStaffData.slotDuration || 0}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setNewStaffData({ ...newStaffData, slotDuration: val > 0 ? val : undefined });
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                >
+                  <option value={0}>Avtomatik (Hər xidmətin öz təyin edilmiş vaxtı)</option>
+                  <option value={15}>15 dəqiqə</option>
+                  <option value={30}>30 dəqiqə</option>
+                  <option value={45}>45 dəqiqə</option>
+                  <option value={60}>1 saat (60 dəqiqə)</option>
+                  <option value={90}>1.5 saat (90 dəqiqə)</option>
+                  <option value={120}>2 saat (120 dəqiqə)</option>
+                  <option value={180}>3 saat (180 dəqiqə)</option>
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Mütəxəssis üçün fərdi interval təyin edə və ya hər xidmətin öz standart müddətini seçə bilərsiniz.
+                </p>
+              </div>
+
               <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
@@ -4080,6 +4164,35 @@ export default function AdminDashboardPage() {
                 </div>
                 <p className="text-[10px] text-slate-500 mt-1">
                   Mütəxəssis rezervasiya zamanı yalnız seçilmiş bu xidmətlər üzrə görünəcək.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                  <span>Fərdi Rezervasiya Vaxt Aralığı</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                    {editStaffData.slotDuration ? (editStaffData.slotDuration >= 60 ? `${editStaffData.slotDuration % 60 === 0 ? editStaffData.slotDuration / 60 : (editStaffData.slotDuration / 60).toFixed(1)} saat (${editStaffData.slotDuration} dəq)` : `${editStaffData.slotDuration} dəq`) : 'Xidmət standartı'}
+                  </span>
+                </label>
+                <select
+                  value={editStaffData.slotDuration || 0}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setEditStaffData({ ...editStaffData, slotDuration: val > 0 ? val : undefined });
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                >
+                  <option value={0}>Avtomatik (Hər xidmətin öz təyin edilmiş vaxtı)</option>
+                  <option value={15}>15 dəqiqə</option>
+                  <option value={30}>30 dəqiqə</option>
+                  <option value={45}>45 dəqiqə</option>
+                  <option value={60}>1 saat (60 dəqiqə)</option>
+                  <option value={90}>1.5 saat (90 dəqiqə)</option>
+                  <option value={120}>2 saat (120 dəqiqə)</option>
+                  <option value={180}>3 saat (180 dəqiqə)</option>
+                </select>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Mütəxəssis üçün fərdi interval təyin edə və ya hər xidmətin öz standart müddətini seçə bilərsiniz.
                 </p>
               </div>
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createBooking, getBookings, isCustomerBlocked } from '../../../lib/dataStore';
+import { createBooking, getBookings, isCustomerBlocked, getServices, getStaff, isTimeOverlapping } from '../../../lib/dataStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,8 @@ export async function GET(request: Request) {
     const bookedSlots = activeBookings.map(b => ({
       date: b.date,
       timeSlot: b.timeSlot,
-      staffId: b.staffId
+      staffId: b.staffId,
+      duration: b.duration || 30
     }));
 
     return NextResponse.json({
@@ -71,19 +72,26 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // Check if time slot is already booked for this staff on this date
+    // Determine booking duration from staff slotDuration or service duration
+    const services = getServices(body.tenantId);
+    const staffList = getStaff(body.tenantId);
+    const service = services.find(s => s.id === body.serviceId);
+    const staff = staffList.find(st => st.id === body.staffId);
+    const bookingDuration = (staff?.slotDuration && staff.slotDuration > 0) ? staff.slotDuration : (service?.duration || 30);
+
+    // Check if time slot is already booked or overlaps with existing bookings for this staff on this date
     const existingBookings = getBookings({ tenantId: body.tenantId, date: body.date });
     const isSlotTaken = existingBookings.some(
       b => b.status !== 'CANCELLED' && 
            b.date === body.date && 
-           b.timeSlot === body.timeSlot &&
-           b.staffId === body.staffId
+           b.staffId === body.staffId &&
+           isTimeOverlapping(body.timeSlot, bookingDuration, b.timeSlot, b.duration || 30)
     );
 
     if (isSlotTaken) {
       return NextResponse.json({
         success: false,
-        error: `Seçilmiş saat (${body.timeSlot}) həmin mütəxəssis üçün artıq rezerv olunub. Zəhmət olmasa başqa saat seçin.`
+        error: `Seçilmiş saat (${body.timeSlot}) və ya onun tələb etdiyi vaxt aralığı (${bookingDuration} dəqiqə) bu mütəxəssis üçün artıq mövcud rezervasiya ilə kəsişir. Zəhmət olmasa başqa saat seçin.`
       }, { status: 409 });
     }
 
@@ -96,6 +104,7 @@ export async function POST(request: Request) {
       staffId: body.staffId,
       date: body.date,
       timeSlot: body.timeSlot,
+      duration: bookingDuration,
       status: 'CONFIRMED',
       clientIp
     });

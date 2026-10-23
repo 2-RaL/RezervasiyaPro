@@ -631,6 +631,7 @@ export function createStaff(data: Omit<Staff, 'id'>): Staff {
   const newStaff: Staff = {
     ...data,
     serviceIds: Array.isArray(data.serviceIds) ? data.serviceIds : [],
+    slotDuration: data.slotDuration ? Number(data.slotDuration) : undefined,
     id: 'stf-' + Date.now()
   };
   db.staff.push(newStaff);
@@ -642,7 +643,11 @@ export function updateStaff(id: string, data: Partial<Staff>): Staff | null {
   const db = readDb();
   const index = db.staff.findIndex(s => s.id === id);
   if (index === -1) return null;
-  db.staff[index] = { ...db.staff[index], ...data };
+  db.staff[index] = { 
+    ...db.staff[index], 
+    ...data,
+    ...(data.slotDuration !== undefined ? { slotDuration: data.slotDuration ? Number(data.slotDuration) : undefined } : {})
+  };
   writeDb(db);
   return db.staff[index];
 }
@@ -848,10 +853,37 @@ export function getBookings(filters?: {
   return list.sort((a, b) => (b.date + b.timeSlot).localeCompare(a.date + a.timeSlot));
 }
 
+export function timeToMinutes(timeStr: string): number {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':').map(Number);
+  return (parts[0] || 0) * 60 + (parts[1] || 0);
+}
+
+export function isTimeOverlapping(
+  slotA: string,
+  durationA: number,
+  slotB: string,
+  durationB: number
+): boolean {
+  const startA = timeToMinutes(slotA);
+  const endA = startA + (durationA > 0 ? durationA : 30);
+  const startB = timeToMinutes(slotB);
+  const endB = startB + (durationB > 0 ? durationB : 30);
+  return startA < endB && startB < endA;
+}
+
 export function createBooking(data: Omit<Booking, 'id' | 'createdAt'>): Booking {
   const db = readDb();
+  const service = db.services.find(s => s.id === data.serviceId);
+  const staff = db.staff.find(st => st.id === data.staffId);
+  const calculatedDuration = Number(data.duration) || (staff?.slotDuration && staff.slotDuration > 0 ? staff.slotDuration : (service?.duration || 30));
+
   const newBooking: Booking = {
     ...data,
+    duration: calculatedDuration,
+    serviceName: data.serviceName || service?.nameAz,
+    servicePrice: data.servicePrice !== undefined ? data.servicePrice : service?.price,
+    staffName: data.staffName || staff?.name,
     id: 'bkg-' + Math.floor(1000 + Math.random() * 9000),
     status: data.status || 'CONFIRMED',
     customerScore: data.customerScore !== undefined ? Number(data.customerScore) : undefined,

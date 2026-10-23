@@ -47,7 +47,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const [bookingError, setBookingError] = useState<{ message: string; isBlocked?: boolean } | null>(null);
 
   // Booked slots tracking
-  const [bookedSlots, setBookedSlots] = useState<{ date: string; timeSlot: string; staffId: string }[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<{ date: string; timeSlot: string; staffId: string; duration?: number }[]>([]);
 
   // Quality & Reviews state
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
@@ -63,13 +63,45 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const [hasReviewed, setHasReviewed] = useState<boolean>(false);
   const [reviewStarFilter, setReviewStarFilter] = useState<'ALL' | 1 | 2 | 3 | 4 | 5>('ALL');
 
-  // 24 saatlıq tam rejim üzrə vaxt cədvəli (08:00 - 23:00)
-  const timeSlots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
-    '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'
-  ];
+  // Mütəxəssis və ya xidmətin təyin edilmiş vaxt aralığı (dəqiqə ilə)
+  const activeInterval = useMemo(() => {
+    const stf = tenant?.staff?.find(s => s.id === selectedStaffId);
+    if (stf?.slotDuration && stf.slotDuration > 0) return stf.slotDuration;
+    const srv = tenant?.services?.find(s => s.id === selectedServiceId);
+    if (srv?.duration && srv.duration > 0) return srv.duration;
+    return 30;
+  }, [tenant, selectedStaffId, selectedServiceId]);
+
+  // Aralıq üçün oxunaqlı yazı (məs: "2 saat", "30 dəq", "1 saat 30 dəq")
+  const formatIntervalLabel = (mins: number) => {
+    if (!mins) return '30 dəq';
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60);
+      const rem = mins % 60;
+      if (rem === 0) return `${h} saat (${mins} dəq)`;
+      return `${h} saat ${rem} dəq (${mins} dəq)`;
+    }
+    return `${mins} dəq`;
+  };
+
+  const timeToMinutes = (timeStr: string) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':').map(Number);
+    return (parts[0] || 0) * 60 + (parts[1] || 0);
+  };
+
+  // 24 saatlıq tam rejim üzrə dinamik vaxt cədvəli (08:00 - 23:00) təyin edilmiş aralıqla
+  const timeSlots = useMemo(() => {
+    const slots: string[] = [];
+    const startM = 8 * 60;  // 08:00
+    const endM = 23 * 60;   // 23:00
+    for (let m = startM; m <= endM; m += activeInterval) {
+      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+      const mm = String(m % 60).padStart(2, '0');
+      slots.push(`${hh}:${mm}`);
+    }
+    return slots;
+  }, [activeInterval]);
 
   const [timeFilter, setTimeFilter] = useState<'ALL' | 'MORNING' | 'AFTERNOON' | 'EVENING'>('ALL');
 
@@ -81,7 +113,21 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
       if (timeFilter === 'EVENING') return hour >= 17 && hour <= 23;
       return true;
     });
-  }, [timeFilter]);
+  }, [timeSlots, timeFilter]);
+
+  // Slotun kəsişməsini yoxlayan funksiya (startA < endB && startB < endA)
+  const checkSlotBooked = (time: string) => {
+    const slotStart = timeToMinutes(time);
+    const slotEnd = slotStart + activeInterval;
+
+    return bookedSlots.some(b => {
+      if (selectedStaffId && b.staffId !== selectedStaffId) return false;
+      const bDuration = b.duration || 30;
+      const bStart = timeToMinutes(b.timeSlot);
+      const bEnd = bStart + bDuration;
+      return slotStart < bEnd && bStart < slotEnd;
+    });
+  };
 
   // Müştərilərin real rəylərinin ulduz üzrə filtrasiyası
   const filteredReviews = useMemo(() => {
@@ -239,20 +285,18 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     }
   }, [tenant?.id, selectedDate, selectedStaffId]);
 
-  // Auto-switch selected time slot if current selected slot is booked
+  // Auto-switch selected time slot if current selected slot is booked or not in available timeSlots
   useEffect(() => {
-    const isCurrentBooked = bookedSlots.some(
-      b => b.timeSlot === selectedTime && (!selectedStaffId || b.staffId === selectedStaffId)
-    );
-    if (isCurrentBooked) {
-      const freeSlot = timeSlots.find(
-        t => !bookedSlots.some(b => b.timeSlot === t && (!selectedStaffId || b.staffId === selectedStaffId))
-      );
+    const isCurrentBooked = checkSlotBooked(selectedTime);
+    if (!timeSlots.includes(selectedTime) || isCurrentBooked) {
+      const freeSlot = timeSlots.find(t => !checkSlotBooked(t));
       if (freeSlot) {
         setSelectedTime(freeSlot);
+      } else if (timeSlots.length > 0) {
+        setSelectedTime(timeSlots[0]);
       }
     }
-  }, [bookedSlots, selectedTime, selectedStaffId]);
+  }, [timeSlots, bookedSlots, selectedTime, selectedStaffId, activeInterval]);
 
   // Submit Quality Review
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -706,8 +750,8 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       </div>
                       <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1">{srv.nameAz}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>Müddət: {srv.duration} dəqiqə</span>
+                        <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Müddət: {formatIntervalLabel(srv.duration)}</span>
                       </p>
                     </div>
                   );
@@ -746,6 +790,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         </div>
                         <h4 className="font-bold text-slate-900 dark:text-white text-sm">{stf.name}</h4>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{stf.role}</p>
+                        {stf.slotDuration ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full mt-2 border border-emerald-200 dark:border-emerald-500/20">
+                            <Clock className="w-2.5 h-2.5" />
+                            {formatIntervalLabel(stf.slotDuration)} aralıq
+                          </span>
+                        ) : null}
                       </div>
                     );
                   })}
@@ -783,11 +833,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 <div className="sm:col-span-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Mövcud Saatlar</span>
                       </label>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
+                        <span>Aralıq: {formatIntervalLabel(activeInterval)}</span>
+                      </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
                         24 Saatlıq Rejim
                       </span>
@@ -854,9 +907,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   {/* 24-Saatlıq Slotlar Qridi */}
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto pr-1">
                     {filteredTimeSlots.map(time => {
-                      const isBooked = bookedSlots.some(
-                        b => b.timeSlot === time && (!selectedStaffId || b.staffId === selectedStaffId)
-                      );
+                      const isBooked = checkSlotBooked(time);
                       const isSelected = selectedTime === time;
 
                       if (isBooked) {
@@ -892,10 +943,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   </div>
 
                   {/* Seçilmiş saat göstəricisi */}
-                  <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-white/5">
+                  <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-white/5 flex-wrap gap-2">
                     <span className="text-slate-500">Seçilmiş vaxt:</span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/20">
-                      {selectedTime} (24 saatlıq rejim)
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{selectedTime} ({formatIntervalLabel(activeInterval)}, 24 saatlıq rejim)</span>
                     </span>
                   </div>
                 </div>

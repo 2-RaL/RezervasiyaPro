@@ -61,6 +61,7 @@ export interface Staff {
   name: string;
   role: string;
   serviceIds?: string[]; // Mütəxəssisə təhkim edilmiş xidmətlərin ID siyahısı
+  slotDuration?: number; // Mütəxəssisin fərdi vaxt aralığı (dəqiqə ilə, məs: 30, 60, 120). Təyin edilməyibsə xidmətin müddəti əsas götürülür.
 }
 
 export interface Booking {
@@ -77,6 +78,7 @@ export interface Booking {
   staffName?: string;
   date: string; // YYYY-MM-DD
   timeSlot: string; // HH:mm
+  duration?: number; // Rezervasiya müddəti (dəqiqə ilə)
   status: BookingStatus;
   clientIp?: string;        // Rezervasiya edilən IP / qurğu
   customerScore?: number;   // Müştəriyə verilən xal / bal (1 - 100)

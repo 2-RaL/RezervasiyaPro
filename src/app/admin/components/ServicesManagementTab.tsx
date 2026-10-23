@@ -19,6 +19,27 @@ import {
 import { Service, Tenant, User } from '../../../lib/types';
 import { SectorConfig } from '../../../lib/sectorUtils';
 
+const formatDuration = (mins?: number) => {
+  const m = Number(mins) || 30;
+  if (m >= 60) {
+    const hours = Math.floor(m / 60);
+    const rem = m % 60;
+    if (rem === 0) return `${hours} saat (${m} dəq)`;
+    return `${hours} saat ${rem} dəq (${m} dəq)`;
+  }
+  return `${m} dəq`;
+};
+
+const DURATION_PRESETS = [
+  { label: '15 dəq', value: 15 },
+  { label: '30 dəq', value: 30 },
+  { label: '45 dəq', value: 45 },
+  { label: '1 saat', value: 60 },
+  { label: '1.5 saat', value: 90 },
+  { label: '2 saat', value: 120 },
+  { label: '3 saat', value: 180 },
+];
+
 interface ServicesManagementTabProps {
   services: Service[];
   tenants: Tenant[];
@@ -381,10 +402,10 @@ export default function ServicesManagementTab({
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Müddət</span>
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Rezervasiya Aralığı</span>
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 justify-end">
                         <Clock className="w-3 h-3 text-indigo-500" />
-                        <span>{s.duration} dəq</span>
+                        <span>{formatDuration(s.duration)}</span>
                       </span>
                     </div>
                   </div>
@@ -532,19 +553,41 @@ export default function ServicesManagementTab({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Müddət (Dəq) *
-                  </label>
+                <div className="col-span-2 sm:col-span-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Müddət / Aralıq *
+                    </label>
+                    <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                      {formatDuration(newService.duration)}
+                    </span>
+                  </div>
                   <input
                     type="number"
                     required
                     min={5}
                     step={5}
+                    placeholder="Məs: 30, 60, 120"
                     value={newService.duration}
                     onChange={(e) => setNewService({ ...newService, duration: Number(e.target.value) })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 mb-2"
                   />
+                  <div className="flex flex-wrap gap-1">
+                    {DURATION_PRESETS.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setNewService({ ...newService, duration: p.value })}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                          newService.duration === p.value
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -650,19 +693,41 @@ export default function ServicesManagementTab({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Müddət (Dəq) *
-                  </label>
+                <div className="col-span-2 sm:col-span-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Müddət / Aralıq *
+                    </label>
+                    <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                      {formatDuration(editingService.duration)}
+                    </span>
+                  </div>
                   <input
                     type="number"
                     required
                     min={5}
                     step={5}
+                    placeholder="Məs: 30, 60, 120"
                     value={editingService.duration}
                     onChange={(e) => setEditingService({ ...editingService, duration: Number(e.target.value) })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 mb-2"
                   />
+                  <div className="flex flex-wrap gap-1">
+                    {DURATION_PRESETS.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setEditingService({ ...editingService, duration: p.value })}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                          editingService.duration === p.value
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
