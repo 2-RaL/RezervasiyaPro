@@ -55,9 +55,9 @@ export default function LoginPage() {
     }
   };
 
-  const fillCredentials = (u: string, p: string) => {
+  const selectRoleAccount = (u: string) => {
     setUsername(u);
-    setPassword(p);
+    setPassword('');
     setErrorMessage(null);
   };
 
@@ -147,17 +147,17 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Quick select demo accounts from database */}
+        {/* Quick select account without exposing passwords */}
         <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800/80">
           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
-            {lang === 'ru' ? 'Доступные роли в базе (нажмите для теста):' : (lang === 'en' ? 'Available database roles (click to test):' : 'Bazada mövcud olan rollar (Sınaq üçün klikləyin):')}
+            {lang === 'ru' ? 'Выберите аккаунт для входа:' : (lang === 'en' ? 'Select an account to log in:' : 'Daxil olmaq üçün hesab seçin:')}
           </p>
 
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => fillCredentials('superadmin', 'admin123')}
-              className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 transition-all flex items-center justify-between group"
+              onClick={() => selectRoleAccount('superadmin')}
+              className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 transition-all flex items-center justify-between group cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Crown className="w-4 h-4 text-amber-500" />
@@ -166,7 +166,7 @@ export default function LoginPage() {
                     Super Admin
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    superadmin / admin123 • {lang === 'ru' ? 'Все компании и пользователи' : (lang === 'en' ? 'All companies & users' : 'Bütün şirkətlər və userlər')}
+                    @superadmin • {lang === 'ru' ? 'Все компании и пользователи' : (lang === 'en' ? 'All companies & users' : 'Bütün şirkətlər və userlər')}
                   </div>
                 </div>
               </div>
@@ -177,8 +177,8 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => fillCredentials('admin_gozellik', 'admin123')}
-              className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 transition-all flex items-center justify-between group"
+              onClick={() => selectRoleAccount('admin_gozellik')}
+              className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 transition-all flex items-center justify-between group cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-indigo-500" />
@@ -187,7 +187,7 @@ export default function LoginPage() {
                     {lang === 'ru' ? 'Администратор компании (Gözəllik)' : (lang === 'en' ? 'Company Admin (Beauty Center)' : 'Şirkət Admini (Gözəllik Mərkəzi)')}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    admin_gozellik / admin123 • {lang === 'ru' ? '1 компания и 1 редактор' : (lang === 'en' ? '1 company & 1 editor' : 'Yalnız 1 şirkət & 1 redaktor')}
+                    @admin_gozellik • {lang === 'ru' ? '1 компания и 1 редактор' : (lang === 'en' ? '1 company & 1 editor' : 'Yalnız 1 şirkət & 1 redaktor')}
                   </div>
                 </div>
               </div>
@@ -198,17 +198,17 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => fillCredentials('editor_gozellik', 'editor123')}
-              className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 transition-all flex items-center justify-between group"
+              onClick={() => selectRoleAccount('editor_gozellik')}
+              className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 transition-all flex items-center justify-between group cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-emerald-500" />
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                    {lang === 'ru' ? 'Редактор филиала (Только приём)' : (lang === 'en' ? 'Branch Editor' : 'Şirkət Redaktoru (Tək Redaktor)')}
+                    {lang === 'ru' ? 'Редактор филиала' : (lang === 'en' ? 'Branch Editor' : 'Şirkət Redaktoru')}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    editor_gozellik / editor123 • {lang === 'ru' ? '1 редактор на филиал' : (lang === 'en' ? '1 editor per branch' : 'Filial üzrə 1 redaktor')}
+                    @editor_gozellik • {lang === 'ru' ? '1 редактор на филиал' : (lang === 'en' ? '1 editor per branch' : 'Filial üzrə 1 redaktor')}
                   </div>
                 </div>
               </div>
@@ -222,10 +222,10 @@ export default function LoginPage() {
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
             <span>
               {lang === 'ru'
-                ? 'Незарегистрированные пользователи не имеют доступа к системе.'
+                ? 'Пароли пользователей зашифрованы и защищены хэшем scrypt.'
                 : (lang === 'en'
-                  ? 'Unregistered users cannot log into the system.'
-                  : 'Qeydiyyatsız heç bir user sistemə daxil ola bilməz.')}
+                  ? 'User passwords are encrypted and protected with scrypt hashing.'
+                  : 'İstifadəçi şifrələri gizlidir və scrypt ilə şifrələnərək qorunur.')}
             </span>
           </div>
         </div>

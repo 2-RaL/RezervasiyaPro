@@ -14,6 +14,7 @@ import {
   FeedbackSuggestion,
   BlockedCustomer
 } from './types';
+import { hashPassword, verifyPassword, isPasswordHashed, sanitizeUser } from './security';
 
 interface DatabaseSchema {
   users: User[];
@@ -36,7 +37,7 @@ const defaultData: DatabaseSchema = {
     {
       id: 'usr-super',
       username: 'superadmin',
-      password: 'admin123',
+      password: hashPassword('admin123'),
       fullName: 'Super Administrator',
       role: 'SUPER_ADMIN',
       tenantId: null,
@@ -46,7 +47,7 @@ const defaultData: DatabaseSchema = {
     {
       id: 'usr-admin',
       username: 'admin',
-      password: 'admin123',
+      password: hashPassword('admin123'),
       fullName: 'Baş İnzibatçı',
       role: 'SUPER_ADMIN',
       tenantId: null,
@@ -56,7 +57,7 @@ const defaultData: DatabaseSchema = {
     {
       id: 'usr-admin-gozellik',
       username: 'admin_gozellik',
-      password: 'admin123',
+      password: hashPassword('admin123'),
       fullName: 'Aysel Xanım (Gözəllik Admini)',
       role: 'ADMIN',
       tenantId: 'tenant-1',
@@ -66,7 +67,7 @@ const defaultData: DatabaseSchema = {
     {
       id: 'usr-admin-klinika',
       username: 'admin_klinika',
-      password: 'admin123',
+      password: hashPassword('admin123'),
       fullName: 'Dr. Rəşad Əliyev (Klinika Admini)',
       role: 'ADMIN',
       tenantId: 'tenant-2',
@@ -76,7 +77,7 @@ const defaultData: DatabaseSchema = {
     {
       id: 'usr-editor-gozellik',
       username: 'editor_gozellik',
-      password: 'editor123',
+      password: hashPassword('editor123'),
       fullName: 'Nərmin Məmmədova (Redaktor)',
       role: 'EDITOR',
       tenantId: 'tenant-1',
@@ -495,8 +496,20 @@ function readDb(): DatabaseSchema {
     }
     const content = fs.readFileSync(dataFilePath, 'utf-8');
     const parsed = JSON.parse(content);
-    return {
-      users: parsed.users || defaultData.users,
+    
+    // Auto-migrate any unhashed plaintext passwords to secure scrypt hashes
+    let hasUnhashed = false;
+    const rawUsers: User[] = parsed.users || defaultData.users;
+    const secureUsers = rawUsers.map((u: User) => {
+      if (u.password && !isPasswordHashed(u.password)) {
+        hasUnhashed = true;
+        return { ...u, password: hashPassword(u.password) };
+      }
+      return u;
+    });
+
+    const schema: DatabaseSchema = {
+      users: secureUsers,
       tenants: parsed.tenants || defaultData.tenants,
       services: parsed.services || defaultData.services,
       staff: parsed.staff || defaultData.staff,
@@ -507,6 +520,16 @@ function readDb(): DatabaseSchema {
       feedbacks: parsed.feedbacks || defaultData.feedbacks,
       blockedCustomers: parsed.blockedCustomers || defaultData.blockedCustomers || [],
     };
+
+    if (hasUnhashed) {
+      try {
+        fs.writeFileSync(dataFilePath, JSON.stringify(schema, null, 2), 'utf-8');
+      } catch (e) {
+        console.error('Password auto-migration save warning:', e);
+      }
+    }
+
+    return schema;
   } catch (err) {
     console.error('DataStore read error, using fallback in-memory:', err);
     return defaultData;
@@ -545,8 +568,8 @@ export function getTenantBySlug(slug: string): Tenant | null {
   return {
     ...t,
     services: db.services.filter(s => s.tenantId === t.id),
-    staff: db.staff.filter(s => s.tenantId === t.id),
-    bookings: db.bookings.filter(b => b.tenantId === t.id)
+    staff: db.staff.filter(s => s.tenantId === t.id)
+    // bookings are removed for privacy to prevent leaking customer PII to public visitors
   };
 }
 
@@ -967,6 +990,16 @@ export function getPatients(tenantId?: string): Patient[] {
   }));
 }
 
+export function getPatientById(id: string): Patient | undefined {
+  const db = readDb();
+  const patient = db.patients.find(p => p.id === id);
+  if (!patient) return undefined;
+  return {
+    ...patient,
+    encounters: db.encounters.filter(e => e.patientId === id)
+  };
+}
+
 export function createPatient(data: Omit<Patient, 'id' | 'encounters'>): Patient {
   const db = readDb();
   const newPatient: Patient = {
@@ -1032,38 +1065,44 @@ export function getUsers(tenantId?: string | null): User[] {
   }
   return list.map(u => {
     const tenant = u.tenantId ? db.tenants.find(t => t.id === u.tenantId) : null;
-    return {
+    return sanitizeUser({
       ...u,
       tenantName: tenant ? tenant.name : (u.role === 'SUPER_ADMIN' ? 'Bütün Sistem (Super Admin)' : 'Təyin edilməyib')
-    };
+    }) as User;
   });
 }
 
 export function getUserByUsername(username: string): User | undefined {
   const db = readDb();
   const search = username.toLowerCase().trim();
-  return (db.users || []).find(u => u.username.toLowerCase() === search);
+  const user = (db.users || []).find(u => u.username.toLowerCase() === search);
+  return user ? (sanitizeUser(user) as User) : undefined;
 }
 
 export function getUserById(id: string): User | undefined {
   const db = readDb();
-  return (db.users || []).find(u => u.id === id);
+  const user = (db.users || []).find(u => u.id === id);
+  return user ? (sanitizeUser(user) as User) : undefined;
 }
 
 export function validateUserCredentials(username: string, password: string): User | null {
   const db = readDb();
-  const user = (db.users || []).find(
-    u => u.username.toLowerCase() === username.toLowerCase().trim() && u.password === password.trim()
-  );
-  if (!user) return null;
+  const search = username.toLowerCase().trim();
+  const user = (db.users || []).find(u => u.username.toLowerCase() === search);
+  if (!user || !user.password) return null;
+  
+  if (!verifyPassword(password.trim(), user.password)) {
+    return null;
+  }
+  
   if (user.isActive === false) {
     throw new Error('Hesabınız bloklanıb! Zəhmət olmasa baş administratorla əlaqə saxlayın.');
   }
   const tenant = user.tenantId ? db.tenants.find(t => t.id === user.tenantId) : null;
-  return {
+  return sanitizeUser({
     ...user,
     tenantName: tenant ? tenant.name : (user.role === 'SUPER_ADMIN' ? 'Bütün Sistem' : undefined)
-  };
+  }) as User;
 }
 
 export function createUser(data: {
@@ -1100,10 +1139,11 @@ export function createUser(data: {
     }
   }
 
+  const rawPassword = data.password ? data.password.trim() : 'admin123';
   const newUser: User = {
     id: 'usr-' + Date.now(),
     username: cleanUsername,
-    password: data.password || 'admin123',
+    password: hashPassword(rawPassword),
     fullName: data.fullName.trim(),
     role: data.role,
     tenantId: data.tenantId || null,
@@ -1122,7 +1162,7 @@ export function createUser(data: {
   const tenant = newUser.tenantId ? db.tenants.find(t => t.id === newUser.tenantId) : null;
   return { 
     success: true, 
-    user: { ...newUser, tenantName: tenant ? tenant.name : undefined } 
+    user: sanitizeUser({ ...newUser, tenantName: tenant ? tenant.name : undefined }) as User 
   };
 }
 
@@ -1148,8 +1188,12 @@ export function updateUser(id: string, updates: Partial<User>): User | null {
 
   // If password was empty string, do not overwrite with empty
   const cleanUpdates = { ...updates };
-  if (cleanUpdates.password !== undefined && cleanUpdates.password.trim() === '') {
-    delete cleanUpdates.password;
+  if (cleanUpdates.password !== undefined) {
+    if (cleanUpdates.password.trim() === '') {
+      delete cleanUpdates.password;
+    } else {
+      cleanUpdates.password = hashPassword(cleanUpdates.password.trim());
+    }
   }
   if (cleanUpdates.fin) {
     cleanUpdates.fin = cleanUpdates.fin.trim().toUpperCase();
@@ -1161,7 +1205,7 @@ export function updateUser(id: string, updates: Partial<User>): User | null {
     updatedAt: new Date().toISOString()
   };
   writeDb(db);
-  return db.users[index];
+  return sanitizeUser(db.users[index]) as User;
 }
 
 export function deleteUser(id: string): boolean {
@@ -1175,7 +1219,8 @@ export function deleteUser(id: string): boolean {
 
 export function getEditorForTenant(tenantId: string): User | null {
   const db = readDb();
-  return (db.users || []).find(u => u.tenantId === tenantId && u.role === 'EDITOR') || null;
+  const editor = (db.users || []).find(u => u.tenantId === tenantId && u.role === 'EDITOR');
+  return editor ? (sanitizeUser(editor) as User) : null;
 }
 
 // ── DASHBOARD STATS ────────────────────────────────────────────────────

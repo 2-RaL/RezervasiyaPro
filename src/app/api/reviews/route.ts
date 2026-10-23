@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getReviews, createReview, deleteReview, hasIpReviewed } from '../../../lib/dataStore';
 import { getSessionUser } from '../../../lib/auth';
+import { sanitizePublicReview, sanitizeInputText } from '../../../lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,8 +22,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get('tenantId') || undefined;
+    const currentUser = getSessionUser();
+
     const reviews = getReviews(tenantId);
-    return NextResponse.json({ success: true, reviews });
+    
+    // Privacy protection: if not logged-in admin, strip client IP and customer phone number
+    const safeReviews = currentUser ? reviews : reviews.map(sanitizePublicReview);
+
+    return NextResponse.json({ success: true, reviews: safeReviews });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -41,29 +48,34 @@ export async function POST(request: Request) {
       );
     }
 
-    // Tələb: Bir IP-dən yalnız bir rəy yazmaq olsun
+    // Rate-limiting / anti-spam: One review per client IP
     if (hasIpReviewed(clientIp, tenantId)) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `Siz bu müəssisə üçün artıq rəy bildirmisiniz. Təhlükəsizlik qaydalarına əsasən, bir IP ünvanından (${clientIp}) yalnız bir dəfə rəy yazmaq mümkündür.` 
+          error: `Siz bu müəssisə üçün artıq rəy bildirmisiniz. Təhlükəsizlik qaydalarına əsasən, bir IP ünvanından yalnız bir dəfə rəy yazmaq mümkündür.` 
         },
         { status: 429 }
       );
     }
 
+    // Stored XSS defense: Sanitize text inputs
+    const cleanCustomerName = sanitizeInputText(customerName.trim());
+    const cleanComment = sanitizeInputText(comment.trim());
+    const cleanServiceName = serviceName ? sanitizeInputText(serviceName.trim()) : undefined;
+
     const review = createReview({
       tenantId,
       tenantName: tenantName || undefined,
-      customerName: customerName.trim(),
+      customerName: cleanCustomerName,
       customerPhone: customerPhone ? customerPhone.trim() : undefined,
-      serviceName: serviceName ? serviceName.trim() : undefined,
+      serviceName: cleanServiceName,
       rating: Math.max(1, Math.min(5, Number(rating) || 5)),
-      comment: comment.trim(),
+      comment: cleanComment,
       clientIp
     });
 
-    return NextResponse.json({ success: true, review });
+    return NextResponse.json({ success: true, review: sanitizePublicReview(review) });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

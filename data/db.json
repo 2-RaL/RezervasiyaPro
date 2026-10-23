@@ -3,7 +3,7 @@
     {
       "id": "usr-super",
       "username": "superadmin",
-      "password": "admin123",
+      "password": "554605a4e82446466f5d1d57f724a40f:7aa213c40237b7705dfeaae02bfc48b7c2d0cf8d06bc8d6057d14fa3ccb2a9bd25dfb76859779f2db92d1bd2608eaa288f1ece4720f8122cffca113be5fb4387",
       "fullName": "Super Administrator",
       "role": "SUPER_ADMIN",
       "tenantId": null,
@@ -16,7 +16,7 @@
     {
       "id": "usr-admin",
       "username": "admin",
-      "password": "admin123",
+      "password": "9171d16bc10869528fb113997bc7e276:cc3afe476b2b1f59eae3354018c9aee6205dbeadd0a11527af7804ce51394078716ab5ede20b67f50f09b0eae50dd2dfe899b3fa9479cd969f8e26d88e6f4d25",
       "fullName": "Baş İnzibatçı",
       "role": "SUPER_ADMIN",
       "tenantId": null,
@@ -29,7 +29,7 @@
     {
       "id": "usr-admin-gozellik",
       "username": "admin_gozellik",
-      "password": "admin123",
+      "password": "66e6f817dd8ee34594402c9e0f2d6cf7:cd7f14a77fc13735a9e443fd944f52dcce07ce8ce1562ec4b8c96c517b996c41eae57a09438cea3b5da77f7db8e5b23381e5a5e44afd855fa685498e43078396",
       "fullName": "Aysel Xanım (Gözəllik Admini)",
       "role": "ADMIN",
       "tenantId": "tenant-1",
@@ -42,7 +42,7 @@
     {
       "id": "usr-admin-klinika",
       "username": "admin_klinika",
-      "password": "admin123",
+      "password": "f4e2a343c0852ba9d38125fb9d802226:72ee147d4b07335f4599542883112570c6d166f9415749360556b0ae44627bdfd902f9d801210151fde3bbbd44808ac7a9bbfe1285c233bec2f8f565e43a71c5",
       "fullName": "Dr. Rəşad Əliyev (Klinika Admini)",
       "role": "ADMIN",
       "tenantId": "tenant-2",
@@ -55,7 +55,7 @@
     {
       "id": "usr-editor-gozellik",
       "username": "editor_gozellik",
-      "password": "editor123",
+      "password": "1749de90bffa969ee7a559e3796f30ab:d3f12277fb5dd53cb6d1efe905a993b1d4497cda9707d768f105dce262c4a87a2860ab7aba623fe66595476dd8fb841923669311614c7435ff432b3384b0a355",
       "fullName": "Nərmin Məmmədova (Redaktor)",
       "role": "EDITOR",
       "tenantId": "tenant-1",
@@ -314,91 +314,120 @@
       "tenantId": "tenant-1",
       "name": "Aysel Quliyeva",
       "role": "Baş Kosmetoloq",
-      "serviceIds": ["srv-2"]
+      "serviceIds": [
+        "srv-2"
+      ]
     },
     {
       "id": "stf-2",
       "tenantId": "tenant-1",
       "name": "Nərmin Məmmədova",
       "role": "Lazer Mütəxəssisi",
-      "serviceIds": ["srv-1"]
+      "serviceIds": [
+        "srv-1"
+      ]
     },
     {
       "id": "stf-3",
       "tenantId": "tenant-2",
       "name": "Dr. Rəşad Əliyev",
       "role": "Ortodont / Stomatoloq",
-      "serviceIds": ["srv-3", "srv-4"]
+      "serviceIds": [
+        "srv-3",
+        "srv-4"
+      ]
     },
     {
       "id": "stf-4",
       "tenantId": "tenant-2",
       "name": "Dr. Günel Həsənova",
       "role": "Terapevt-Stomatoloq",
-      "serviceIds": ["srv-3"]
+      "serviceIds": [
+        "srv-3"
+      ]
     },
     {
       "id": "stf-5",
       "tenantId": "tenant-3",
       "name": "Kamran Əhmədov",
       "role": "Top Barber Master",
-      "serviceIds": ["srv-5"]
+      "serviceIds": [
+        "srv-5"
+      ]
     },
     {
       "id": "stf-auto-1",
       "tenantId": "tenant-4",
       "name": "Elçin Qasımov",
       "role": "Baş Detailing Ustası",
-      "serviceIds": ["srv-auto-1"]
+      "serviceIds": [
+        "srv-auto-1"
+      ]
     },
     {
       "id": "stf-auto-2",
       "tenantId": "tenant-4",
       "name": "Ramil Məmmədov",
       "role": "Avto Diaqnost",
-      "serviceIds": ["srv-auto-2", "srv-auto-3"]
+      "serviceIds": [
+        "srv-auto-2",
+        "srv-auto-3"
+      ]
     },
     {
       "id": "stf-fit-1",
       "tenantId": "tenant-5",
       "name": "Murad Əliyev",
       "role": "Sertifikatlı Fitnes Təlimçisi",
-      "serviceIds": ["srv-fit-1"]
+      "serviceIds": [
+        "srv-fit-1"
+      ]
     },
     {
       "id": "stf-fit-2",
       "tenantId": "tenant-5",
       "name": "Ayan Qasımzadə",
       "role": "Yoga & Pilates Mütəxəssisi",
-      "serviceIds": ["srv-fit-2"]
+      "serviceIds": [
+        "srv-fit-2"
+      ]
     },
     {
       "id": "stf-edu-1",
       "tenantId": "tenant-6",
       "name": "Nigar Əhmədova",
       "role": "IELTS Baş Təlimçi (C2)",
-      "serviceIds": ["srv-edu-1"]
+      "serviceIds": [
+        "srv-edu-1"
+      ]
     },
     {
       "id": "stf-edu-2",
       "tenantId": "tenant-6",
       "name": "Fərid İsmayılov",
       "role": "Senior Proqramçı / Mentor",
-      "serviceIds": ["srv-edu-2"]
+      "serviceIds": [
+        "srv-edu-2"
+      ]
     },
     {
       "id": "stf-ost-1",
       "tenantId": "tenant-osteopat",
       "name": "Dr. Elmir Məmmədov",
       "role": "Baş Həkim-Osteopat",
-      "serviceIds": ["srv-ost-1", "srv-ost-2"]
+      "serviceIds": [
+        "srv-ost-1",
+        "srv-ost-2"
+      ]
     },
     {
       "id": "stf-ost-2",
       "tenantId": "tenant-osteopat",
       "name": "Dr. Leyla Rəhimova",
       "role": "Fizioterapevt / Reabilitoloq",
-      "serviceIds": ["srv-ost-3"]
+      "serviceIds": [
+        "srv-ost-3"
+      ]
     }
   ],
   "bookings": [

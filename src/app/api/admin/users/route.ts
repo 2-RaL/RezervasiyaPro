@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUsers, createUser, updateUser, deleteUser, getUserById, getTenants } from '../../../../lib/dataStore';
 import { getSessionUser } from '../../../../lib/auth';
+import { sanitizeUser } from '../../../../lib/security';
 import { UserRole } from '../../../../lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -18,13 +19,13 @@ export async function GET(request: Request) {
     // Super Admin can see all users, or filter by tenant
     if (currentUser.role === 'SUPER_ADMIN') {
       const users = getUsers(tenantFilter || undefined);
-      return NextResponse.json({ success: true, users, role: currentUser.role });
+      return NextResponse.json({ success: true, users: users.map(sanitizeUser), role: currentUser.role });
     }
 
     // Normal Admin can only see their company's users/editor
     if (currentUser.role === 'ADMIN') {
       const users = getUsers(currentUser.tenantId);
-      return NextResponse.json({ success: true, users, role: currentUser.role });
+      return NextResponse.json({ success: true, users: users.map(sanitizeUser), role: currentUser.role });
     }
 
     // Editor is not authorized to list users
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: result.error }, { status: 400 });
       }
 
-      return NextResponse.json({ success: true, user: result.user });
+      return NextResponse.json({ success: true, user: result.user ? sanitizeUser(result.user) : undefined });
     }
 
     // Rule 3: Normal admin can ONLY create an EDITOR for their OWN company
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: result.error }, { status: 400 });
       }
 
-      return NextResponse.json({ success: true, user: result.user });
+      return NextResponse.json({ success: true, user: result.user ? sanitizeUser(result.user) : undefined });
     }
 
     return NextResponse.json({ success: false, error: 'Bu əməliyyat üçün icazəniz yoxdur' }, { status: 403 });
@@ -160,7 +161,7 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ success: false, error: 'Yenilənmə alınmadı (İstifadəçi adı artıq mövcuddur və ya xətalı parametrlər)' }, { status: 400 });
       }
 
-      return NextResponse.json({ success: true, user: updated, message: 'İstifadəçi məlumatları yeniləndi' });
+      return NextResponse.json({ success: true, user: sanitizeUser(updated), message: 'İstifadəçi məlumatları yeniləndi' });
     }
 
     // Company Admin can ONLY edit their own company's editor
@@ -177,7 +178,11 @@ export async function PATCH(request: Request) {
       if (isActive !== undefined) updates.isActive = isActive;
 
       const updated = updateUser(id, updates);
-      return NextResponse.json({ success: true, user: updated, message: 'Redaktor məlumatları yeniləndi' });
+      if (!updated) {
+        return NextResponse.json({ success: false, error: 'Redaktor yenilənmədi' }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, user: sanitizeUser(updated), message: 'Redaktor məlumatları yeniləndi' });
     }
 
     return NextResponse.json({ success: false, error: 'İcazə verilmədi' }, { status: 403 });
