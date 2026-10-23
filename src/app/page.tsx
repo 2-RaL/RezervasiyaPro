@@ -31,6 +31,7 @@ import {
   Lock,
   HeartPulse
 } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface TenantDisplay {
   id: string;
@@ -214,18 +215,7 @@ export default function HomePage() {
           <div className="flex items-center space-x-3">
             
             {/* Light / Dark Mode Toggle */}
-            <button
-              onClick={toggleTheme}
-              aria-label="Rejimi dəyişdir"
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all shadow-sm"
-              title={isDark ? "İşıqlı rejimə keç" : "Qaranlıq rejimə keç"}
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5 text-amber-400 animate-spin-slow" />
-              ) : (
-                <Moon className="w-5 h-5 text-indigo-600" />
-              )}
-            </button>
+            <ThemeToggle />
 
             {/* Single "Giriş" Button */}
             <Link 

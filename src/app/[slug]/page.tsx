@@ -19,6 +19,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Tenant, Service, Staff } from '../../lib/types';
+import ThemeToggle from '../../components/ThemeToggle';
 
 export default function TenantBookingPage({ params }: { params: { slug: string } }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -112,10 +113,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-900 dark:text-white transition-colors">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400 text-sm">Müəssisə məlumatları yüklənir...</p>
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Müəssisə məlumatları yüklənir...</p>
         </div>
       </div>
     );
@@ -123,14 +124,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
   if (error || !tenant) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-white">
-        <div className="max-w-md w-full bg-slate-800/80 border border-white/10 rounded-3xl p-8 text-center">
-          <AlertCircle className="w-14 h-14 text-rose-400 mx-auto mb-4" />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-slate-900 dark:text-white transition-colors">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl">
+          <AlertCircle className="w-14 h-14 text-rose-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Filial Tapılmadı</h2>
-          <p className="text-slate-400 text-sm mb-6">{error || 'Göstərilən filial mövcud deyil və ya deaktiv edilib.'}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{error || 'Göstərilən filial mövcud deyil və ya deaktiv edilib.'}</p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Ana Səhifəyə Qayıt</span>
@@ -144,48 +145,52 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const selectedStaff = tenant.staff?.find(s => s.id === selectedStaffId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
-        {/* Top Breadcrumb */}
+        {/* Top Breadcrumb & Controls */}
         <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Əsas səhifə</span>
           </Link>
 
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl transition-all"
-          >
-            <span>Giriş</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 text-xs text-indigo-700 dark:text-indigo-300 font-semibold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-3.5 py-2 rounded-xl transition-all hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+            >
+              <span>Giriş</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         {/* Tenant Header Banner */}
-        <div className="bg-slate-800/80 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-xl mb-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl mb-8 shadow-xl relative overflow-hidden transition-colors">
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/20 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-500/30">
                   {tenant.sector}
                 </span>
                 {tenant.medicalEnabled && (
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200 dark:border-emerald-500/30">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     Tibbi İnteqrasiya
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">{tenant.name}</h1>
+              <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{tenant.name}</h1>
               {tenant.address && (
-                <p className="text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-slate-500" />
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-slate-400" />
                   <span>{tenant.address}</span>
                 </p>
               )}
@@ -194,9 +199,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             {tenant.phone && (
               <a
                 href={`tel:${tenant.phone}`}
-                className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-200 transition-all"
+                className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all"
               >
-                <Phone className="w-4 h-4 text-emerald-400" />
+                <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                 <span>{tenant.phone}</span>
               </a>
             )}
@@ -205,40 +210,40 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
         {confirmedBooking ? (
           /* Confirmation Success Ticket */
-          <div className="bg-gradient-to-br from-slate-800/90 to-indigo-900/60 border border-emerald-500/30 rounded-3xl p-8 text-center backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in duration-300">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/20">
+          <div className="bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-3xl p-8 text-center backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/20">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full">
               Rezervasiya Təsdiqləndi
             </span>
 
-            <h2 className="text-3xl font-extrabold text-white mt-3 mb-2">Təşəkkür edirik, {confirmedBooking.customerName}!</h2>
-            <p className="text-slate-300 text-sm max-w-md mx-auto mb-8">
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-3 mb-2">Təşəkkür edirik, {confirmedBooking.customerName}!</h2>
+            <p className="text-slate-600 dark:text-slate-300 text-sm max-w-md mx-auto mb-8">
               Rezervasiyanız uğurla qeydə alındı və mərkəzin admin sisteminə ötürüldü.
             </p>
 
-            <div className="max-w-md mx-auto bg-slate-900/80 border border-white/10 rounded-2xl p-6 text-left space-y-3 mb-8">
-              <div className="flex justify-between items-center border-b border-white/5 pb-2 text-sm">
-                <span className="text-slate-400">Rezervasiya ID:</span>
-                <span className="font-mono font-bold text-indigo-400">{confirmedBooking.id}</span>
+            <div className="max-w-md mx-auto bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 rounded-2xl p-6 text-left space-y-3 mb-8">
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Rezervasiya ID:</span>
+                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{confirmedBooking.id}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2 text-sm">
-                <span className="text-slate-400">Xidmət:</span>
-                <span className="font-semibold text-white">{selectedService?.nameAz}</span>
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Xidmət:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedService?.nameAz}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2 text-sm">
-                <span className="text-slate-400">Mütəxəssis / Həkim:</span>
-                <span className="font-semibold text-white">{selectedStaff?.name}</span>
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Mütəxəssis:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedStaff?.name}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2 text-sm">
-                <span className="text-slate-400">Tarix və Saat:</span>
-                <span className="font-semibold text-emerald-400">{confirmedBooking.date} / {confirmedBooking.timeSlot}</span>
+              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Tarix və Saat:</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{confirmedBooking.date} / {confirmedBooking.timeSlot}</span>
               </div>
               <div className="flex justify-between items-center text-sm pt-1">
-                <span className="text-slate-400">Qiymət:</span>
-                <span className="font-extrabold text-white text-base">{selectedService?.price} AZN</span>
+                <span className="text-slate-500 dark:text-slate-400">Qiymət:</span>
+                <span className="font-extrabold text-slate-900 dark:text-white text-base">{selectedService?.price} AZN</span>
               </div>
             </div>
 
@@ -250,13 +255,13 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   setCustomerPhone('+994 ');
                   setCustomerFin('');
                 }}
-                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm transition-all"
+                className="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-semibold text-sm transition-all"
               >
                 Yeni Rezervasiya Et
               </button>
               <Link
                 href="/admin"
-                className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all"
+                className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all"
               >
                 Admin Paneldə Bax
               </Link>
@@ -266,12 +271,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
           /* Interactive Booking Form */
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Step 1: Select Service */}
-            <div className="bg-slate-800/70 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm">1</div>
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">1</div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Xidmət Seçimi</h3>
-                  <p className="text-xs text-slate-400">Yazılmaq istədiyiniz proseduru və ya xidməti seçin</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Xidmət Seçimi</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Yazılmaq istədiyiniz proseduru və ya xidməti seçin</p>
                 </div>
               </div>
 
@@ -284,18 +289,18 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       onClick={() => setSelectedServiceId(srv.id)}
                       className={`cursor-pointer rounded-2xl p-4 border transition-all ${
                         isSelected 
-                          ? 'border-indigo-500 bg-indigo-600/20 shadow-lg shadow-indigo-500/10' 
-                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                          ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
+                          : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-100/50 dark:hover:bg-white/10'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
                           {srv.category}
                         </span>
-                        <span className="text-base font-extrabold text-indigo-300">{srv.price} AZN</span>
+                        <span className="text-base font-extrabold text-indigo-600 dark:text-indigo-400">{srv.price} AZN</span>
                       </div>
-                      <h4 className="font-bold text-white text-base mb-1">{srv.nameAz}</h4>
-                      <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1">{srv.nameAz}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Müddət: {srv.duration} dəqiqə</span>
                       </p>
@@ -306,12 +311,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             </div>
 
             {/* Step 2: Select Specialist */}
-            <div className="bg-slate-800/70 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm">2</div>
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">2</div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Mütəxəssis / Həkim Seçimi</h3>
-                  <p className="text-xs text-slate-400">Xidmət almaq istədiyiniz mütəxəssisi seçin</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Mütəxəssis Seçimi</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Xidmət almaq istədiyiniz mütəxəssisi seçin</p>
                 </div>
               </div>
 
@@ -324,15 +329,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       onClick={() => setSelectedStaffId(stf.id)}
                       className={`cursor-pointer rounded-2xl p-4 border transition-all text-center ${
                         isSelected 
-                          ? 'border-indigo-500 bg-indigo-600/20 shadow-lg shadow-indigo-500/10' 
-                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                          ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
+                          : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
                       }`}
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold text-base mx-auto mb-3 shadow-md">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-bold text-base mx-auto mb-3 shadow-md">
                         {stf.name.split(' ').map(n => n[0]).join('')}
                       </div>
-                      <h4 className="font-bold text-white text-sm">{stf.name}</h4>
-                      <p className="text-xs text-slate-400 mt-1">{stf.role}</p>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{stf.name}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{stf.role}</p>
                     </div>
                   );
                 })}
@@ -340,30 +345,30 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             </div>
 
             {/* Step 3: Date & Time Slot */}
-            <div className="bg-slate-800/70 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm">3</div>
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">3</div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Tarix və Saat</h3>
-                  <p className="text-xs text-slate-400">Sizə uyğun olan rezervasiya vaxtını təyin edin</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tarix və Saat</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Sizə uyğun olan rezervasiya vaxtını təyin edin</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Tarix</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Tarix</label>
                   <input
                     type="date"
                     min={new Date().toISOString().split('T')[0]}
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/15 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
                     required
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Mövcud Saatlar</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Mövcud Saatlar</label>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     {timeSlots.map(time => {
                       const isSelected = selectedTime === time;
@@ -375,7 +380,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                             isSelected
                               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                              : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                              : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
                           }`}
                         >
                           {time}
@@ -388,43 +393,43 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             </div>
 
             {/* Step 4: Contact & Identity Info */}
-            <div className="bg-slate-800/70 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm">4</div>
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">4</div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Müştəri Məlumatları</h3>
-                  <p className="text-xs text-slate-400">Rezervasiya təsdiqi üçün əlaqə vasitələriniz</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Müştəri Məlumatları</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Rezervasiya təsdiqi üçün əlaqə vasitələriniz</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Ad və Soyad *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ad və Soyad *</label>
                   <input
                     type="text"
                     required
                     placeholder="Məs: Əli Əliyev"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/15 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Mobil Nömrə *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Mobil Nömrə *</label>
                   <input
                     type="tel"
                     required
                     placeholder="+994 50 123 45 67"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/15 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
 
                 {tenant.medicalEnabled && (
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-emerald-400 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4" />
                       <span>Şəxsiyyət Vəsiqəsinin FİN Kodu (Tibbi Qeydiyyat üçün)</span>
                     </label>
@@ -434,22 +439,22 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       placeholder="Məs: 7ABC123"
                       value={customerFin}
                       onChange={(e) => setCustomerFin(e.target.value.toUpperCase())}
-                      className="w-full bg-slate-900 border border-emerald-500/30 rounded-xl px-4 py-3 text-white uppercase focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-emerald-500/40 rounded-xl px-4 py-3 text-slate-900 dark:text-white uppercase focus:outline-none focus:border-emerald-500 text-sm font-mono"
                     />
-                    <p className="text-[11px] text-slate-400 mt-1">FİN kod tibbi xəstəlik tarixçənizin və həkim qeydlərinin avtomatik arxivləşməsi üçün lazımdır.</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">FİN kod tibbi xəstəlik tarixçənizin və həkim qeydlərinin avtomatik arxivləşməsi üçün lazımdır.</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Submit Action */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/30 rounded-2xl p-6 shadow-md transition-colors">
               <div>
-                <span className="text-xs text-slate-400">Yekun Xidmət:</span>
-                <p className="font-bold text-white text-base">
-                  {selectedService?.nameAz} — <span className="text-emerald-400">{selectedService?.price} AZN</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Yekun Xidmət:</span>
+                <p className="font-bold text-slate-900 dark:text-white text-base">
+                  {selectedService?.nameAz} — <span className="text-emerald-600 dark:text-emerald-400">{selectedService?.price} AZN</span>
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {selectedDate} / {selectedTime} • {selectedStaff?.name}
                 </p>
               </div>
@@ -457,7 +462,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <span>Rezervasiya edilir...</span>
