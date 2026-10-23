@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { LanguageProvider } from '../lib/languageContext';
 
 export const metadata: Metadata = {
   title: 'RezervasiyaPro - Onlayn Rezervasiya və İdarəetmə Sistemi',
@@ -23,13 +24,17 @@ export default function RootLayout({
                 } else {
                   document.documentElement.classList.remove('dark');
                 }
+                var l = localStorage.getItem('rezervasiya_lang');
+                if (l) document.documentElement.lang = l;
               } catch (_) {}
             `,
           }}
         />
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white transition-colors duration-200">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

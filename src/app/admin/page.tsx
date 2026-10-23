@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
+import LanguageSelector from '../../components/LanguageSelector';
 import { getSectorInfo } from '../../lib/sectorUtils';
 import QualityReviewsTab from './components/QualityReviewsTab';
 import FeedbacksTab from './components/FeedbacksTab';
@@ -196,6 +197,7 @@ export default function AdminDashboardPage() {
   const [newServiceData, setNewServiceData] = useState({
     tenantId: '',
     nameAz: '',
+    nameRu: '',
     nameEn: '',
     price: 30,
     duration: 45,
@@ -814,6 +816,7 @@ export default function AdminDashboardPage() {
         setNewServiceData({
           tenantId: tenants[0]?.id || '',
           nameAz: '',
+          nameRu: '',
           nameEn: '',
           price: 30,
           duration: 45,
@@ -1438,6 +1441,9 @@ export default function AdminDashboardPage() {
               <span className="text-slate-400 dark:text-slate-500">•</span>
               <span className="font-semibold text-slate-700 dark:text-slate-300">{currentUser?.fullName}</span>
             </div>
+
+            {/* Language Selector */}
+            <LanguageSelector />
 
             {/* Theme Toggle Button */}
             <ThemeToggle />
@@ -3855,6 +3861,17 @@ export default function AdminDashboardPage() {
                   placeholder="məs. Üz Təmizlənməsi və Baxım"
                   value={newServiceData.nameAz}
                   onChange={(e) => setNewServiceData({ ...newServiceData, nameAz: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Xidmətin Adı (RU)</label>
+                <input
+                  type="text"
+                  placeholder="məs. Чистка лица и уход"
+                  value={newServiceData.nameRu}
+                  onChange={(e) => setNewServiceData({ ...newServiceData, nameRu: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 />
               </div>

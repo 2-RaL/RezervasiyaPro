@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CalendarCheck, Lock, User, ArrowRight, ShieldCheck, AlertCircle, Building2, Crown, UserCheck } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
+import LanguageSelector from '../../components/LanguageSelector';
+import { useLanguage } from '../../lib/languageContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { lang, t } = useLanguage();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [loading, setLoading] = useState(false);
@@ -28,7 +31,13 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setErrorMessage(data.error || 'İstifadəçi adı və ya şifrə yanlışdır! Bazada qeydiyyatı olmayan şəxslər daxil ola bilməz.');
+        setErrorMessage(
+          data.error || (lang === 'ru' 
+            ? 'Неверное имя пользователя или пароль! Пользователи без регистрации в базе не могут войти.' 
+            : (lang === 'en' 
+              ? 'Invalid username or password! Unregistered users cannot log in.' 
+              : 'İstifadəçi adı və ya şifrə yanlışdır! Bazada qeydiyyatı olmayan şəxslər daxil ola bilməz.'))
+        );
         setLoading(false);
         return;
       }
@@ -37,7 +46,11 @@ export default function LoginPage() {
       router.push('/admin');
       router.refresh();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Serverlə əlaqə qurularkən xəta baş verdi');
+      setErrorMessage(
+        err.message || (lang === 'ru' 
+          ? 'Ошибка при подключении к серверу' 
+          : (lang === 'en' ? 'Error connecting to server' : 'Serverlə əlaqə qurularkən xəta baş verdi'))
+      );
       setLoading(false);
     }
   };
@@ -50,8 +63,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex items-center justify-center p-4 sm:p-6 relative transition-colors duration-300">
-      {/* Top Bar with Home & Theme Toggle */}
-      <div className="absolute top-6 right-6 flex items-center gap-3">
+      {/* Top Bar with Language Selector & Theme Toggle */}
+      <div className="absolute top-6 right-6 flex items-center gap-2.5">
+        <LanguageSelector />
         <ThemeToggle />
       </div>
 
@@ -60,15 +74,23 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-600/30">
             <CalendarCheck className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white">Sistemə Giriş</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Baza ilə əlaqəli RezervasiyaPro İdarəetmə Paneli</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+            {lang === 'ru' ? 'Вход в систему' : (lang === 'en' ? 'System Login' : 'Sistemə Giriş')}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {lang === 'ru' 
+              ? 'Панель управления RezervasiyaPro' 
+              : (lang === 'en' ? 'RezervasiyaPro Admin Control Panel' : 'Baza ilə əlaqəli RezervasiyaPro İdarəetmə Paneli')}
+          </p>
         </div>
 
         {errorMessage && (
           <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 text-xs text-red-600 dark:text-red-300 flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <span className="font-bold">Giriş qadağandır: </span>
+              <span className="font-bold">
+                {lang === 'ru' ? 'Доступ запрещен: ' : (lang === 'en' ? 'Access denied: ' : 'Giriş qadağandır: ')}
+              </span>
               {errorMessage}
             </div>
           </div>
@@ -77,7 +99,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              İstifadəçi adı
+              {lang === 'ru' ? 'Имя пользователя' : (lang === 'en' ? 'Username' : 'İstifadəçi adı')}
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -86,7 +108,7 @@ export default function LoginPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="məs. admin və ya superadmin"
+                placeholder={lang === 'ru' ? 'напр. admin или superadmin' : (lang === 'en' ? 'e.g. admin or superadmin' : 'məs. admin və ya superadmin')}
                 className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
@@ -94,7 +116,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Şifrə
+              {lang === 'ru' ? 'Пароль' : (lang === 'en' ? 'Password' : 'Şifrə')}
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -115,10 +137,10 @@ export default function LoginPage() {
             className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
-              <span>Yoxlanılır...</span>
+              <span>{t('loading')}</span>
             ) : (
               <>
-                <span>Baza ilə Giriş Et</span>
+                <span>{lang === 'ru' ? 'Войти в панель' : (lang === 'en' ? 'Sign In' : 'Baza ilə Giriş Et')}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -128,7 +150,7 @@ export default function LoginPage() {
         {/* Quick select demo accounts from database */}
         <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800/80">
           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
-            Bazada mövcud olan rollar (Sınaq üçün klikləyin):
+            {lang === 'ru' ? 'Доступные роли в базе (нажмите для теста):' : (lang === 'en' ? 'Available database roles (click to test):' : 'Bazada mövcud olan rollar (Sınaq üçün klikləyin):')}
           </p>
 
           <div className="space-y-2">
@@ -144,7 +166,7 @@ export default function LoginPage() {
                     Super Admin
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    superadmin / admin123 • Bütün şirkətlər və userlər
+                    superadmin / admin123 • {lang === 'ru' ? 'Все компании и пользователи' : (lang === 'en' ? 'All companies & users' : 'Bütün şirkətlər və userlər')}
                   </div>
                 </div>
               </div>
@@ -162,10 +184,10 @@ export default function LoginPage() {
                 <Building2 className="w-4 h-4 text-indigo-500" />
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                    Şirkət Admini (Gözəllik Mərkəzi)
+                    {lang === 'ru' ? 'Администратор компании (Gözəllik)' : (lang === 'en' ? 'Company Admin (Beauty Center)' : 'Şirkət Admini (Gözəllik Mərkəzi)')}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    admin_gozellik / admin123 • Yalnız 1 şirkət & 1 redaktor
+                    admin_gozellik / admin123 • {lang === 'ru' ? '1 компания и 1 редактор' : (lang === 'en' ? '1 company & 1 editor' : 'Yalnız 1 şirkət & 1 redaktor')}
                   </div>
                 </div>
               </div>
@@ -183,10 +205,10 @@ export default function LoginPage() {
                 <UserCheck className="w-4 h-4 text-emerald-500" />
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                    Şirkət Redaktoru (Tək Redaktor)
+                    {lang === 'ru' ? 'Редактор филиала (Только приём)' : (lang === 'en' ? 'Branch Editor' : 'Şirkət Redaktoru (Tək Redaktor)')}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    editor_gozellik / editor123 • Filial üzrə 1 redaktor
+                    editor_gozellik / editor123 • {lang === 'ru' ? '1 редактор на филиал' : (lang === 'en' ? '1 editor per branch' : 'Filial üzrə 1 redaktor')}
                   </div>
                 </div>
               </div>
@@ -198,13 +220,19 @@ export default function LoginPage() {
 
           <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span>Qeydiyyatsız heç bir user sistemə daxil ola bilməz.</span>
+            <span>
+              {lang === 'ru'
+                ? 'Незарегистрированные пользователи не имеют доступа к системе.'
+                : (lang === 'en'
+                  ? 'Unregistered users cannot log into the system.'
+                  : 'Qeydiyyatsız heç bir user sistemə daxil ola bilməz.')}
+            </span>
           </div>
         </div>
 
         <div className="mt-6 text-center">
           <Link href="/" className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
-            ← Əsas Səhifəyə Qayıt
+            ← {t('backToHome')}
           </Link>
         </div>
       </div>

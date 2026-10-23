@@ -25,8 +25,12 @@ import {
 } from 'lucide-react';
 import { Tenant, Service, Staff, CustomerReview } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
+import LanguageSelector from '../../components/LanguageSelector';
+import { useLanguage } from '../../lib/languageContext';
 
 export default function TenantBookingPage({ params }: { params: { slug: string } }) {
+  const { lang, t, formatDuration, getServiceName, getCategoryName } = useLanguage();
+
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,18 +75,6 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     if (srv?.duration && srv.duration > 0) return srv.duration;
     return 30;
   }, [tenant, selectedStaffId, selectedServiceId]);
-
-  // Aralıq üçün oxunaqlı yazı (məs: "2 saat", "30 dəq", "1 saat 30 dəq")
-  const formatIntervalLabel = (mins: number) => {
-    if (!mins) return '30 dəq';
-    if (mins >= 60) {
-      const h = Math.floor(mins / 60);
-      const rem = mins % 60;
-      if (rem === 0) return `${h} saat (${mins} dəq)`;
-      return `${h} saat ${rem} dəq (${mins} dəq)`;
-    }
-    return `${mins} dəq`;
-  };
 
   const timeToMinutes = (timeStr: string) => {
     if (!timeStr) return 0;
@@ -145,7 +137,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     if (!tenant) return '#';
     const waNumber = tenant.whatsapp ? getCleanPhone(tenant.whatsapp) : getCleanPhone(tenant.phone);
     if (!waNumber) return '#';
-    const text = encodeURIComponent(`Salam, ${tenant.name} üçün rezervasiya ilə bağlı müraciət edirəm.`);
+    const msg = lang === 'ru' 
+      ? `Здравствуйте, я по поводу бронирования в ${tenant.name}.`
+      : (lang === 'en' 
+        ? `Hello, I'm contacting regarding a reservation at ${tenant.name}.`
+        : `Salam, ${tenant.name} üçün rezervasiya ilə bağlı müraciət edirəm.`);
+    const text = encodeURIComponent(msg);
     return `https://wa.me/${waNumber}?text=${text}`;
   };
 
@@ -186,9 +183,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     return `https://t.me/${tenant.slug}`;
   };
 
-  // Real-time input handlers: strictly letters for name, strictly digits for phone
+  // Real-time input handlers: strictly letters (Az, En, Ru) for name, strictly digits for phone
   const handleCustomerNameChange = (val: string) => {
-    const cleaned = val.replace(/[^a-zA-Z\səıöğçşƏIİÖĞÇŞ'-]/g, '');
+    const cleaned = val.replace(/[^a-zA-Zа-яА-ЯёЁ\səıöğçşƏIİÖĞÇŞ'-]/g, '');
     setCustomerName(cleaned);
   };
 
@@ -198,7 +195,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   };
 
   const handleReviewNameChange = (val: string) => {
-    const cleaned = val.replace(/[^a-zA-Z\səıöğçşƏIİÖĞÇŞ'-]/g, '');
+    const cleaned = val.replace(/[^a-zA-Zа-яА-ЯёЁ\səıöğçşƏIİÖĞÇŞ'-]/g, '');
     setReviewName(cleaned);
   };
 
@@ -245,7 +242,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
           let initialStaffId = '';
           if (activeServices.length > 0) {
             setSelectedServiceId(activeServices[0].id);
-            setReviewServiceName(activeServices[0].nameAz);
+            setReviewServiceName(getServiceName(activeServices[0]));
             // Specialist matching the first service
             const matchingStaff = (data.tenant.staff || []).filter((st: Staff) => 
               !st.serviceIds || st.serviceIds.length === 0 || st.serviceIds.includes(activeServices[0].id)
@@ -253,70 +250,60 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             if (matchingStaff.length > 0) {
               initialStaffId = matchingStaff[0].id;
               setSelectedStaffId(matchingStaff[0].id);
+            } else if (data.tenant.staff && data.tenant.staff.length > 0) {
+              initialStaffId = data.tenant.staff[0].id;
+              setSelectedStaffId(data.tenant.staff[0].id);
             }
           } else if (data.tenant.staff && data.tenant.staff.length > 0) {
             initialStaffId = data.tenant.staff[0].id;
             setSelectedStaffId(data.tenant.staff[0].id);
           }
-          loadReviews(data.tenant.id);
+          
+          // Load booked slots and reviews
           loadBookedSlots(data.tenant.id, selectedDate, initialStaffId);
+          loadReviews(data.tenant.id);
+
+          // Check if previously reviewed on this device
           if (typeof window !== 'undefined') {
             const hasDone = localStorage.getItem(`reviewed_${data.tenant.id}`);
-            if (hasDone === 'true') {
-              setHasReviewed(true);
-            }
+            if (hasDone) setHasReviewed(true);
           }
         } else {
           setError(data.error || 'Müəssisə tapılmadı');
         }
       } catch (err: any) {
-        setError('Sistemlə əlaqə qurularkən xəta baş verdi');
+        setError(err.message || 'Xəta baş verdi');
       } finally {
         setLoading(false);
       }
     }
-    loadTenant();
+
+    if (params.slug) {
+      loadTenant();
+    }
   }, [params.slug]);
 
-  // Load booked slots whenever date or staff changes
+  // Reload booked slots when date or staff selection changes
   useEffect(() => {
     if (tenant?.id && selectedDate) {
       loadBookedSlots(tenant.id, selectedDate, selectedStaffId);
     }
   }, [tenant?.id, selectedDate, selectedStaffId]);
 
-  // Auto-switch selected time slot if current selected slot is booked or not in available timeSlots
-  useEffect(() => {
-    const isCurrentBooked = checkSlotBooked(selectedTime);
-    if (!timeSlots.includes(selectedTime) || isCurrentBooked) {
-      const freeSlot = timeSlots.find(t => !checkSlotBooked(t));
-      if (freeSlot) {
-        setSelectedTime(freeSlot);
-      } else if (timeSlots.length > 0) {
-        setSelectedTime(timeSlots[0]);
-      }
-    }
-  }, [timeSlots, bookedSlots, selectedTime, selectedStaffId, activeInterval]);
-
-  // Submit Quality Review
+  // Handle Review submission
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenant) return;
 
-    if (hasReviewed) {
-      setReviewError('Siz bu müəssisə üçün artıq rəy bildirmisiniz. Bir IP ünvanından yalnız bir dəfə rəy yazmaq mümkündür.');
-      return;
-    }
-
     if (!reviewName.trim() || !reviewComment.trim()) {
-      setReviewError('Zəhmət olmasa adınızı və rəyinizi qeyd edin.');
+      setReviewError(t('requiredFieldsError'));
       return;
     }
-
-    setReviewError(null);
 
     try {
       setReviewSubmitting(true);
+      setReviewError(null);
+
       const res = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,7 +330,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         loadReviews(tenant.id);
         setTimeout(() => setReviewSuccess(false), 6000);
       } else {
-        setReviewError(data.error || 'Rəy göndərilmədi');
+        setReviewError(data.error || (lang === 'ru' ? 'Отзыв не отправлен' : (lang === 'en' ? 'Review not submitted' : 'Rəy göndərilmədi')));
         if (res.status === 429) {
           setHasReviewed(true);
           if (typeof window !== 'undefined') {
@@ -352,7 +339,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         }
       }
     } catch (err) {
-      setReviewError('Rəy göndərilərkən xəta baş verdi');
+      setReviewError(lang === 'ru' ? 'Произошла ошибка при отправке отзыва' : (lang === 'en' ? 'Error sending review' : 'Rəy göndərilərkən xəta baş verdi'));
     } finally {
       setReviewSubmitting(false);
     }
@@ -363,7 +350,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     if (!tenant) return;
 
     if (!selectedServiceId || !selectedStaffId || !customerName.trim() || !customerPhone.trim()) {
-      alert('Zəhmət olmasa bütün vacib məlumatları doldurun.');
+      alert(t('requiredFieldsError'));
       return;
     }
 
@@ -390,19 +377,20 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         setBookingError(null);
       } else {
         const isBlocked = Boolean(data.blocked || res.status === 403);
+        const errMsg = isBlocked ? t('blockedError') : (data.error || t('slotTakenError'));
         setBookingError({
-          message: data.error || 'Rezervasiya qeydə alınmadı',
+          message: errMsg,
           isBlocked
         });
         if (isBlocked) {
-          alert('🚫 DİQQƏT: ' + (data.error || 'Bu nömrə, FİN və ya qurğudan rezervasiya etmək bloklanıb.'));
+          alert('🚫 ' + (lang === 'ru' ? 'ВНИМАНИЕ: ' : (lang === 'en' ? 'ATTENTION: ' : 'DİQQƏT: ')) + errMsg);
         } else {
-          alert(data.error || 'Rezervasiya qeydə alınmadı');
+          alert(errMsg);
         }
       }
     } catch (err) {
-      setBookingError({ message: 'Xəta baş verdi, zəhmət olmasa yenidən cəhd edin' });
-      alert('Xəta baş verdi, zəhmət olmasa yenidən cəhd edin');
+      setBookingError({ message: lang === 'ru' ? 'Произошла ошибка, пожалуйста, повторите попытку' : (lang === 'en' ? 'An error occurred, please try again' : 'Xəta baş verdi, zəhmət olmasa yenidən cəhd edin') });
+      alert(lang === 'ru' ? 'Произошла ошибка, пожалуйста, повторите попытку' : (lang === 'en' ? 'An error occurred, please try again' : 'Xəta baş verdi, zəhmət olmasa yenidən cəhd edin'));
     } finally {
       setSubmitting(false);
     }
@@ -413,7 +401,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-900 dark:text-white transition-colors">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Müəssisə məlumatları yüklənir...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{t('loading')}</p>
         </div>
       </div>
     );
@@ -424,14 +412,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-slate-900 dark:text-white transition-colors">
         <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl">
           <AlertCircle className="w-14 h-14 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Filial Tapılmadı</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{error || 'Göstərilən filial mövcud deyil və ya deaktiv edilib.'}</p>
+          <h2 className="text-2xl font-bold mb-2">{t('notFound')}</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{error || t('notFoundDesc')}</p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Ana Səhifəyə Qayıt</span>
+            <span>{t('backToHome')}</span>
           </Link>
         </div>
       </div>
@@ -450,24 +438,25 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
-        {/* Top Breadcrumb & Controls */}
+        {/* Top Breadcrumb & Controls (Language Switcher, Theme Toggle, Login) */}
         <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Əsas səhifə</span>
+            <span>{t('home')}</span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <LanguageSelector />
             <ThemeToggle />
 
             <Link
               href="/login"
               className="inline-flex items-center gap-1.5 text-xs text-indigo-700 dark:text-indigo-300 font-semibold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-3.5 py-2 rounded-xl transition-all hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
             >
-              <span>Giriş</span>
+              <span>{t('login')}</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -482,7 +471,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             <div className="relative h-44 sm:h-60 -mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-6 overflow-hidden border-b border-slate-200 dark:border-white/10 group">
               <img
                 src={tenant.coverImage}
-                alt={`${tenant.name} örtük banneri`}
+                alt={`${tenant.name} banner`}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
@@ -495,7 +484,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               {tenant.logo ? (
                 <img
                   src={tenant.logo}
-                  alt={`${tenant.name} loqosu`}
+                  alt={`${tenant.name} logo`}
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-xl shrink-0 bg-white dark:bg-slate-800"
                 />
               ) : (
@@ -507,12 +496,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-500/30">
-                    {tenant.sector}
+                    {getCategoryName(tenant.sector)}
                   </span>
                   {tenant.medicalEnabled && (
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200 dark:border-emerald-500/30">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      Tibbi İnteqrasiya
+                      {lang === 'ru' ? 'Медицинская интеграция' : (lang === 'en' ? 'Medical Integration' : 'Tibbi İnteqrasiya')}
                     </span>
                   )}
                 </div>
@@ -544,7 +533,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="WhatsApp ilə birbaşa əlaqə"
+                  title={t('whatsappDirect')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-transform hover:scale-105 active:scale-95"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -558,7 +547,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getInstagramUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Instagram səhifəsi"
+                  title={t('instagramPage')}
                   className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-md shadow-rose-500/25 transition-transform hover:scale-110 active:scale-95"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -571,7 +560,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getFacebookUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Facebook səhifəsi"
+                  title={t('facebookPage')}
                   className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#1877F2] text-white shadow-md shadow-blue-500/25 transition-transform hover:scale-110 active:scale-95"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -584,7 +573,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getTikTokUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="TikTok profili"
+                  title={t('tiktokProfile')}
                   className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-900 dark:bg-white/10 hover:bg-black text-white border border-slate-700/30 transition-transform hover:scale-110 active:scale-95"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -597,7 +586,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getTelegramUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="Telegram kanalı"
+                  title={t('telegramChannel')}
                   className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#229ED9] text-white shadow-md shadow-sky-500/25 transition-transform hover:scale-110 active:scale-95"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -617,33 +606,35 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             </div>
 
             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full">
-              Rezervasiya Təsdiqləndi
+              {t('confirmed')}
             </span>
 
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-3 mb-2">Təşəkkür edirik, {confirmedBooking.customerName}!</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-3 mb-2">
+              {lang === 'ru' ? `Спасибо, ${confirmedBooking.customerName}!` : (lang === 'en' ? `Thank you, ${confirmedBooking.customerName}!` : `Təşəkkür edirik, ${confirmedBooking.customerName}!`)}
+            </h2>
             <p className="text-slate-600 dark:text-slate-300 text-sm max-w-md mx-auto mb-8">
-              Rezervasiyanız uğurla qeydə alındı və mərkəzin admin sisteminə ötürüldü.
+              {t('bookingSuccessDesc')}
             </p>
 
             <div className="max-w-md mx-auto bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 rounded-2xl p-6 text-left space-y-3 mb-8">
               <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Rezervasiya ID:</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('bookingCode')}:</span>
                 <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{confirmedBooking.id}</span>
               </div>
               <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Xidmət:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{selectedService?.nameAz}</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('service')}:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedService ? getServiceName(selectedService) : ''}</span>
               </div>
               <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Mütəxəssis:</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('specialist')}:</span>
                 <span className="font-semibold text-slate-900 dark:text-white">{selectedStaff?.name}</span>
               </div>
               <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Tarix və Saat:</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('date')} & {t('time')}:</span>
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">{confirmedBooking.date} / {confirmedBooking.timeSlot}</span>
               </div>
               <div className="flex justify-between items-center text-sm pt-1">
-                <span className="text-slate-500 dark:text-slate-400">Qiymət:</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('price')}:</span>
                 <span className="font-extrabold text-slate-900 dark:text-white text-base">{selectedService?.price} AZN</span>
               </div>
             </div>
@@ -651,7 +642,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             {/* Direct support / WhatsApp links on confirmation */}
             <div className="max-w-md mx-auto mb-8 p-4 rounded-2xl bg-indigo-50/50 dark:bg-white/5 border border-indigo-100 dark:border-white/10 text-center">
               <p className="text-xs text-slate-600 dark:text-slate-300 mb-3 font-medium">
-                Rezervasiya ilə bağlı əlavə sualınız və ya dəyişiklik istəyiniz olarsa, bizimlə əlaqə saxlaya bilərsiniz:
+                {lang === 'ru' 
+                  ? 'Если у вас есть вопросы или пожелания по изменению бронирования, свяжитесь с нами:' 
+                  : (lang === 'en' 
+                    ? 'If you have any questions or would like to modify your booking, please contact us:' 
+                    : 'Rezervasiya ilə bağlı əlavə sualınız və ya dəyişiklik istəyiniz olarsa, bizimlə əlaqə saxlaya bilərsiniz:')}
               </p>
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <a
@@ -663,7 +658,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
                   </svg>
-                  <span>WhatsApp ilə Əlaqə</span>
+                  <span>WhatsApp</span>
                 </a>
                 {tenant?.phone && (
                   <a
@@ -671,7 +666,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-800 dark:text-white text-xs font-bold transition-all"
                   >
                     <Phone className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Zəng Et</span>
+                    <span>{t('call')}</span>
                   </a>
                 )}
                 <a
@@ -702,7 +697,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
               >
                 <Calendar className="w-4 h-4" />
-                <span>Yeni Rezervasiya Et</span>
+                <span>{t('newBooking')}</span>
               </button>
             </div>
           </div>
@@ -714,20 +709,23 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">1</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Xidmət Seçimi</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Yazılmaq istədiyiniz proseduru və ya xidməti seçin</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step1Title')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('step1Subtitle')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {tenant.services?.filter(srv => srv.isActive !== false).map(srv => {
                   const isSelected = selectedServiceId === srv.id;
+                  const localizedServiceName = getServiceName(srv);
+                  const localizedCategory = getCategoryName(srv.category);
+
                   return (
                     <div
                       key={srv.id}
                       onClick={() => {
                         setSelectedServiceId(srv.id);
-                        setReviewServiceName(srv.nameAz);
+                        setReviewServiceName(localizedServiceName);
                         // Check if current specialist provides this service
                         const matches = (tenant.staff || []).filter(st => 
                           !st.serviceIds || st.serviceIds.length === 0 || st.serviceIds.includes(srv.id)
@@ -744,14 +742,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     >
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
-                          {srv.category}
+                          {localizedCategory}
                         </span>
                         <span className="text-base font-extrabold text-indigo-600 dark:text-indigo-400">{srv.price} AZN</span>
                       </div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1">{srv.nameAz}</h4>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1">{localizedServiceName}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                        <span>Müddət: {formatIntervalLabel(srv.duration)}</span>
+                        <span>{t('duration')}: {formatDuration(srv.duration)}</span>
                       </p>
                     </div>
                   );
@@ -764,9 +762,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">2</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Mütəxəssis Seçimi</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step2Title')}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Seçilmiş xidmət üzrə təyin edilmiş mütəxəssisi seçin
+                    {t('step2Subtitle')}
                   </p>
                 </div>
               </div>
@@ -793,7 +791,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         {stf.slotDuration ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full mt-2 border border-emerald-200 dark:border-emerald-500/20">
                             <Clock className="w-2.5 h-2.5" />
-                            {formatIntervalLabel(stf.slotDuration)} aralıq
+                            {formatDuration(stf.slotDuration)} {lang === 'ru' ? 'интервал' : (lang === 'en' ? 'interval' : 'aralıq')}
                           </span>
                         ) : null}
                       </div>
@@ -803,7 +801,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               ) : (
                 <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Bu xidmət üzrə aktiv mütəxəssis təyin edilməyib. Zəhmət olmasa başqa xidmət seçin və ya müəssisə ilə əlaqə saxlayın.</span>
+                  <span>{t('noStaffForService')}</span>
                 </div>
               )}
             </div>
@@ -813,14 +811,16 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">3</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tarix və Saat</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Sizə uyğun olan rezervasiya vaxtını təyin edin</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step3Title')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('step3Subtitle')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Tarix</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                    {t('bookingDate')}
+                  </label>
                   <input
                     type="date"
                     min={new Date().toISOString().split('T')[0]}
@@ -836,22 +836,22 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     <div className="flex items-center gap-2 flex-wrap">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <span>Mövcud Saatlar</span>
+                        <span>{t('availableHours')}</span>
                       </label>
                       <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
-                        <span>Aralıq: {formatIntervalLabel(activeInterval)}</span>
+                        <span>{t('slotInterval')}: {formatDuration(activeInterval)}</span>
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
-                        24 Saatlıq Rejim
+                        {t('twentyFourHourMode')}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3 text-[11px] text-slate-500">
                       <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Boş
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {t('free')}
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Dolu (Rezerv edilib)
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> {t('booked')}
                       </span>
                     </div>
                   </div>
@@ -867,7 +867,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
                       }`}
                     >
-                      Bütün Saatlar (24H)
+                      {t('allHours')}
                     </button>
                     <button
                       type="button"
@@ -878,7 +878,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
                       }`}
                     >
-                      Səhər (08:00 - 12:00)
+                      {t('morning')}
                     </button>
                     <button
                       type="button"
@@ -889,7 +889,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
                       }`}
                     >
-                      Günorta (12:00 - 17:00)
+                      {t('afternoon')}
                     </button>
                     <button
                       type="button"
@@ -900,7 +900,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
                       }`}
                     >
-                      Axşam (17:00 - 23:00)
+                      {t('evening')}
                     </button>
                   </div>
 
@@ -916,11 +916,13 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                             key={time}
                             type="button"
                             disabled={true}
-                            title="Bu saat artıq doludur və seçilə bilməz"
+                            title={t('booked')}
                             className="py-2.5 px-2 rounded-xl text-xs font-bold transition-all bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/40 text-rose-500 dark:text-rose-400 line-through cursor-not-allowed opacity-70 flex flex-col items-center justify-center gap-0.5"
                           >
                             <span>{time}</span>
-                            <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 no-underline">Dolu</span>
+                            <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 no-underline">
+                              {t('bookedShort')}
+                            </span>
                           </button>
                         );
                       }
@@ -944,10 +946,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                   {/* Seçilmiş saat göstəricisi */}
                   <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-white/5 flex-wrap gap-2">
-                    <span className="text-slate-500">Seçilmiş vaxt:</span>
+                    <span className="text-slate-500">{t('selectedTime')}:</span>
                     <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
-                      <span>{selectedTime} ({formatIntervalLabel(activeInterval)}, 24 saatlıq rejim)</span>
+                      <span>{selectedTime} ({formatDuration(activeInterval)}, {t('twentyFourHourMode')})</span>
                     </span>
                   </div>
                 </div>
@@ -959,20 +961,20 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">4</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Müştəri Məlumatları</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Rezervasiya təsdiqi üçün əlaqə vasitələriniz</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step4Title')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('step4Subtitle')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Ad və Soyad * (Yalnız hərflər)
+                    {t('fullName')} * ({t('onlyLetters')})
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Məs: Əli Əliyev"
+                    placeholder={t('fullNamePlaceholder')}
                     value={customerName}
                     onChange={(e) => handleCustomerNameChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
@@ -981,7 +983,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Mobil Nömrə * (Yalnız rəqəmlər)
+                    {t('phone')} * ({t('onlyDigits')})
                   </label>
                   <input
                     type="tel"
@@ -997,17 +999,17 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Şəxsiyyət Vəsiqəsinin FİN Kodu (Tibbi Qeydiyyat üçün)</span>
+                      <span>{t('finCode')} ({t('optional')})</span>
                     </label>
                     <input
                       type="text"
                       maxLength={7}
-                      placeholder="Məs: 7ABC123"
+                      placeholder={t('finPlaceholder')}
                       value={customerFin}
                       onChange={(e) => setCustomerFin(e.target.value.toUpperCase())}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-emerald-500/40 rounded-xl px-4 py-3 text-slate-900 dark:text-white uppercase focus:outline-none focus:border-emerald-500 text-sm font-mono"
                     />
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">FİN kod tibbi xəstəlik tarixçənizin və həkim qeydlərinin avtomatik arxivləşməsi üçün lazımdır.</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{t('secureNotice')}</p>
                   </div>
                 )}
               </div>
@@ -1023,12 +1025,16 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <div className="font-bold text-sm">
-                    {bookingError.isBlocked ? '🚫 Onlayn Rezervasiya Məhdudlaşdırılıb' : 'Rezervasiya Xətası'}
+                    {bookingError.isBlocked 
+                      ? (lang === 'ru' ? '🚫 Онлайн-бронирование ограничено' : (lang === 'en' ? '🚫 Online Booking Restricted' : '🚫 Onlayn Rezervasiya Məhdudlaşdırılıb'))
+                      : (lang === 'ru' ? 'Ошибка бронирования' : (lang === 'en' ? 'Booking Error' : 'Rezervasiya Xətası'))
+                    }
                   </div>
                   <p className="mt-1 leading-relaxed">{bookingError.message}</p>
                   {bookingError.isBlocked && tenant?.phone && (
                     <div className="mt-2 text-xs font-semibold">
-                      Müəssisə ilə birbaşa əlaqə: <a href={`tel:${tenant.phone}`} className="underline font-bold text-indigo-600 dark:text-indigo-400">{tenant.phone}</a>
+                      {lang === 'ru' ? 'Прямая связь с филиалом: ' : (lang === 'en' ? 'Direct contact with branch: ' : 'Müəssisə ilə birbaşa əlaqə: ')}
+                      <a href={`tel:${tenant.phone}`} className="underline font-bold text-indigo-600 dark:text-indigo-400">{tenant.phone}</a>
                     </div>
                   )}
                 </div>
@@ -1038,9 +1044,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             {/* Submit Action */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/30 rounded-2xl p-6 shadow-md transition-colors">
               <div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Yekun Xidmət:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {lang === 'ru' ? 'Итоговая услуга:' : (lang === 'en' ? 'Selected Service:' : 'Yekun Xidmət:')}
+                </span>
                 <p className="font-bold text-slate-900 dark:text-white text-base">
-                  {selectedService?.nameAz} — <span className="text-emerald-600 dark:text-emerald-400">{selectedService?.price} AZN</span>
+                  {selectedService ? getServiceName(selectedService) : ''} — <span className="text-emerald-600 dark:text-emerald-400">{selectedService?.price} AZN</span>
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {selectedDate} / {selectedTime} • {selectedStaff?.name}
@@ -1053,11 +1061,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting ? (
-                  <span>Rezervasiya edilir...</span>
+                  <span>{t('confirming')}</span>
                 ) : (
                   <>
                     <CalendarCheck className="w-5 h-5" />
-                    <span>Rezervasiyanı Təsdiqlə</span>
+                    <span>{t('confirmBooking')}</span>
                   </>
                 )}
               </button>
@@ -1074,13 +1082,17 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
                   <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  <span>Xidmət Keyfiyyəti & Müştəri Məmnuniyyəti</span>
+                  <span>{t('reviewsSubtitle')}</span>
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                  Xidməti Qiymətləndirin və Rəy Bildirin
+                  {t('leaveReviewTitle')}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-                  {tenant.name} filialı üçün təəssüratınızı və balınızı qeyd edin. Sizin rəyiniz xidmət səviyyəsinin yüksəldilməsinə xidmət edir.
+                  {lang === 'ru' 
+                    ? `Оставьте ваш отзыв и оценку для филиала ${tenant.name}. Ваш отзыв помогает улучшить качество обслуживания.`
+                    : (lang === 'en' 
+                      ? `Leave your review and rating for ${tenant.name}. Your feedback helps improve service quality.`
+                      : `${tenant.name} filialı üçün təəssüratınızı və balınızı qeyd edin. Sizin rəyiniz xidmət səviyyəsinin yüksəldilməsinə xidmət edir.`)}
                 </p>
               </div>
 
@@ -1100,7 +1112,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   ))}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                  {reviews.length} müştəri qiymətləndirməsi
+                  {reviews.length} {t('basedOnReviews')}
                 </p>
               </div>
             </div>
@@ -1111,7 +1123,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               {/* Star Selection Row */}
               <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-                  Xidmət Balı (Ulduz Seçin) *
+                  {lang === 'ru' ? 'Оценка услуги (Выберите звёзды) *' : (lang === 'en' ? 'Service Rating (Select Stars) *' : 'Xidmət Balı (Ulduz Seçin) *')}
                 </label>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5">
@@ -1125,7 +1137,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           onMouseEnter={() => setHoverRating(star)}
                           onMouseLeave={() => setHoverRating(0)}
                           className="p-1 rounded-lg transition-transform hover:scale-125 focus:outline-none"
-                          title={`${star} ulduz`}
+                          title={`${star} ${t('star')}`}
                         >
                           <Star
                             className={`w-8 h-8 transition-colors ${
@@ -1141,11 +1153,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   
                   {/* Rating Description Label */}
                   <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
-                    {(hoverRating || reviewRating) === 5 && '⭐⭐⭐⭐⭐ 5/5 — Əla və Mükəmməl!'}
-                    {(hoverRating || reviewRating) === 4 && '⭐⭐⭐⭐ 4/5 — Çox Yaxşı Xidmət'}
-                    {(hoverRating || reviewRating) === 3 && '⭐⭐⭐ 3/5 — Qənaətbəxş / Orta'}
-                    {(hoverRating || reviewRating) === 2 && '⭐⭐ 2/5 — Zəif Təcrübə'}
-                    {(hoverRating || reviewRating) === 1 && '⭐ 1/5 — Çox Zəif / Narazıyam'}
+                    {(hoverRating || reviewRating) === 5 && (lang === 'ru' ? '⭐⭐⭐⭐⭐ 5/5 — Отлично и идеально!' : (lang === 'en' ? '⭐⭐⭐⭐⭐ 5/5 — Excellent & Perfect!' : '⭐⭐⭐⭐⭐ 5/5 — Əla və Mükəmməl!'))}
+                    {(hoverRating || reviewRating) === 4 && (lang === 'ru' ? '⭐⭐⭐⭐ 4/5 — Очень хорошее обслуживание' : (lang === 'en' ? '⭐⭐⭐⭐ 4/5 — Very Good Service' : '⭐⭐⭐⭐ 4/5 — Çox Yaxşı Xidmət'))}
+                    {(hoverRating || reviewRating) === 3 && (lang === 'ru' ? '⭐⭐⭐ 3/5 — Удовлетворительно / Средне' : (lang === 'en' ? '⭐⭐⭐ 3/5 — Satisfactory / Average' : '⭐⭐⭐ 3/5 — Qənaətbəxş / Orta'))}
+                    {(hoverRating || reviewRating) === 2 && (lang === 'ru' ? '⭐⭐ 2/5 — Слабый опыт' : (lang === 'en' ? '⭐⭐ 2/5 — Poor Experience' : '⭐⭐ 2/5 — Zəif Təcrübə'))}
+                    {(hoverRating || reviewRating) === 1 && (lang === 'ru' ? '⭐ 1/5 — Очень плохо / Недоволен' : (lang === 'en' ? '⭐ 1/5 — Very Poor / Dissatisfied' : '⭐ 1/5 — Çox Zəif / Narazıyam'))}
                   </span>
                 </div>
               </div>
@@ -1154,12 +1166,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Adınız və Soyadınız * (Yalnız hərflər)
+                    {t('yourName')} ({t('onlyLetters')})
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Məs: Günel Əhmədova"
+                    placeholder={t('fullNamePlaceholder')}
                     value={reviewName}
                     onChange={(e) => handleReviewNameChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
@@ -1168,7 +1180,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Mobil Nömrəniz (İstəyə bağlı, yalnız rəqəmlər)
+                    {t('yourPhone')} ({t('optional')})
                   </label>
                   <input
                     type="tel"
@@ -1181,11 +1193,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Xidmət / Prosedur
+                    {t('serviceUsed')}
                   </label>
                   <input
                     type="text"
-                    placeholder="Məs: Həkim qəbulu, Saç kəsimi..."
+                    placeholder={lang === 'ru' ? 'Напр: Стрижка, Консультация...' : (lang === 'en' ? 'E.g: Consultation, Haircut...' : 'Məs: Həkim qəbulu, Saç kəsimi...')}
                     value={reviewServiceName}
                     onChange={(e) => setReviewServiceName(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
@@ -1196,12 +1208,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               {/* Review Textarea */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Rəy və Təəssüratınız *
+                  {t('yourExperience')}
                 </label>
                 <textarea
                   required
                   rows={3}
-                  placeholder="Göstərilən xidmət, həkim/usta diqqəti, vaxtında qəbul və s. barədə fikirlərinizi qeyd edin..."
+                  placeholder={t('reviewPlaceholder')}
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm leading-relaxed"
@@ -1214,7 +1226,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   {hasReviewed ? (
                     <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs font-semibold">
                       <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                      <span>Siz bu müəssisə üçün artıq rəy bildirmisiniz. Qaydalara əsasən, bir IP ünvanından yalnız bir dəfə rəy yazmaq mümkündür. Təşəkkür edirik!</span>
+                      <span>{t('alreadyReviewed')}</span>
                     </div>
                   ) : (
                     <button
@@ -1223,14 +1235,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                     >
                       <Send className="w-4 h-4" />
-                      <span>{reviewSubmitting ? 'Göndərilir...' : 'Rəyi və Balı Təsdiqlə'}</span>
+                      <span>{reviewSubmitting ? t('loading') : t('sendReview')}</span>
                     </button>
                   )}
 
                   {reviewSuccess && (
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-semibold animate-in fade-in">
                       <Check className="w-4 h-4 text-emerald-500" />
-                      <span>Təşəkkür edirik! Rəyiniz qeydə alındı və xidmət keyfiyyətinin yüksəldilməsinə töhfə verir.</span>
+                      <span>{t('reviewSentSuccess')}</span>
                     </div>
                   )}
                 </div>
@@ -1250,7 +1262,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                   <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-indigo-500" />
-                    <span>Müştərilərin Real Rəyləri ({reviews.length})</span>
+                    <span>{t('reviewsTitle')} ({reviews.length})</span>
                   </h4>
 
                   {/* Ulduz ilə Filterləmə Düymələri */}
@@ -1264,7 +1276,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
                       }`}
                     >
-                      <span>Hamısı</span>
+                      <span>{t('allStars')}</span>
                       <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
                         reviewStarFilter === 'ALL' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-slate-900' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300'
                       }`}>
@@ -1347,9 +1359,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         </div>
 
                         <div className="mt-3 pt-2 text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-between border-t border-slate-200/50 dark:border-white/5">
-                          <span>{new Date(r.createdAt).toLocaleDateString('az-AZ')}</span>
+                          <span>
+                            {new Date(r.createdAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : (lang === 'en' ? 'en-US' : 'az-AZ'))}
+                          </span>
                           <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Təsdiqlənmiş Müştəri
+                            <CheckCircle2 className="w-3 h-3" />
+                            {lang === 'ru' ? 'Подтвержденный клиент' : (lang === 'en' ? 'Verified Client' : 'Təsdiqlənmiş Müştəri')}
                           </span>
                         </div>
                       </div>
@@ -1359,14 +1374,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 rounded-2xl">
                     <Star className="w-8 h-8 text-amber-400/40 mx-auto mb-2" />
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                      Bu ulduz dərəcəsi ({reviewStarFilter} ulduz) üzrə hələ rəy yazılmayıb.
+                      {t('noReviewsForStar')}
                     </p>
                     <button
                       type="button"
                       onClick={() => setReviewStarFilter('ALL')}
                       className="mt-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
                     >
-                      Bütün rəyləri göstər ({reviews.length})
+                      {lang === 'ru' ? `Показать все отзывы (${reviews.length})` : (lang === 'en' ? `Show all reviews (${reviews.length})` : `Bütün rəyləri göstər (${reviews.length})`)}
                     </button>
                   </div>
                 )}

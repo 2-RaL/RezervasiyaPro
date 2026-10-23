@@ -74,6 +74,7 @@ export default function ServicesManagementTab({
   const [newService, setNewService] = useState({
     tenantId: tenants[0]?.id || '',
     nameAz: '',
+    nameRu: '',
     nameEn: '',
     price: 30,
     duration: 30,
@@ -105,9 +106,10 @@ export default function ServicesManagementTab({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchAz = s.nameAz?.toLowerCase().includes(q);
+      const matchRu = s.nameRu?.toLowerCase().includes(q);
       const matchEn = s.nameEn?.toLowerCase().includes(q);
       const matchCat = s.category?.toLowerCase().includes(q);
-      if (!matchAz && !matchEn && !matchCat) return false;
+      if (!matchAz && !matchRu && !matchEn && !matchCat) return false;
     }
     return true;
   });
@@ -142,6 +144,7 @@ export default function ServicesManagementTab({
         setNewService({
           tenantId: tenants[0]?.id || '',
           nameAz: '',
+          nameRu: '',
           nameEn: '',
           price: 30,
           duration: 30,
@@ -389,9 +392,20 @@ export default function ServicesManagementTab({
                   <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1">
                     {s.nameAz}
                   </h4>
-                  {s.nameEn && (
-                    <p className="text-xs text-slate-400 italic mb-3">{s.nameEn}</p>
-                  )}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {s.nameRu && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-white/10 font-medium">
+                        <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">RU</span>
+                        {s.nameRu}
+                      </span>
+                    )}
+                    {s.nameEn && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100/50 dark:bg-white/5 px-2 py-0.5 rounded-lg border border-slate-200/50 dark:border-white/5 font-medium">
+                        <span className="text-[9px] font-bold text-slate-400">EN</span>
+                        {s.nameEn}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Price and Duration */}
                   <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-white/5 mb-3">
@@ -511,8 +525,9 @@ export default function ServicesManagementTab({
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Xidmətin Adı (Azərbaycanca) *
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Xidmətin Adı (Azərbaycanca) *</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">🇦🇿 AZ</span>
                 </label>
                 <input
                   type="text"
@@ -525,8 +540,23 @@ export default function ServicesManagementTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Xidmətin Adı (İngiliscə)
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Xidmətin Adı (Rusca - Название услуги)</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">🇷🇺 RU</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Məs: Классическая стрижка или Осмотр стоматолога"
+                  value={newService.nameRu}
+                  onChange={(e) => setNewService({ ...newService, nameRu: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Xidmətin Adı (İngiliscə - Service name)</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">🇬🇧 EN</span>
                 </label>
                 <input
                   type="text"
@@ -653,8 +683,9 @@ export default function ServicesManagementTab({
             <form onSubmit={handleEditSubmit} className="space-y-4">
               
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Xidmətin Adı (Azərbaycanca) *
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Xidmətin Adı (Azərbaycanca) *</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">🇦🇿 AZ</span>
                 </label>
                 <input
                   type="text"
@@ -666,8 +697,23 @@ export default function ServicesManagementTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Xidmətin Adı (İngiliscə)
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Xidmətin Adı (Rusca - Название услуги)</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">🇷🇺 RU</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Məs: Классическая стрижка"
+                  value={editingService.nameRu || ''}
+                  onChange={(e) => setEditingService({ ...editingService, nameRu: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Xidmətin Adı (İngiliscə - Service name)</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">🇬🇧 EN</span>
                 </label>
                 <input
                   type="text"

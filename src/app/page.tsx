@@ -32,6 +32,8 @@ import {
   HeartPulse
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+import LanguageSelector from '../components/LanguageSelector';
+import { useLanguage } from '../lib/languageContext';
 
 interface TenantDisplay {
   id: string;
@@ -163,32 +165,8 @@ const DEMO_TENANTS: TenantDisplay[] = [
 ];
 
 export default function HomePage() {
-  const [isDark, setIsDark] = useState<boolean>(false);
+  const { lang, t, formatDuration, getCategoryName } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-
-  // Ensure default is light mode, but allow toggling and persistent preference
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDark(true);
-      document.documentElement.classList.add('dark');
-    } else {
-      setIsDark(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    if (isDark) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      setIsDark(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      setIsDark(true);
-    }
-  };
 
   const filteredTenants = selectedCategory === 'all' 
     ? DEMO_TENANTS 
@@ -215,31 +193,39 @@ export default function HomePage() {
                   Universal
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Bütün Sektorlar Üçün Rezervasiya Sistemi</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                {lang === 'ru' ? 'Система бронирования для любого бизнеса' : (lang === 'en' ? 'Online Booking System for Any Business' : 'Bütün Sektorlar Üçün Rezervasiya Sistemi')}
+              </p>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            <a href="#sektorlar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Sektorlar</a>
-            <a href="#filiallar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Filiallar</a>
-            <a href="#imkanlar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">İmkanlar</a>
-            <a href="#nece-isleyir" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Necə İşləyir?</a>
+            <a href="#sektorlar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              {lang === 'ru' ? 'Секторы' : (lang === 'en' ? 'Sectors' : 'Sektorlar')}
+            </a>
+            <a href="#filiallar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              {lang === 'ru' ? 'Филиалы' : (lang === 'en' ? 'Branches' : 'Filiallar')}
+            </a>
+            <a href="#imkanlar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              {lang === 'ru' ? 'Возможности' : (lang === 'en' ? 'Features' : 'İmkanlar')}
+            </a>
+            <a href="#nece-isleyir" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              {lang === 'ru' ? 'Как это работает?' : (lang === 'en' ? 'How it works?' : 'Necə İşləyir?')}
+            </a>
           </div>
 
-          {/* Action Bar (Theme Toggle + Giriş Button) */}
-          <div className="flex items-center space-x-3">
-            
-            {/* Light / Dark Mode Toggle */}
+          {/* Action Bar (Language Switcher + Theme Toggle + Login Button) */}
+          <div className="flex items-center space-x-2.5">
+            <LanguageSelector />
             <ThemeToggle />
 
-            {/* Single "Giriş" Button */}
             <Link 
               href="/login" 
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-sm px-4 sm:px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Lock className="w-4 h-4" />
-              <span>Giriş</span>
+              <span>{t('login')}</span>
             </Link>
           </div>
         </div>
@@ -256,20 +242,20 @@ export default function HomePage() {
           {/* Top Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-slate-800/80 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6 shadow-sm">
             <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span>Müasir & Çoxşaxəli Biznes Həlli</span>
+            <span>{t('heroBadge')}</span>
           </div>
 
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12] mb-6 text-slate-900 dark:text-white">
-            Bütün Xidmət və Biznes Sahələri Üçün <br className="hidden sm:inline" />
+            {t('heroTitle1')} <br className="hidden sm:inline" />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 dark:from-indigo-400 dark:via-blue-300 dark:to-cyan-300">
-              Ağıllı Rezervasiya Sistemi
+              {t('heroTitle2')}
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="max-w-3xl mx-auto text-lg sm:text-xl text-slate-600 dark:text-slate-300 font-normal leading-relaxed mb-10">
-            Gözəllik mərkəzləri, tibb klinikaları, bərbərxanalar, avto servislər, fitnes studiyaları və tədris müəssisələri üçün vahid növbə, mütəxəssis və müştəri idarəetmə platforması.
+            {t('heroDesc')}
           </p>
 
           {/* Call to Actions */}
@@ -279,7 +265,7 @@ export default function HomePage() {
               className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:translate-y-[-2px] flex items-center gap-3"
             >
               <CalendarCheck className="w-5 h-5" />
-              <span>Nümunə Filialları Sına</span>
+              <span>{t('tryDemo')}</span>
               <ArrowRight className="w-5 h-5" />
             </a>
 
@@ -288,7 +274,7 @@ export default function HomePage() {
               className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-base border border-slate-300 dark:border-slate-700 shadow-md transition-all flex items-center gap-2"
             >
               <Lock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <span>Sistemə Giriş</span>
+              <span>{t('login')}</span>
             </Link>
           </div>
 
@@ -296,22 +282,32 @@ export default function HomePage() {
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
               <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400">100%</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Hər Sektora Uyğun</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                {lang === 'ru' ? 'Для всех отраслей' : (lang === 'en' ? 'For all sectors' : 'Hər Sektora Uyğun')}
+              </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
               <div className="text-3xl font-black text-slate-900 dark:text-white">24/7</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Avtomatlaşdırılmış Növbə</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                {lang === 'ru' ? 'Автоматическая очередь' : (lang === 'en' ? 'Automated queue' : 'Avtomatlaşdırılmış Növbə')}
+              </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
-              <div className="text-3xl font-black text-slate-900 dark:text-white">0 dəq</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Vaxt İtkisi və Xəta</div>
+              <div className="text-3xl font-black text-slate-900 dark:text-white">0 {lang === 'ru' ? 'мин' : (lang === 'en' ? 'min' : 'dəq')}</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                {lang === 'ru' ? 'Без задержек и ошибок' : (lang === 'en' ? 'Zero delay & errors' : 'Vaxt İtkisi və Xəta')}
+              </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
-              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">Canlı</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Mütəxəssis Qrafiki</div>
+              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                {lang === 'ru' ? 'Онлайн' : (lang === 'en' ? 'Live' : 'Canlı')}
+              </div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                {lang === 'ru' ? 'График специалистов' : (lang === 'en' ? 'Specialist schedule' : 'Mütəxəssis Qrafiki')}
+              </div>
             </div>
           </div>
 
@@ -323,13 +319,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-              Universal Tətbiq Sahələri
+              {lang === 'ru' ? 'Универсальные сферы применения' : (lang === 'en' ? 'Universal Business Sectors' : 'Universal Tətbiq Sahələri')}
             </span>
             <h2 className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-              İstənilən Xidmət Sektoruna Rahat İnteqrasiya
+              {lang === 'ru' ? 'Простая интеграция для любого бизнеса' : (lang === 'en' ? 'Seamless integration for every service sector' : 'İstənilən Xidmət Sektoruna Rahat İnteqrasiya')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Sistem yalnız bir istiqamət üçün deyil, bütün xidmət yönümlü müəssisələr üçün elastik parametrlərlə təchiz edilmişdir.
+              {lang === 'ru' 
+                ? 'Система спроектирована с гибкими параметрами для любых сервисных организаций, салонов и клиник.' 
+                : (lang === 'en' 
+                  ? 'The system is equipped with versatile parameters for all service-oriented enterprises, salons, and clinics.' 
+                  : 'Sistem yalnız bir istiqamət üçün deyil, bütün xidmət yönümlü müəssisələr üçün elastik parametrlərlə təchiz edilmişdir.')}
             </p>
           </div>
 
@@ -340,8 +340,12 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Gözəllik & Spa</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Kosmetologiya, baxım, lazer</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                {lang === 'ru' ? 'Красота и SPA' : (lang === 'en' ? 'Beauty & Spa' : 'Gözəllik & Spa')}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {lang === 'ru' ? 'Косметология, уход, лазер' : (lang === 'en' ? 'Cosmetology, care, laser' : 'Kosmetologiya, baxım, lazer')}
+              </p>
             </div>
 
             {/* Sector 2 */}
@@ -349,8 +353,12 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <HeartPulse className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Klinika & Səhiyyə</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Həkim, stomatoloq, tibb</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                {lang === 'ru' ? 'Клиника и здоровье' : (lang === 'en' ? 'Clinic & Health' : 'Klinika & Səhiyyə')}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {lang === 'ru' ? 'Врачи, стоматологи, терапия' : (lang === 'en' ? 'Doctors, dentists, therapy' : 'Həkim, stomatoloq, tibb')}
+              </p>
             </div>
 
             {/* Sector 3 */}
@@ -358,8 +366,12 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Scissors className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Bərbər & Stil</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Kişi salonları, saç dizaynı</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                {lang === 'ru' ? 'Барбершоп и стиль' : (lang === 'en' ? 'Barbershop & Style' : 'Bərbər & Stil')}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {lang === 'ru' ? 'Мужские стрижки, уход' : (lang === 'en' ? 'Men haircuts, beard style' : 'Kişi salonları, saç dizaynı')}
+              </p>
             </div>
 
             {/* Sector 4 */}
@@ -367,8 +379,12 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Car className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Avto Servis</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Detailing, təmir, texniki baxış</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                {lang === 'ru' ? 'Автосервис' : (lang === 'en' ? 'Auto Service' : 'Avto Servis')}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {lang === 'ru' ? 'Детейлинг, ТО, ремонт' : (lang === 'en' ? 'Detailing, repair, checkup' : 'Detailing, təmir, texniki baxış')}
+              </p>
             </div>
 
             {/* Sector 5 */}
@@ -376,8 +392,12 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Dumbbell className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">İdman & Yoga</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Fərdi məşq, pilates, zal</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                {lang === 'ru' ? 'Фитнес и Йога' : (lang === 'en' ? 'Fitness & Yoga' : 'İdman & Yoga')}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {lang === 'ru' ? 'Персональные тренировки' : (lang === 'en' ? 'Personal coaching, gym' : 'Fərdi məşq, pilates, zal')}
+              </p>
             </div>
 
             {/* Sector 6 */}
@@ -385,8 +405,12 @@ export default function HomePage() {
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Təhsil & Kurslar</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Fərdi dərslər, repetitor, İT</p>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                {lang === 'ru' ? 'Образование и курсы' : (lang === 'en' ? 'Education & Courses' : 'Təhsil & Kurslar')}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {lang === 'ru' ? 'Репетиторы, уроки, IT' : (lang === 'en' ? 'Tutoring, lessons, IT' : 'Fərdi dərslər, repetitor, İT')}
+              </p>
             </div>
 
           </div>
@@ -401,26 +425,30 @@ export default function HomePage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-2">
                 <Building2 className="w-4 h-4" />
-                <span>Canlı Filial Nümunələri</span>
+                <span>{lang === 'ru' ? 'Примеры филиалов' : (lang === 'en' ? 'Live Branch Examples' : 'Canlı Filial Nümunələri')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Müəssisələr və Rezervasiya Səhifələri
+                {lang === 'ru' ? 'Организации и страницы бронирования' : (lang === 'en' ? 'Enterprises & Booking Portals' : 'Müəssisələr və Rezervasiya Səhifələri')}
               </h2>
               <p className="text-slate-600 dark:text-slate-400 text-sm mt-2 max-w-xl">
-                Hər filial üçün ayrılmış fərdi portal. Müştərilər xidməti, mütəxəssisi və münasib saatı saniyələr içində seçib rezervasiya edirlər.
+                {lang === 'ru'
+                  ? 'Индивидуальный портал для каждого филиала. Клиенты выбирают услугу, мастера и время за считанные секунды.'
+                  : (lang === 'en'
+                    ? 'Dedicated portal for each branch. Customers select service, specialist, and convenient time in seconds.'
+                    : 'Hər filial üçün ayrılmış fərdi portal. Müştərilər xidməti, mütəxəssisi və münasib saatı saniyələr içində seçib rezervasiya edirlər.')}
               </p>
             </div>
 
             {/* Category Filter Pills */}
             <div className="flex flex-wrap gap-2">
               {[
-                { id: 'all', label: 'Hamısı' },
-                { id: 'beauty', label: 'Gözəllik' },
-                { id: 'health', label: 'Səhiyyə' },
-                { id: 'barber', label: 'Bərbərxana' },
-                { id: 'auto', label: 'Avto Servis' },
-                { id: 'fitness', label: 'İdman' },
-                { id: 'education', label: 'Təhsil' },
+                { id: 'all', label: t('allSectors') },
+                { id: 'beauty', label: lang === 'ru' ? 'Красота' : (lang === 'en' ? 'Beauty' : 'Gözəllik') },
+                { id: 'health', label: lang === 'ru' ? 'Здоровье' : (lang === 'en' ? 'Healthcare' : 'Səhiyyə') },
+                { id: 'barber', label: lang === 'ru' ? 'Барбер' : (lang === 'en' ? 'Barbershop' : 'Bərbərxana') },
+                { id: 'auto', label: lang === 'ru' ? 'Автосервис' : (lang === 'en' ? 'Auto Service' : 'Avto Servis') },
+                { id: 'fitness', label: lang === 'ru' ? 'Спорт' : (lang === 'en' ? 'Fitness' : 'İdman') },
+                { id: 'education', label: lang === 'ru' ? 'Образование' : (lang === 'en' ? 'Education' : 'Təhsil') },
               ].map(cat => (
                 <button
                   key={cat.id}
@@ -461,11 +489,11 @@ export default function HomePage() {
                     {/* Badges on Banner */}
                     <div className="absolute top-3 inset-x-3 flex items-center justify-between">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-white bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
-                        {item.sector}
+                        {getCategoryName(item.sector)}
                       </span>
                       <span className="inline-flex items-center gap-1.5 text-xs text-white bg-emerald-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full font-semibold">
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                        Aktiv
+                        {lang === 'ru' ? 'Активен' : (lang === 'en' ? 'Active' : 'Aktiv')}
                       </span>
                     </div>
                   </div>
@@ -496,13 +524,15 @@ export default function HomePage() {
 
                     {/* Featured Services Preview */}
                     <div className="space-y-2 mb-6">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Populyar Xidmətlər:</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {t('featuredServices')}:
+                      </div>
                       {item.featuredServices.map((srv, idx) => (
                         <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
                           <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[190px]">{srv.name}</span>
                           <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white shrink-0">
                             <span>{srv.price} ₼</span>
-                            <span className="text-[10px] text-slate-400 font-normal">({srv.duration} dəq)</span>
+                            <span className="text-[10px] text-slate-400 font-normal">({formatDuration(srv.duration)})</span>
                           </div>
                         </div>
                       ))}
@@ -517,7 +547,7 @@ export default function HomePage() {
                       href={`/${item.slug}`}
                       className="w-full py-3 px-4 rounded-xl bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 hover:text-white dark:hover:text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group-hover:shadow-md"
                     >
-                      <span>Rezervasiya Et</span>
+                      <span>{t('bookNow')}</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
@@ -535,13 +565,17 @@ export default function HomePage() {
           
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-              Korporativ Standartlar
+              {lang === 'ru' ? 'Корпоративные стандарты' : (lang === 'en' ? 'Enterprise Standards' : 'Korporativ Standartlar')}
             </span>
             <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white mt-2 tracking-tight">
-              Biznesinizi Tam Nəzarətdə Saxlayın
+              {lang === 'ru' ? 'Полный контроль над вашим бизнесом' : (lang === 'en' ? 'Keep Your Business Fully Under Control' : 'Biznesinizi Tam Nəzarətdə Saxlayın')}
             </h2>
             <p className="text-base text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
-              Müştəri məmnuniyyətini artıran, boş dayanma vaxtını aradan qaldıran və komandanın işini nizamlayan güclü idarəetmə vasitələri.
+              {lang === 'ru'
+                ? 'Мощные инструменты управления, повышающие удовлетворенность клиентов, исключающие простои и наводящие идеальный порядок в расписании.'
+                : (lang === 'en'
+                  ? 'Powerful management tools that boost customer satisfaction, eliminate idle time, and streamline team workflows.'
+                  : 'Müştəri məmnuniyyətini artıran, boş dayanma vaxtını aradan qaldıran və komandanın işini nizamlayan güclü idarəetmə vasitələri.')}
             </p>
           </div>
 
@@ -552,9 +586,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6">
                 <Layers className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Çoxfiliallı və Çoxsahəli</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Мульти-филиальность и отрасли' : (lang === 'en' ? 'Multi-branch & Multi-sector' : 'Çoxfiliallı və Çoxsahəli')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Bir platformadan bir neçə fərqli sektordakı filialı, xidmətləri və işçiləri ayrı-ayrı tənzimləyin.
+                {lang === 'ru'
+                  ? 'Управляйте несколькими филиалами в разных отраслях, их услугами и персоналом из одной централизованной платформы.'
+                  : (lang === 'en'
+                    ? 'Manage multiple branches across different sectors, their services, and employees from a single unified system.'
+                    : 'Bir platformadan bir neçə fərqli sektordakı filialı, xidmətləri və işçiləri ayrı-ayrı tənzimləyin.')}
               </p>
             </div>
 
@@ -563,9 +603,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-6">
                 <Clock className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Real-vaxtda Ağıllı Cədvəl</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Умное расписание реального времени' : (lang === 'en' ? 'Real-Time Smart Schedule' : 'Real-vaxtda Ağıllı Cədvəl')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Boş vaxt intervalları avtomatik hesablanır, toqquşmalar tam istisna olunur və növbələr dərhal yenilənir.
+                {lang === 'ru'
+                  ? 'Свободные интервалы рассчитываются автоматически, наложения и двойные бронирования полностью исключены.'
+                  : (lang === 'en'
+                    ? 'Free time slots are dynamically calculated, double bookings are eliminated, and slots update instantly.'
+                    : 'Boş vaxt intervalları avtomatik hesablanır, toqquşmalar tam istisna olunur və növbələr dərhal yenilənir.')}
               </p>
             </div>
 
@@ -574,9 +620,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6">
                 <Users className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Mütəxəssis & İşçi İdarəsi</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Управление специалистами' : (lang === 'en' ? 'Specialist & Staff Management' : 'Mütəxəssis & İşçi İdarəsi')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Hər həkim, usta, məşqçi və ya təlimçi üçün xüsusi iş saatları, xidmət kateqoriyaları və statuslar təyin edin.
+                {lang === 'ru'
+                  ? 'Назначайте персональные рабочие часы, интервалы приёма и привязывайте услуги для каждого специалиста.'
+                  : (lang === 'en'
+                    ? 'Assign custom working hours, booking durations, and service specialties for every team member.'
+                    : 'Hər həkim, usta, məşqçi və ya təlimçi üçün xüsusi iş saatları, xidmət kateqoriyaları və statuslar təyin edin.')}
               </p>
             </div>
 
@@ -585,9 +637,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-6">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Müştəri & FİN Tarixçəsi</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Клиентская база и FIN-история' : (lang === 'en' ? 'Customer Base & FIN History' : 'Müştəri & FİN Tarixçəsi')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Gələn hər müştərinin rezervasiya tarixçəsini, əlaqə nömrəsini və qeydlərini təhlükəsiz bazada saxlayın.
+                {lang === 'ru'
+                  ? 'Сохраняйте историю записей клиентов, контакты, медицинские FIN-номера и внутренние заметки в защищённой базе.'
+                  : (lang === 'en'
+                    ? 'Securely store customer reservation records, contact info, medical FIN codes, and internal admin notes.'
+                    : 'Gələn hər müştərinin rezervasiya tarixçəsini, əlaqə nömrəsini və qeydlərini təhlükəsiz bazada saxlayın.')}
               </p>
             </div>
 
@@ -596,9 +654,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-6">
                 <TrendingUp className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Gəlir və Rezervasiya Analitikası</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Аналитика и выручка' : (lang === 'en' ? 'Revenue & Booking Analytics' : 'Gəlir və Rezervasiya Analitikası')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Hansı xidmətlərin daha çox tələb olunduğunu, mütəxəssislərin yüklənməsini və filial üzrə dövriyyəni izləyin.
+                {lang === 'ru'
+                  ? 'Отслеживайте самые востребованные процедуры, нагрузку специалистов и общие финансовые показатели.'
+                  : (lang === 'en'
+                    ? 'Monitor top-performing services, staff workloads, and turnover statistics by branch.'
+                    : 'Hansı xidmətlərin daha çox tələb olunduğunu, mütəxəssislərin yüklənməsini və filial üzrə dövriyyəni izləyin.')}
               </p>
             </div>
 
@@ -607,9 +671,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-6">
                 <Globe2 className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Bütün Cihazlara Uyğun</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Адаптивность для любых устройств' : (lang === 'en' ? 'Responsive on All Devices' : 'Bütün Cihazlara Uyğun')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Mobil telefon, planşet və noutbuklarda sürətli, həssas və qüsursuz işləyən korporativ interfeys.
+                {lang === 'ru'
+                  ? 'Молниеносный, удобный и интуитивный интерфейс на смартфонах, планшетах и компьютерах.'
+                  : (lang === 'en'
+                    ? 'Lightning-fast, sleek, and intuitive UI on mobile phones, tablets, and desktop workstations.'
+                    : 'Mobil telefon, planşet və noutbuklarda sürətli, həssas və qüsursuz işləyən korporativ interfeys.')}
               </p>
             </div>
 
@@ -623,13 +693,17 @@ export default function HomePage() {
           
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-              Sadə Proses
+              {lang === 'ru' ? 'Простой процесс' : (lang === 'en' ? 'Simple Process' : 'Sadə Proses')}
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mt-2">
-              3 Addımda Rezervasiya
+              {lang === 'ru' ? 'Бронирование в 3 шага' : (lang === 'en' ? 'Booking in 3 Steps' : '3 Addımda Rezervasiya')}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-              Müştəriləriniz növbəyə durmadan, cəmi 30 saniyə ərzində istədikləri xidməti qeydiyyatdan keçirə bilirlər.
+              {lang === 'ru'
+                ? 'Клиенты записываются без очередей и телефонных звонков всего за 30 секунд.'
+                : (lang === 'en'
+                  ? 'Your clients book their desired service in just 30 seconds without waiting in lines.'
+                  : 'Müştəriləriniz növbəyə durmadan, cəmi 30 saniyə ərzində istədikləri xidməti qeydiyyatdan keçirə bilirlər.')}
             </p>
           </div>
 
@@ -640,9 +714,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-indigo-600/30">
                 1
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Filial və Xidməti Seçin</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Выберите филиал и услугу' : (lang === 'en' ? 'Select Branch & Service' : 'Filial və Xidməti Seçin')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Tələb olunan xidmət kateqoriyasını və qiymət tarifini siyahıdan seçin.
+                {lang === 'ru'
+                  ? 'Выберите нужную процедуру и ознакомьтесь с актуальной стоимостью и длительностью.'
+                  : (lang === 'en'
+                    ? 'Select the service category and check transparent price rates.'
+                    : 'Tələb olunan xidmət kateqoriyasını və qiymət tarifini siyahıdan seçin.')}
               </p>
             </div>
 
@@ -651,9 +731,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-indigo-600/30">
                 2
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Mütəxəssis və Saat Təyin Edin</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Назначьте мастера и время' : (lang === 'en' ? 'Pick Specialist & Time' : 'Mütəxəssis və Saat Təyin Edin')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                İstədiyiniz mütəxəssisin həmin günə aid real-vaxtda boş olan saatını təyin edin.
+                {lang === 'ru'
+                  ? 'Определите удобный интервал времени в живом 24-часовом графике выбранного специалиста.'
+                  : (lang === 'en'
+                    ? 'Choose an available time slot in the specialist real-time 24-hour calendar.'
+                    : 'İstədiyiniz mütəxəssisin həmin günə aid real-vaxtda boş olan saatını təyin edin.')}
               </p>
             </div>
 
@@ -662,9 +748,15 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-indigo-600/30">
                 3
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Dərhal Təsdiq Alın</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {lang === 'ru' ? 'Получите мгновенное подтверждение' : (lang === 'en' ? 'Get Instant Confirmation' : 'Dərhal Təsdiq Alın')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Məlumatlar dərhal mərkəzin admin sisteminə ötürülür və rezervasiya təsdiqlənir.
+                {lang === 'ru'
+                  ? 'Запись мгновенно отправляется в систему филиала и генерирует электронный талон бронирования.'
+                  : (lang === 'en'
+                    ? 'Booking data is instantly submitted to the center admin dashboard with an e-ticket.'
+                    : 'Məlumatlar dərhal mərkəzin admin sisteminə ötürülür və rezervasiya təsdiqlənir.')}
               </p>
             </div>
 
@@ -679,13 +771,17 @@ export default function HomePage() {
 
           <div className="relative z-10 max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-300 bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-400/30">
-              Rəqəmsal Növbə İdarəetməsi
+              {lang === 'ru' ? 'Цифровое управление очередями' : (lang === 'en' ? 'Digital Queue Management' : 'Rəqəmsal Növbə İdarəetməsi')}
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold mt-4 mb-4">
-              Müəssisənizi RezervasiyaPro ilə İdarə Edin
+              {lang === 'ru' ? 'Управляйте предприятием с RezervasiyaPro' : (lang === 'en' ? 'Manage Your Business with RezervasiyaPro' : 'Müəssisənizi RezervasiyaPro ilə İdarə Edin')}
             </h2>
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8">
-              Bütün filiallarınızı, işçilərinizi, xidmətlərinizi və rezervasiyaları tək bir korporativ paneldən izləyin.
+              {lang === 'ru'
+                ? 'Отслеживайте все ваши филиалы, персонал, список услуг и бронирования из единой корпоративной панели.'
+                : (lang === 'en'
+                  ? 'Track all your branches, specialists, services, and live bookings from a single corporate console.'
+                  : 'Bütün filiallarınızı, işçilərinizi, xidmətlərinizi və rezervasiyaları tək bir korporativ paneldən izləyin.')}
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
@@ -694,13 +790,13 @@ export default function HomePage() {
                 className="px-8 py-3.5 rounded-xl bg-white text-indigo-950 font-bold text-sm shadow-xl hover:bg-slate-100 transition-all flex items-center gap-2"
               >
                 <Lock className="w-4 h-4 text-indigo-600" />
-                <span>Giriş</span>
+                <span>{t('login')}</span>
               </Link>
               <a
                 href="#filiallar"
                 className="px-8 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 transition-all"
               >
-                Filialları İncələ
+                {lang === 'ru' ? 'Смотреть филиалы' : (lang === 'en' ? 'Explore Branches' : 'Filialları İncələ')}
               </a>
             </div>
           </div>
@@ -717,19 +813,27 @@ export default function HomePage() {
             </div>
             <div>
               <span className="font-bold text-slate-900 dark:text-white">RezervasiyaPro</span>
-              <p className="text-[11px] text-slate-400">Universal Rezervasiya və İdarəetmə Sistemi</p>
+              <p className="text-[11px] text-slate-400">
+                {lang === 'ru' ? 'Универсальная система бронирования и управления' : (lang === 'en' ? 'Universal Booking & Management Platform' : 'Universal Rezervasiya və İdarəetmə Sistemi')}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-6 font-semibold">
-            <a href="#sektorlar" className="hover:text-indigo-600 dark:hover:text-indigo-400">Sektorlar</a>
-            <a href="#filiallar" className="hover:text-indigo-600 dark:hover:text-indigo-400">Filiallar</a>
-            <a href="#imkanlar" className="hover:text-indigo-600 dark:hover:text-indigo-400">İmkanlar</a>
-            <Link href="/login" className="hover:text-indigo-600 dark:hover:text-indigo-400">Giriş</Link>
+            <a href="#sektorlar" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+              {lang === 'ru' ? 'Секторы' : (lang === 'en' ? 'Sectors' : 'Sektorlar')}
+            </a>
+            <a href="#filiallar" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+              {lang === 'ru' ? 'Филиалы' : (lang === 'en' ? 'Branches' : 'Filiallar')}
+            </a>
+            <a href="#imkanlar" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+              {lang === 'ru' ? 'Возможности' : (lang === 'en' ? 'Features' : 'İmkanlar')}
+            </a>
+            <Link href="/login" className="hover:text-indigo-600 dark:hover:text-indigo-400">{t('login')}</Link>
           </div>
 
           <div>
-            © {new Date().getFullYear()} RezervasiyaPro. Bütün hüquqlar qorunur.
+            © {new Date().getFullYear()} RezervasiyaPro. {lang === 'ru' ? 'Все права защищены.' : (lang === 'en' ? 'All rights reserved.' : 'Bütün hüquqlar qorunur.')}
           </div>
 
         </div>

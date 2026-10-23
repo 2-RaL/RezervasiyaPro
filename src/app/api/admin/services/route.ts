@@ -46,12 +46,17 @@ export async function POST(request: Request) {
     const service = createService({
       tenantId,
       nameAz: body.nameAz,
+      nameRu: body.nameRu || '',
       nameEn: body.nameEn || body.nameAz,
       duration: Number(body.duration) || 30,
       price: Number(body.price) || 0,
       category: body.category || 'Ümumi',
+      categoryRu: body.categoryRu || '',
+      categoryEn: body.categoryEn || '',
       isActive: body.isActive !== undefined ? body.isActive : true,
-      description: body.description || ''
+      description: body.description || '',
+      descriptionRu: body.descriptionRu || '',
+      descriptionEn: body.descriptionEn || ''
     });
 
     return NextResponse.json({ success: true, service });

@@ -47,12 +47,17 @@ export interface Service {
   id: string;
   tenantId: string;
   nameAz: string;
+  nameRu?: string; // Rusca xidmət adı
   nameEn: string;
   duration: number; // in minutes
   price: number; // in AZN
   category: string;
+  categoryRu?: string;
+  categoryEn?: string;
   isActive?: boolean; // Xidmətin aktiv və ya bloklanmış olması
   description?: string;
+  descriptionRu?: string;
+  descriptionEn?: string;
 }
 
 export interface Staff {
