@@ -78,6 +78,11 @@ export interface Booking {
   date: string; // YYYY-MM-DD
   timeSlot: string; // HH:mm
   status: BookingStatus;
+  clientIp?: string;        // Rezervasiya edilən IP / qurğu
+  customerScore?: number;   // Müştəriyə verilən xal / bal (1 - 100)
+  adminNotes?: string;      // Müştəri/rezervasiya haqqında daxili qeyd
+  noShowCount?: number;     // Müştərinin gəlmədiyi rezervasiyaların sayı
+  isBlocked?: boolean;      // Bloklanmış olub-olmaması
   createdAt: string;
 }
 
@@ -86,10 +91,27 @@ export interface Patient {
   tenantId: string;
   fullName: string;
   fin: string;
+  phone?: string | null;
   birthDate?: string | null;
   bloodGroup?: string | null;
   allergies?: string | null;
+  notes?: string | null;
   encounters?: ClinicalEncounter[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BlockedCustomer {
+  id: string;
+  phone?: string;
+  fin?: string;
+  ip?: string;
+  customerName?: string;
+  reason: string;
+  noShowCount: number;
+  isManual?: boolean;
+  blockedAt: string;
+  blockedBy?: string;
 }
 
 export interface ClinicalEncounter {

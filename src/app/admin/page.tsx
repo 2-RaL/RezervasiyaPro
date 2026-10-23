@@ -37,7 +37,11 @@ import {
   Star,
   Lightbulb,
   Edit2,
-  Sparkles
+  Sparkles,
+  UserX,
+  ShieldAlert,
+  FileText,
+  HeartPulse
 } from 'lucide-react';
 import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -85,6 +89,61 @@ export default function AdminDashboardPage() {
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isEncounterModalOpen, setIsEncounterModalOpen] = useState(false);
   const [selectedPatientForEncounter, setSelectedPatientForEncounter] = useState<Patient | null>(null);
+
+  // Super Admin Tenant Edit Modal State
+  const [isEditTenantModalOpen, setIsEditTenantModalOpen] = useState(false);
+  const [editTenantData, setEditTenantData] = useState({
+    id: '',
+    name: '',
+    slug: '',
+    sector: 'Gözəllik & Kosmetologiya',
+    phone: '',
+    address: '',
+    medicalEnabled: false,
+    assignedAdminId: '',
+    coverImage: '',
+    logo: '',
+    whatsapp: '',
+    instagram: '',
+    facebook: '',
+    tiktok: '',
+    telegram: ''
+  });
+  const [editTenantImageError, setEditTenantImageError] = useState<{ cover?: string; logo?: string }>({});
+
+  // Patient Modals & Search State
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+  const [isEditPatientModalOpen, setIsEditPatientModalOpen] = useState(false);
+  const [patientSearch, setPatientSearch] = useState('');
+  const [newPatientData, setNewPatientData] = useState({
+    tenantId: '',
+    fullName: '',
+    fin: '',
+    phone: '+994 ',
+    birthDate: '',
+    bloodGroup: 'I (O) Rh+',
+    allergies: '',
+    notes: ''
+  });
+  const [editPatientData, setEditPatientData] = useState({
+    id: '',
+    tenantId: '',
+    fullName: '',
+    fin: '',
+    phone: '',
+    birthDate: '',
+    bloodGroup: '',
+    allergies: '',
+    notes: ''
+  });
+
+  // Customer Reputation & Notes Modal State
+  const [isReputationModalOpen, setIsReputationModalOpen] = useState(false);
+  const [selectedBookingForReputation, setSelectedBookingForReputation] = useState<Booking | null>(null);
+  const [reputationData, setReputationData] = useState({
+    customerScore: 100,
+    adminNotes: ''
+  });
 
   // Form states for modals
   const [newBookingData, setNewBookingData] = useState({
@@ -368,7 +427,13 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`Rezervasiya statusu yeniləndi: ${status}`);
+        const statusMap: Record<string, string> = {
+          'CONFIRMED': 'Təsdiqləndi',
+          'COMPLETED': 'Tamamlandı',
+          'CANCELLED': 'Ləğv edildi',
+          'NO_SHOW': 'Gəlmədi (Qeydə alındı)'
+        };
+        showToast(`Rezervasiya statusu yeniləndi: ${statusMap[status] || status}`);
         loadData();
       }
     } catch (err) {
@@ -388,6 +453,73 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       alert('Silinmədi');
+    }
+  };
+
+  // Open Customer Reputation & Notes Modal
+  const handleOpenReputation = (b: Booking) => {
+    setSelectedBookingForReputation(b);
+    setReputationData({
+      customerScore: b.customerScore !== undefined ? b.customerScore : 100,
+      adminNotes: b.adminNotes || ''
+    });
+    setIsReputationModalOpen(true);
+  };
+
+  // Save Customer Reputation & Notes
+  const handleSaveReputation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBookingForReputation) return;
+    try {
+      const res = await fetch('/api/admin/bookings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedBookingForReputation.id,
+          customerScore: reputationData.customerScore,
+          adminNotes: reputationData.adminNotes
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Müştəri xalı və daxili qeyd yadda saxlanıldı');
+        setIsReputationModalOpen(false);
+        loadData();
+      } else {
+        alert(data.error || 'Yadda saxlanmadı');
+      }
+    } catch {
+      alert('Xəta baş verdi');
+    }
+  };
+
+  // Manual Toggle Block / Unblock Customer
+  const handleToggleBlockCustomer = async (b: Booking, block: boolean) => {
+    const actionText = block ? 'bloklamaq' : 'blokdan çıxarmaq';
+    if (!confirm(`Müştərini (${b.customerName}, ${b.customerPhone}) ${actionText} istədiyinizdən əminsiniz?`)) return;
+    try {
+      const res = await fetch('/api/admin/bookings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggleBlock',
+          phone: b.customerPhone,
+          fin: b.customerFin,
+          ip: b.clientIp,
+          customerName: b.customerName,
+          blocked: block,
+          reason: block ? 'Admin tərəfindən bloklandı' : undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(block ? 'Müştəri bloklandı (Qurğu, Nömrə və FİN)' : 'Müştəri blokdan çıxarıldı');
+        loadData();
+      } else {
+        alert(data.error || 'Əməliyyat yerinə yetirilmədi');
+      }
+    } catch {
+      alert('Xəta baş verdi');
     }
   };
 
@@ -477,6 +609,53 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       alert('Silinmədi');
+    }
+  };
+
+  // Open Edit Tenant Modal (Super Admin)
+  const handleOpenEditTenant = (t: Tenant) => {
+    const assignedAdmin = (t as any).assignedAdmin;
+    setEditTenantData({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      sector: t.sector,
+      phone: t.phone || '',
+      address: t.address || '',
+      medicalEnabled: Boolean(t.medicalEnabled),
+      assignedAdminId: assignedAdmin?.id || '',
+      coverImage: t.coverImage || '',
+      logo: t.logo || '',
+      whatsapp: t.whatsapp || '',
+      instagram: t.instagram || '',
+      facebook: t.facebook || '',
+      tiktok: t.tiktok || '',
+      telegram: t.telegram || ''
+    });
+    setEditTenantImageError({});
+    setIsEditTenantModalOpen(true);
+  };
+
+  // Save Edit Tenant (Super Admin)
+  const handleSaveEditTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/tenants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editTenantData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Şirkət/filial məlumatları uğurla yeniləndi');
+        setIsEditTenantModalOpen(false);
+        loadData();
+        loadUsers();
+      } else {
+        alert(data.error || 'Xəta baş verdi');
+      }
+    } catch {
+      alert('Yenilənmədi');
     }
   };
 
@@ -735,6 +914,101 @@ export default function AdminDashboardPage() {
       }
     } catch {
       alert('Silinmədi');
+    }
+  };
+
+  // ── PATIENT CRUD HANDLERS ──────────────────────────────────────────
+  const handleCreatePatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const tenantToUse = currentUser?.role === 'SUPER_ADMIN' ? (newPatientData.tenantId || tenants[0]?.id) : currentUser?.tenantId;
+      if (!tenantToUse) {
+        alert('Zəhmət olmasa filialı seçin');
+        return;
+      }
+      const res = await fetch('/api/admin/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newPatientData, tenantId: tenantToUse })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Yeni pasiyent uğurla qeydiyyata alındı');
+        setIsPatientModalOpen(false);
+        setNewPatientData({
+          tenantId: '',
+          fullName: '',
+          fin: '',
+          phone: '+994 ',
+          birthDate: '',
+          bloodGroup: 'I (O) Rh+',
+          allergies: '',
+          notes: ''
+        });
+        loadData();
+      } else {
+        alert(data.error || 'Pasiyent əlavə olunmadı');
+      }
+    } catch {
+      alert('Pasiyent əlavə olunarkən xəta baş verdi');
+    }
+  };
+
+  const handleOpenEditPatient = (p: Patient) => {
+    setEditPatientData({
+      id: p.id,
+      tenantId: p.tenantId,
+      fullName: p.fullName,
+      fin: p.fin,
+      phone: p.phone || '',
+      birthDate: p.birthDate || '',
+      bloodGroup: p.bloodGroup || '',
+      allergies: p.allergies || '',
+      notes: p.notes || ''
+    });
+    setIsEditPatientModalOpen(true);
+  };
+
+  const handleUpdatePatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/patients', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editPatientData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Pasiyent məlumatları uğurla yeniləndi');
+        setIsEditPatientModalOpen(false);
+        if (selectedPatientForEncounter?.id === editPatientData.id) {
+          setSelectedPatientForEncounter(data.patient);
+        }
+        loadData();
+      } else {
+        alert(data.error || 'Pasiyent yenilənmədi');
+      }
+    } catch {
+      alert('Pasiyent yenilənərkən xəta baş verdi');
+    }
+  };
+
+  const handleDeletePatient = async (id: string, name: string) => {
+    if (!confirm(`Diqqət: "${name}" adlı pasiyenti və bütün tibbi baxış tarixçəsini silmək istədiyinizdən əminsiniz?`)) return;
+    try {
+      const res = await fetch(`/api/admin/patients?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Pasiyent uğurla silindi');
+        if (selectedPatientForEncounter?.id === id) {
+          setSelectedPatientForEncounter(null);
+        }
+        loadData();
+      } else {
+        alert(data.error || 'Silinmədi');
+      }
+    } catch {
+      alert('Silinərkən xəta baş verdi');
     }
   };
 
@@ -1344,8 +1618,18 @@ export default function AdminDashboardPage() {
                       {bookings.slice(0, 5).map(b => (
                         <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                           <td className="p-3.5 font-bold text-slate-900 dark:text-white">
-                            <div>{b.customerName}</div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>{b.customerName}</span>
+                              {b.customerScore !== undefined && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
+                                  ⭐ {b.customerScore}
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[11px] font-normal text-slate-500">{b.customerPhone}</div>
+                            {b.isBlocked && (
+                              <span className="text-[10px] font-bold text-rose-500 block">🚫 BLOKLANIB</span>
+                            )}
                           </td>
                           <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
                             {b.tenantName || 'Filial'}
@@ -1363,11 +1647,14 @@ export default function AdminDashboardPage() {
                                   ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                                   : b.status === 'COMPLETED'
                                   ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30'
-                                  : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                                  : b.status === 'NO_SHOW'
+                                  ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/10'
                               }`}
                             >
                               {b.status === 'CONFIRMED' && 'Təsdiqləndi'}
                               {b.status === 'COMPLETED' && 'Tamamlandı'}
+                              {b.status === 'NO_SHOW' && 'Gəlmədi'}
                               {b.status === 'CANCELLED' && 'Ləğv edildi'}
                             </span>
                           </td>
@@ -1380,6 +1667,15 @@ export default function AdminDashboardPage() {
                                   className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 dark:bg-emerald-500/10 dark:hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white transition-all"
                                 >
                                   <Check className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {b.status !== 'NO_SHOW' && (
+                                <button
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'NO_SHOW')}
+                                  title="Gəlmədi (No-Show)"
+                                  className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-600 dark:bg-orange-500/10 dark:hover:bg-orange-500 text-orange-700 dark:text-orange-300 hover:text-white transition-all"
+                                >
+                                  <UserX className="w-3.5 h-3.5" />
                                 </button>
                               )}
                               {b.status !== 'CANCELLED' && (
@@ -1443,6 +1739,7 @@ export default function AdminDashboardPage() {
                     <option value="all">Bütün Statuslar</option>
                     <option value="CONFIRMED">Təsdiqləndi</option>
                     <option value="COMPLETED">Tamamlandı</option>
+                    <option value="NO_SHOW">Gəlmədi (No-Show)</option>
                     <option value="CANCELLED">Ləğv edildi</option>
                   </select>
                 </div>
@@ -1459,7 +1756,7 @@ export default function AdminDashboardPage() {
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold">
                         <th className="p-3.5">ID</th>
-                        <th className="p-3.5">Müştəri Məlumatı</th>
+                        <th className="p-3.5">Müştəri & Reputasiya</th>
                         {isSuperAdmin && <th className="p-3.5">Filial</th>}
                         <th className="p-3.5">Xidmət & Qiymət</th>
                         <th className="p-3.5">Mütəxəssis</th>
@@ -1473,13 +1770,38 @@ export default function AdminDashboardPage() {
                         <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                           <td className="p-3.5 font-mono text-[11px] text-slate-400">{b.id}</td>
                           <td className="p-3.5 font-bold text-slate-900 dark:text-white">
-                            <div>{b.customerName}</div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>{b.customerName}</span>
+                              {b.customerScore !== undefined && (
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 flex items-center gap-0.5" title="Müştəri Xalı / Balı">
+                                  <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-500" />
+                                  <span>{b.customerScore} bal</span>
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[11px] font-normal text-slate-500">{b.customerPhone}</div>
                             {b.customerFin && (
                               <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
                                 FİN: {b.customerFin}
                               </div>
                             )}
+                            {b.adminNotes && (
+                              <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded border border-slate-200 dark:border-white/5 font-normal line-clamp-2" title={b.adminNotes}>
+                                📝 Qeyd: {b.adminNotes}
+                              </div>
+                            )}
+                            {/* No Show / Blocking Status Pill */}
+                            {b.isBlocked ? (
+                              <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-600 text-white animate-pulse">
+                                <ShieldAlert className="w-3 h-3" />
+                                <span>BLOKLANIB ({b.noShowCount || 3}x gəlməyib)</span>
+                              </div>
+                            ) : b.noShowCount && b.noShowCount > 0 ? (
+                              <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30">
+                                <AlertCircle className="w-2.5 h-2.5" />
+                                <span>{b.noShowCount} dəfə gəlməyib</span>
+                              </div>
+                            ) : null}
                           </td>
                           {isSuperAdmin && (
                             <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
@@ -1510,11 +1832,14 @@ export default function AdminDashboardPage() {
                                   ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                                   : b.status === 'COMPLETED'
                                   ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30'
-                                  : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                                  : b.status === 'NO_SHOW'
+                                  ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/10'
                               }`}
                             >
                               {b.status === 'CONFIRMED' && 'Təsdiqləndi'}
                               {b.status === 'COMPLETED' && 'Tamamlandı'}
+                              {b.status === 'NO_SHOW' && 'Gəlmədi (No-Show)'}
                               {b.status === 'CANCELLED' && 'Ləğv edildi'}
                             </span>
                           </td>
@@ -1529,6 +1854,15 @@ export default function AdminDashboardPage() {
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
                               )}
+                              {b.status !== 'NO_SHOW' && (
+                                <button
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'NO_SHOW')}
+                                  title="Müştəri gəlmədi qeyd et (3 dəfə olduqda bloklanacaq)"
+                                  className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-600 dark:bg-orange-500/10 dark:hover:bg-orange-500 text-orange-700 dark:text-orange-300 hover:text-white transition-all"
+                                >
+                                  <UserX className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               {b.status !== 'CANCELLED' && (
                                 <button
                                   onClick={() => handleUpdateBookingStatus(b.id, 'CANCELLED')}
@@ -1538,10 +1872,36 @@ export default function AdminDashboardPage() {
                                   <XCircle className="w-3.5 h-3.5" />
                                 </button>
                               )}
+                              {/* Xal və Daxili Qeyd Butonu */}
+                              <button
+                                onClick={() => handleOpenReputation(b)}
+                                title="Müştəriyə bal ver və daxili qeyd yaz"
+                                className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-600 dark:bg-indigo-500/10 dark:hover:bg-indigo-500 text-indigo-700 dark:text-indigo-300 hover:text-white transition-all"
+                              >
+                                <Star className="w-3.5 h-3.5" />
+                              </button>
+                              {/* Əl ilə Blok / Blokdan çıxar */}
+                              {b.isBlocked ? (
+                                <button
+                                  onClick={() => handleToggleBlockCustomer(b, false)}
+                                  title="Müştərini blokdan çıxar"
+                                  className="p-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-600 dark:bg-emerald-500/20 dark:hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white transition-all"
+                                >
+                                  <ShieldCheck className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleToggleBlockCustomer(b, true)}
+                                  title="Müştərini əl ilə blokla"
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-700 dark:text-rose-300 hover:text-white transition-all"
+                                >
+                                  <ShieldAlert className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDeleteBooking(b.id)}
                                 title="Sil"
-                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-700 dark:text-rose-300 hover:text-white transition-all"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-600 dark:bg-slate-800 dark:hover:bg-rose-500 text-slate-500 hover:text-white transition-all"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1704,12 +2064,24 @@ export default function AdminDashboardPage() {
                         <ExternalLink className="w-3.5 h-3.5" />
                       </Link>
 
-                      <button
-                        onClick={() => handleDeleteTenant(t.id, t.name)}
-                        className="text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-semibold p-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenEditTenant(t)}
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 text-xs font-semibold px-2.5 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-all flex items-center gap-1 border border-indigo-200 dark:border-indigo-500/30"
+                          title="Şirkət və filialı redaktə et"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Redaktə Et</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteTenant(t.id, t.name)}
+                          className="text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-semibold p-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                          title="Sil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1985,48 +2357,147 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Patient List */}
                 <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-3">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pasiyentlər</h4>
-                  <div className="space-y-2">
-                    {patients.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => setSelectedPatientForEncounter(p)}
-                        className={`w-full text-left p-3 rounded-xl border transition-all ${
-                          selectedPatientForEncounter?.id === p.id
-                            ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-500/40'
-                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-white/5 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="font-bold text-xs text-slate-900 dark:text-white">{p.fullName}</div>
-                        <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">FİN: {p.fin}</div>
-                        {p.bloodGroup && (
-                          <div className="text-[10px] text-slate-400">Qan qrupu: {p.bloodGroup}</div>
-                        )}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pasiyentlər</h4>
+                      <p className="text-[11px] text-slate-400">
+                        Cəmi: {patients.filter(p => {
+                          if (!patientSearch.trim()) return true;
+                          const t = patientSearch.toLowerCase().trim();
+                          return p.fullName.toLowerCase().includes(t) || p.fin.toLowerCase().includes(t) || (p.phone && p.phone.toLowerCase().includes(t));
+                        }).length}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setNewPatientData({
+                          tenantId: currentUser?.tenantId || tenants[0]?.id || '',
+                          fullName: '',
+                          fin: '',
+                          phone: '+994 ',
+                          birthDate: '',
+                          bloodGroup: 'I (O) Rh+',
+                          allergies: '',
+                          notes: ''
+                        });
+                        setIsPatientModalOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Yeni Pasiyent</span>
+                    </button>
+                  </div>
+
+                  {/* Search Pasiyent */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Ad, FİN və ya Tel ilə axtar..."
+                      value={patientSearch}
+                      onChange={(e) => setPatientSearch(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {patients
+                      .filter(p => {
+                        if (!patientSearch.trim()) return true;
+                        const t = patientSearch.toLowerCase().trim();
+                        return p.fullName.toLowerCase().includes(t) || p.fin.toLowerCase().includes(t) || (p.phone && p.phone.toLowerCase().includes(t));
+                      })
+                      .map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => setSelectedPatientForEncounter(p)}
+                          className={`w-full text-left p-3 rounded-xl border transition-all ${
+                            selectedPatientForEncounter?.id === p.id
+                              ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-500/40 shadow-sm'
+                              : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-white/5 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="font-bold text-xs text-slate-900 dark:text-white">{p.fullName}</div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">FİN: {p.fin}</span>
+                            {p.phone && <span className="text-[10px] text-slate-400 font-normal">{p.phone}</span>}
+                          </div>
+                          {p.bloodGroup && (
+                            <div className="text-[10px] text-rose-500 font-medium mt-0.5">Qan: {p.bloodGroup}</div>
+                          )}
+                        </button>
+                      ))}
+                    {patients.filter(p => {
+                      if (!patientSearch.trim()) return true;
+                      const t = patientSearch.toLowerCase().trim();
+                      return p.fullName.toLowerCase().includes(t) || p.fin.toLowerCase().includes(t) || (p.phone && p.phone.toLowerCase().includes(t));
+                    }).length === 0 && (
+                      <div className="text-center py-8 text-xs text-slate-400">
+                        {patientSearch ? 'Axtarışa uyğun pasiyent tapılmadı' : 'Hələ heç bir pasiyent əlavə edilməyib'}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Patient Medical History */}
+                {/* Patient Medical History & Actions */}
                 <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
                   {selectedPatientForEncounter ? (
                     <div>
-                      <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
                         <div>
-                          <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                            {selectedPatientForEncounter.fullName}
-                          </h4>
-                          <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
-                            FİN: {selectedPatientForEncounter.fin} • Qan Qrupu: {selectedPatientForEncounter.bloodGroup || 'Qeyd edilməyib'}
-                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                              {selectedPatientForEncounter.fullName}
+                            </h4>
+                            {selectedPatientForEncounter.bloodGroup && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30">
+                                {selectedPatientForEncounter.bloodGroup}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">FİN: {selectedPatientForEncounter.fin}</span>
+                            {selectedPatientForEncounter.phone && <span>• Tel: {selectedPatientForEncounter.phone}</span>}
+                            {selectedPatientForEncounter.birthDate && <span>• Doğum: {selectedPatientForEncounter.birthDate}</span>}
+                          </div>
+                          {selectedPatientForEncounter.allergies && (
+                            <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-1">
+                              ⚠️ Allergiya: {selectedPatientForEncounter.allergies}
+                            </div>
+                          )}
+                          {selectedPatientForEncounter.notes && (
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 italic mt-1 bg-slate-50 dark:bg-white/5 p-1.5 rounded-lg border border-slate-100 dark:border-white/5">
+                              Qeyd: {selectedPatientForEncounter.notes}
+                            </div>
+                          )}
                         </div>
-                        <button
-                          onClick={() => setIsEncounterModalOpen(true)}
-                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Diaqnoz və Baxış Əlavə Et</span>
-                        </button>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => handleOpenEditPatient(selectedPatientForEncounter)}
+                            className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-semibold text-xs flex items-center gap-1.5 border border-slate-200 dark:border-white/10 transition-all"
+                            title="Pasiyent məlumatlarını redaktə et"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Redaktə</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeletePatient(selectedPatientForEncounter.id, selectedPatientForEncounter.fullName)}
+                            className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white font-semibold text-xs flex items-center gap-1.5 transition-all"
+                            title="Pasiyent kartını sil"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Sil</span>
+                          </button>
+                          <button
+                            onClick={() => setIsEncounterModalOpen(true)}
+                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Diaqnoz və Baxış</span>
+                          </button>
+                        </div>
                       </div>
 
                       <div className="space-y-3">
@@ -2961,6 +3432,257 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* ═══════════ MODAL: EDIT TENANT / COMPANY (SUPER ADMIN) ═══════════ */}
+      {isEditTenantModalOpen && isSuperAdmin && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Şirkət / Filialı Redaktə Et</h3>
+                <p className="text-xs text-slate-500">Super Admin hüququ ilə şirkət məlumatlarının tam yenilənməsi</p>
+              </div>
+              <button onClick={() => setIsEditTenantModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditTenant} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Müəssisə / Şirkət Adı</label>
+                <input
+                  type="text"
+                  required
+                  value={editTenantData.name}
+                  onChange={(e) => setEditTenantData({ ...editTenantData, name: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">URL Keçid (Slug)</label>
+                <div className="flex items-center bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs">
+                  <span className="text-slate-500 font-mono">/</span>
+                  <input
+                    type="text"
+                    required
+                    value={editTenantData.slug}
+                    onChange={(e) => setEditTenantData({ ...editTenantData, slug: e.target.value.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-') })}
+                    className="w-full bg-transparent text-indigo-600 dark:text-indigo-400 font-mono focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Assigned Admin user */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Cavabdeh Şirkət Admini Təyin Et / Dəyişdir
+                </label>
+                <select
+                  value={editTenantData.assignedAdminId}
+                  onChange={(e) => setEditTenantData({ ...editTenantData, assignedAdminId: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                >
+                  <option value="">-- Təyin edilməsin --</option>
+                  {usersList.filter(u => u.role === 'ADMIN').map(adminUser => (
+                    <option key={adminUser.id} value={adminUser.id}>
+                      {adminUser.fullName} (@{adminUser.username}) {adminUser.tenantId === editTenantData.id ? '✓ [Hazırkı Admin]' : adminUser.tenantName ? `[${adminUser.tenantName}]` : '[Təyin edilməyib]'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Sektor / Kateqoriya</label>
+                <select
+                  value={editTenantData.sector}
+                  onChange={(e) => setEditTenantData({ ...editTenantData, sector: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                >
+                  <option value="Gözəllik & Kosmetologiya">Gözəllik & Kosmetologiya</option>
+                  <option value="Səhiyyə & Diaqnostika">Səhiyyə & Diaqnostika</option>
+                  <option value="Bərbərxana & Stil">Bərbərxana & Stil</option>
+                  <option value="Avtomobil & Detailing">Avtomobil & Detailing</option>
+                  <option value="İdman & Fitnes">İdman & Fitnes</option>
+                  <option value="Təhsil & Fərdi Dərslər">Təhsil & Fərdi Dərslər</option>
+                  <option value="Reabilitasiya & Osteopatiya">Reabilitasiya & Osteopatiya</option>
+                  <option value="Digər Xidmətlər">Digər Xidmətlər</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Əlaqə Telefonu</label>
+                  <input
+                    type="tel"
+                    value={editTenantData.phone}
+                    onChange={(e) => setEditTenantData({ ...editTenantData, phone: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ünvan</label>
+                  <input
+                    type="text"
+                    value={editTenantData.address}
+                    onChange={(e) => setEditTenantData({ ...editTenantData, address: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="editMedEnabled"
+                  checked={editTenantData.medicalEnabled}
+                  onChange={(e) => setEditTenantData({ ...editTenantData, medicalEnabled: e.target.checked })}
+                  className="rounded border-slate-300 dark:border-white/10 text-indigo-600 focus:ring-0"
+                />
+                <label htmlFor="editMedEnabled" className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold cursor-pointer">
+                  Tibbi Modul Aktiv Olsun (FİN ilə pasiyent bazası)
+                </label>
+              </div>
+
+              {/* ─── SOSİAL MEDİA VƏ ƏLAQƏ LOGOLARI ─── */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 space-y-2.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-emerald-500" />
+                  <span>Sosial Media & Əlaqə Linkləri</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">WhatsApp Nömrəsi</label>
+                    <input
+                      type="text"
+                      placeholder="məs. +994 50 700 80 90"
+                      value={editTenantData.whatsapp}
+                      onChange={(e) => setEditTenantData({ ...editTenantData, whatsapp: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">Instagram (@istifadəçi)</label>
+                    <input
+                      type="text"
+                      placeholder="məs. @clinic_baku"
+                      value={editTenantData.instagram}
+                      onChange={(e) => setEditTenantData({ ...editTenantData, instagram: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">Facebook Səhifəsi</label>
+                    <input
+                      type="text"
+                      placeholder="məs. clinicbaku"
+                      value={editTenantData.facebook}
+                      onChange={(e) => setEditTenantData({ ...editTenantData, facebook: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">TikTok Profili</label>
+                    <input
+                      type="text"
+                      placeholder="məs. @clinicbaku"
+                      value={editTenantData.tiktok}
+                      onChange={(e) => setEditTenantData({ ...editTenantData, tiktok: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── ŞƏKİL VƏ LOQO YÜKLƏNMƏSİ ─── */}
+              <div className="p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-500/20 space-y-3">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-indigo-500" />
+                  <span>Şirkət Şəkilləri (Maks 800KB Örtük, 400KB Loqo)</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">Örtük Banner Şəkli</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleValidateAndUploadImage(
+                            file,
+                            'cover',
+                            (url) => {
+                              setEditTenantData(prev => ({ ...prev, coverImage: url }));
+                              setEditTenantImageError(prev => ({ ...prev, cover: undefined }));
+                            },
+                            (err) => setEditTenantImageError(prev => ({ ...prev, cover: err }))
+                          );
+                        }
+                      }}
+                      className="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"
+                    />
+                    {editTenantImageError.cover && (
+                      <p className="text-[10px] text-rose-500 mt-1">{editTenantImageError.cover}</p>
+                    )}
+                    {editTenantData.coverImage && (
+                      <div className="mt-2 h-16 w-full rounded-lg overflow-hidden border">
+                        <img src={editTenantData.coverImage} alt="Cover preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">Loqo Şəkli</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleValidateAndUploadImage(
+                            file,
+                            'logo',
+                            (url) => {
+                              setEditTenantData(prev => ({ ...prev, logo: url }));
+                              setEditTenantImageError(prev => ({ ...prev, logo: undefined }));
+                            },
+                            (err) => setEditTenantImageError(prev => ({ ...prev, logo: err }))
+                          );
+                        }
+                      }}
+                      className="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"
+                    />
+                    {editTenantImageError.logo && (
+                      <p className="text-[10px] text-rose-500 mt-1">{editTenantImageError.logo}</p>
+                    )}
+                    {editTenantData.logo && (
+                      <div className="mt-2 h-16 w-16 rounded-lg overflow-hidden border">
+                        <img src={editTenantData.logo} alt="Logo preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditTenantModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İmtina
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
+                >
+                  Dəyişiklikləri Yadda Saxla
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ═══════════ MODAL 3: NEW USER (SUPER ADMIN ONLY) ═══════════ */}
       {isUserModalOpen && isSuperAdmin && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3456,6 +4178,386 @@ export default function AdminDashboardPage() {
                   className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-md shadow-emerald-600/30"
                 >
                   Diaqnozu Qeyd Et
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════ MODAL: NEW PATIENT (MEDICAL MODULE) ═══════════ */}
+      {isPatientModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Yeni Pasiyent Qeydiyyatı</span>
+                </h3>
+                <p className="text-xs text-slate-500">Həkim modulu üçün yeni xəstə kartı və tibbi profil</p>
+              </div>
+              <button onClick={() => setIsPatientModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePatient} className="space-y-3">
+              {isSuperAdmin && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial / Klinika</label>
+                  <select
+                    value={newPatientData.tenantId}
+                    onChange={(e) => setNewPatientData({ ...newPatientData, tenantId: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  >
+                    {tenants.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Pasiyentin Adı və Soyadı *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="məs. Əli Məmmədov"
+                  value={newPatientData.fullName}
+                  onChange={(e) => setNewPatientData({ ...newPatientData, fullName: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ş/V FİN Kodu * (7 simvol)</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={7}
+                    placeholder="məs. 7ABC123"
+                    value={newPatientData.fin}
+                    onChange={(e) => setNewPatientData({ ...newPatientData, fin: e.target.value.toUpperCase() })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Əlaqə Nömrəsi</label>
+                  <input
+                    type="tel"
+                    placeholder="+994 50 123 45 67"
+                    value={newPatientData.phone}
+                    onChange={(e) => setNewPatientData({ ...newPatientData, phone: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Doğum Tarixi</label>
+                  <input
+                    type="date"
+                    value={newPatientData.birthDate}
+                    onChange={(e) => setNewPatientData({ ...newPatientData, birthDate: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Qan Qrupu</label>
+                  <select
+                    value={newPatientData.bloodGroup}
+                    onChange={(e) => setNewPatientData({ ...newPatientData, bloodGroup: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  >
+                    <option value="I (O) Rh+">I (O) Rh+</option>
+                    <option value="I (O) Rh-">I (O) Rh-</option>
+                    <option value="II (A) Rh+">II (A) Rh+</option>
+                    <option value="II (A) Rh-">II (A) Rh-</option>
+                    <option value="III (B) Rh+">III (B) Rh+</option>
+                    <option value="III (B) Rh-">III (B) Rh-</option>
+                    <option value="IV (AB) Rh+">IV (AB) Rh+</option>
+                    <option value="IV (AB) Rh-">IV (AB) Rh-</option>
+                    <option value="Naməlum">Naməlum</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Allergiya və Xroniki Xəstəliklər</label>
+                <input
+                  type="text"
+                  placeholder="məs. Penisillin allergiyası, Astma"
+                  value={newPatientData.allergies}
+                  onChange={(e) => setNewPatientData({ ...newPatientData, allergies: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Həkim / Daxili Qeydlər</label>
+                <textarea
+                  rows={2}
+                  placeholder="Pasiyent haqqında xüsusi göstərişlər və ya ilkin şikayətlər..."
+                  value={newPatientData.notes}
+                  onChange={(e) => setNewPatientData({ ...newPatientData, notes: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPatientModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İmtina
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
+                >
+                  Pasiyenti Qeydiyyata Al
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════ MODAL: EDIT PATIENT (MEDICAL MODULE) ═══════════ */}
+      {isEditPatientModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Edit2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Pasiyent Kartını Redaktə Et</span>
+                </h3>
+                <p className="text-xs text-slate-500">Pasiyentin fərdi və tibbi məlumatlarının yenilənməsi</p>
+              </div>
+              <button onClick={() => setIsEditPatientModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePatient} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Pasiyentin Adı və Soyadı *</label>
+                <input
+                  type="text"
+                  required
+                  value={editPatientData.fullName}
+                  onChange={(e) => setEditPatientData({ ...editPatientData, fullName: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ş/V FİN Kodu * (7 simvol)</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={7}
+                    value={editPatientData.fin}
+                    onChange={(e) => setEditPatientData({ ...editPatientData, fin: e.target.value.toUpperCase() })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Əlaqə Nömrəsi</label>
+                  <input
+                    type="tel"
+                    value={editPatientData.phone}
+                    onChange={(e) => setEditPatientData({ ...editPatientData, phone: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Doğum Tarixi</label>
+                  <input
+                    type="date"
+                    value={editPatientData.birthDate}
+                    onChange={(e) => setEditPatientData({ ...editPatientData, birthDate: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Qan Qrupu</label>
+                  <select
+                    value={editPatientData.bloodGroup}
+                    onChange={(e) => setEditPatientData({ ...editPatientData, bloodGroup: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                  >
+                    <option value="">Seçin</option>
+                    <option value="I (O) Rh+">I (O) Rh+</option>
+                    <option value="I (O) Rh-">I (O) Rh-</option>
+                    <option value="II (A) Rh+">II (A) Rh+</option>
+                    <option value="II (A) Rh-">II (A) Rh-</option>
+                    <option value="III (B) Rh+">III (B) Rh+</option>
+                    <option value="III (B) Rh-">III (B) Rh-</option>
+                    <option value="IV (AB) Rh+">IV (AB) Rh+</option>
+                    <option value="IV (AB) Rh-">IV (AB) Rh-</option>
+                    <option value="Naməlum">Naməlum</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Allergiya və Xroniki Xəstəliklər</label>
+                <input
+                  type="text"
+                  placeholder="məs. Penisillin allergiyası, Astma"
+                  value={editPatientData.allergies}
+                  onChange={(e) => setEditPatientData({ ...editPatientData, allergies: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Həkim / Daxili Qeydlər</label>
+                <textarea
+                  rows={2}
+                  value={editPatientData.notes}
+                  onChange={(e) => setEditPatientData({ ...editPatientData, notes: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditPatientModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İmtina
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
+                >
+                  Məlumatları Yenilə
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════ MODAL: CUSTOMER REPUTATION SCORE & STAFF NOTES ═══════════ */}
+      {isReputationModalOpen && selectedBookingForReputation && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <span>Müştəri Xalı və Qeyd</span>
+                </h3>
+                <p className="text-xs text-slate-500">Müştəri reputasiyası və daxili inzibati qeydlər</p>
+              </div>
+              <button onClick={() => setIsReputationModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Customer Info Card */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 text-xs space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white text-sm">
+                {selectedBookingForReputation.customerName}
+              </div>
+              <div className="text-slate-500 flex items-center gap-2">
+                <span>Tel: <b>{selectedBookingForReputation.customerPhone}</b></span>
+                {selectedBookingForReputation.customerFin && (
+                  <span>• FİN: <b>{selectedBookingForReputation.customerFin}</b></span>
+                )}
+              </div>
+              <div className="text-indigo-600 dark:text-indigo-400 font-medium">
+                Xidmət: {selectedBookingForReputation.serviceName} ({selectedBookingForReputation.date} {selectedBookingForReputation.timeSlot})
+              </div>
+
+              {/* No show & Blocking alert in modal */}
+              {selectedBookingForReputation.isBlocked ? (
+                <div className="mt-2 p-2 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 text-[11px] font-bold flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>Bu müştəri sistemdə bloklanıb ({selectedBookingForReputation.noShowCount || 3} dəfə rezervasiyaya gəlməyib).</span>
+                </div>
+              ) : selectedBookingForReputation.noShowCount && selectedBookingForReputation.noShowCount > 0 ? (
+                <div className="mt-2 p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 text-[11px] font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                  <span>Xəbərdarlıq: Müştəri daha əvvəl {selectedBookingForReputation.noShowCount} dəfə rezervasiyaya gəlməyib.</span>
+                </div>
+              ) : null}
+            </div>
+
+            <form onSubmit={handleSaveReputation} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Müştəriyə Verilən Bal / Xal (0 - 100)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    required
+                    value={reputationData.customerScore}
+                    onChange={(e) => setReputationData({ ...reputationData, customerScore: Number(e.target.value) })}
+                    className="w-28 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-base font-bold text-amber-600 dark:text-amber-400 focus:outline-none focus:border-amber-500"
+                  />
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {[100, 80, 50, 20].map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setReputationData({ ...reputationData, customerScore: val })}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                          reputationData.customerScore === val
+                            ? 'bg-amber-500 text-white border-amber-500'
+                            : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5 hover:bg-slate-200'
+                        }`}
+                      >
+                        {val} {val === 100 ? 'Əla' : val === 80 ? 'Yaxşı' : val === 50 ? 'Orta' : 'Zəif'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  İnzibati / Daxili Qeydlər
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Müştəri haqqında daxili qeyd (məs. dəqiqdir, xüsusi diqqət lazımdır, gecikir və s.)..."
+                  value={reputationData.adminNotes}
+                  onChange={(e) => setReputationData({ ...reputationData, adminNotes: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Bu qeyd yalnız admin və filial işçiləri üçün görünür.</p>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsReputationModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İmtina
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
+                >
+                  Yadda Saxla
                 </button>
               </div>
             </form>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getBookings, createBooking, updateBookingStatus, deleteBooking } from '../../../../lib/dataStore';
+import { getBookings, createBooking, updateBooking, deleteBooking, toggleCustomerBlock } from '../../../../lib/dataStore';
 import { getSessionUser } from '../../../../lib/auth';
 import { BookingStatus } from '../../../../lib/types';
 
@@ -75,12 +75,33 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, status } = body;
-    if (!id || !status) {
-      return NextResponse.json({ success: false, error: 'ID və status tələb olunur' }, { status: 400 });
+
+    // Toggle customer block directly
+    if (body.action === 'toggleBlock') {
+      const { phone, fin, ip, customerName, blocked, reason } = body;
+      toggleCustomerBlock({
+        phone,
+        fin,
+        ip,
+        customerName,
+        blocked: Boolean(blocked),
+        reason: reason || (blocked ? 'Admin tərəfindən əl ilə bloklandı' : undefined),
+        adminName: currentUser.fullName
+      });
+      return NextResponse.json({ success: true, message: blocked ? 'Müştəri bloklandı' : 'Müştəri blokdan çıxarıldı' });
     }
 
-    const updated = updateBookingStatus(id, status as BookingStatus);
+    const { id, status, customerScore, adminNotes } = body;
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
+    }
+
+    const updated = updateBooking(id, {
+      ...(status ? { status: status as BookingStatus } : {}),
+      ...(customerScore !== undefined ? { customerScore: Number(customerScore) } : {}),
+      ...(adminNotes !== undefined ? { adminNotes: String(adminNotes) } : {})
+    });
+
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Rezervasiya tapılmadı' }, { status: 404 });
     }

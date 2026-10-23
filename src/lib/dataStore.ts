@@ -11,7 +11,8 @@ import {
   User, 
   UserRole,
   CustomerReview,
-  FeedbackSuggestion
+  FeedbackSuggestion,
+  BlockedCustomer
 } from './types';
 
 interface DatabaseSchema {
@@ -24,6 +25,7 @@ interface DatabaseSchema {
   encounters: ClinicalEncounter[];
   reviews: CustomerReview[];
   feedbacks: FeedbackSuggestion[];
+  blockedCustomers?: BlockedCustomer[];
 }
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -467,7 +469,8 @@ const defaultData: DatabaseSchema = {
       createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
       updatedAt: new Date(Date.now() - 86400000 * 2).toISOString()
     }
-  ]
+  ],
+  blockedCustomers: []
 };
 
 function readDb(): DatabaseSchema {
@@ -491,6 +494,7 @@ function readDb(): DatabaseSchema {
       encounters: parsed.encounters || defaultData.encounters,
       reviews: parsed.reviews || defaultData.reviews,
       feedbacks: parsed.feedbacks || defaultData.feedbacks,
+      blockedCustomers: parsed.blockedCustomers || defaultData.blockedCustomers || [],
     };
   } catch (err) {
     console.error('DataStore read error, using fallback in-memory:', err);
@@ -651,6 +655,153 @@ export function deleteStaff(id: string): boolean {
   return db.staff.length < len;
 }
 
+// ── BOOKING REPUTATION & MULTI-LAYER BLOCKING HELPERS ──────────────────
+export function normalizePhone(phone?: string | null): string {
+  if (!phone) return '';
+  return phone.replace(/\D/g, '');
+}
+
+export function normalizeFin(fin?: string | null): string {
+  if (!fin) return '';
+  return fin.trim().toUpperCase();
+}
+
+export function getCustomerNoShowCount(params: { phone?: string; fin?: string; ip?: string }): {
+  count: number;
+  matchingBookings: Booking[];
+} {
+  const db = readDb();
+  const cleanPhone = normalizePhone(params.phone);
+  const cleanFin = normalizeFin(params.fin);
+  const ip = params.ip ? params.ip.trim() : '';
+
+  const matched = db.bookings.filter(b => {
+    const bPhone = normalizePhone(b.customerPhone);
+    const bFin = normalizeFin(b.customerFin);
+    const bIp = b.clientIp ? b.clientIp.trim() : '';
+
+    const phoneMatch = Boolean(cleanPhone && bPhone && (cleanPhone.endsWith(bPhone) || bPhone.endsWith(cleanPhone) || cleanPhone === bPhone));
+    const finMatch = Boolean(cleanFin && bFin && cleanFin === bFin);
+    const ipMatch = Boolean(ip && bIp && ip === bIp && ip !== '127.0.0.1' && ip !== '::1' && ip !== 'localhost');
+
+    return phoneMatch || finMatch || ipMatch;
+  });
+
+  const noShowBookings = matched.filter(b => b.status === 'NO_SHOW');
+  return {
+    count: noShowBookings.length,
+    matchingBookings: matched
+  };
+}
+
+export function isCustomerBlocked(params: { phone?: string; fin?: string; ip?: string }): {
+  isBlocked: boolean;
+  reason?: string;
+  noShowCount: number;
+} {
+  const db = readDb();
+  const cleanPhone = normalizePhone(params.phone);
+  const cleanFin = normalizeFin(params.fin);
+  const ip = params.ip ? params.ip.trim() : '';
+
+  // 1. Check explicit blockedCustomers list
+  const blockedList = db.blockedCustomers || [];
+  const manualBlock = blockedList.find(item => {
+    const bPhone = normalizePhone(item.phone);
+    const bFin = normalizeFin(item.fin);
+    const bIp = item.ip ? item.ip.trim() : '';
+
+    const phoneMatch = Boolean(cleanPhone && bPhone && (cleanPhone.endsWith(bPhone) || bPhone.endsWith(cleanPhone)));
+    const finMatch = Boolean(cleanFin && bFin && cleanFin === bFin);
+    const ipMatch = Boolean(ip && bIp && ip === bIp && ip !== '127.0.0.1' && ip !== '::1');
+
+    return phoneMatch || finMatch || ipMatch;
+  });
+
+  if (manualBlock) {
+    return {
+      isBlocked: true,
+      reason: manualBlock.reason || 'Daha əvvəl 3 dəfə rezervasiyaya gəlinmədiyi üçün onlayn qeydiyyat bloklanıb.',
+      noShowCount: manualBlock.noShowCount || 3
+    };
+  }
+
+  // 2. Count NO_SHOW in bookings
+  const { count } = getCustomerNoShowCount(params);
+  if (count >= 3) {
+    return {
+      isBlocked: true,
+      reason: `Daha əvvəl ${count} dəfə rezervasiyaya gəlinmədiyi üçün sistem bu nömrəni, FİN-i və qurğunu bloklayıb.`,
+      noShowCount: count
+    };
+  }
+
+  return {
+    isBlocked: false,
+    noShowCount: count
+  };
+}
+
+export function toggleCustomerBlock(params: {
+  phone?: string;
+  fin?: string;
+  ip?: string;
+  customerName?: string;
+  blocked: boolean;
+  reason?: string;
+  adminName?: string;
+}): boolean {
+  const db = readDb();
+  if (!db.blockedCustomers) db.blockedCustomers = [];
+  const cleanPhone = normalizePhone(params.phone);
+  const cleanFin = normalizeFin(params.fin);
+  const ip = params.ip ? params.ip.trim() : '';
+
+  if (params.blocked) {
+    const existingIndex = db.blockedCustomers.findIndex(b => 
+      (cleanPhone && normalizePhone(b.phone) === cleanPhone) ||
+      (cleanFin && normalizeFin(b.fin) === cleanFin) ||
+      (ip && b.ip === ip && ip !== '127.0.0.1')
+    );
+    const item: BlockedCustomer = {
+      id: 'blk-' + Date.now(),
+      phone: params.phone,
+      fin: params.fin,
+      ip: params.ip,
+      customerName: params.customerName,
+      reason: params.reason || 'Admin tərəfindən bloklandı',
+      noShowCount: 3,
+      isManual: true,
+      blockedAt: new Date().toISOString(),
+      blockedBy: params.adminName || 'Admin'
+    };
+    if (existingIndex >= 0) {
+      db.blockedCustomers[existingIndex] = item;
+    } else {
+      db.blockedCustomers.push(item);
+    }
+  } else {
+    db.blockedCustomers = db.blockedCustomers.filter(b => {
+      const matchPhone = cleanPhone && normalizePhone(b.phone) === cleanPhone;
+      const matchFin = cleanFin && normalizeFin(b.fin) === cleanFin;
+      const matchIp = ip && b.ip === ip;
+      return !(matchPhone || matchFin || matchIp);
+    });
+    // If they had NO_SHOW status bookings, reset them to CANCELLED so they don't immediately auto-block again
+    db.bookings.forEach(b => {
+      const bPhone = normalizePhone(b.customerPhone);
+      const bFin = normalizeFin(b.customerFin);
+      const bIp = b.clientIp ? b.clientIp.trim() : '';
+      const match = Boolean((cleanPhone && bPhone === cleanPhone) || (cleanFin && bFin === cleanFin) || (ip && bIp === ip));
+      if (match && b.status === 'NO_SHOW') {
+        b.status = 'CANCELLED';
+      }
+    });
+  }
+  writeDb(db);
+  return true;
+}
+
 // ── BOOKINGS API ───────────────────────────────────────────────────────
 export function getBookings(filters?: {
   tenantId?: string;
@@ -663,12 +814,15 @@ export function getBookings(filters?: {
     const tenant = db.tenants.find(t => t.id === b.tenantId);
     const service = db.services.find(s => s.id === b.serviceId);
     const staffMember = db.staff.find(st => st.id === b.staffId);
+    const blockInfo = isCustomerBlocked({ phone: b.customerPhone, fin: b.customerFin, ip: b.clientIp });
     return {
       ...b,
       tenantName: tenant ? tenant.name : 'Naməlum Filial',
       serviceName: service ? service.nameAz : 'Xidmət',
       servicePrice: service ? service.price : 0,
-      staffName: staffMember ? staffMember.name : 'Təyin edilməyib'
+      staffName: staffMember ? staffMember.name : 'Təyin edilməyib',
+      noShowCount: blockInfo.noShowCount,
+      isBlocked: blockInfo.isBlocked
     };
   });
 
@@ -700,6 +854,9 @@ export function createBooking(data: Omit<Booking, 'id' | 'createdAt'>): Booking 
     ...data,
     id: 'bkg-' + Math.floor(1000 + Math.random() * 9000),
     status: data.status || 'CONFIRMED',
+    customerScore: data.customerScore !== undefined ? Number(data.customerScore) : undefined,
+    adminNotes: data.adminNotes || undefined,
+    clientIp: data.clientIp || undefined,
     createdAt: new Date().toISOString()
   };
   db.bookings.push(newBooking);
@@ -707,13 +864,45 @@ export function createBooking(data: Omit<Booking, 'id' | 'createdAt'>): Booking 
   return newBooking;
 }
 
-export function updateBookingStatus(id: string, status: BookingStatus): Booking | null {
+export function updateBooking(id: string, updates: {
+  status?: BookingStatus;
+  customerScore?: number;
+  adminNotes?: string;
+}): Booking | null {
   const db = readDb();
   const index = db.bookings.findIndex(b => b.id === id);
   if (index === -1) return null;
-  db.bookings[index].status = status;
+  
+  if (updates.status !== undefined) {
+    db.bookings[index].status = updates.status;
+    if (updates.status === 'NO_SHOW') {
+      const b = db.bookings[index];
+      const countInfo = getCustomerNoShowCount({ phone: b.customerPhone, fin: b.customerFin, ip: b.clientIp });
+      if (countInfo.count >= 3) {
+        toggleCustomerBlock({
+          phone: b.customerPhone,
+          fin: b.customerFin,
+          ip: b.clientIp,
+          customerName: b.customerName,
+          blocked: true,
+          reason: '3 dəfə rezervasiyaya gəlinmədiyi üçün avtomatik bloklandı'
+        });
+      }
+    }
+  }
+  if (updates.customerScore !== undefined) {
+    db.bookings[index].customerScore = Number(updates.customerScore);
+  }
+  if (updates.adminNotes !== undefined) {
+    db.bookings[index].adminNotes = updates.adminNotes;
+  }
+  
   writeDb(db);
   return db.bookings[index];
+}
+
+export function updateBookingStatus(id: string, status: BookingStatus): Booking | null {
+  return updateBooking(id, { status });
 }
 
 export function deleteBooking(id: string): boolean {
@@ -739,12 +928,43 @@ export function createPatient(data: Omit<Patient, 'id' | 'encounters'>): Patient
   const db = readDb();
   const newPatient: Patient = {
     ...data,
+    fin: data.fin.trim().toUpperCase(),
+    phone: data.phone || null,
+    notes: data.notes || null,
     id: 'pat-' + Date.now(),
-    encounters: []
+    encounters: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
   db.patients.push(newPatient);
   writeDb(db);
   return newPatient;
+}
+
+export function updatePatient(id: string, data: Partial<Patient>): Patient | null {
+  const db = readDb();
+  const index = db.patients.findIndex(p => p.id === id);
+  if (index === -1) return null;
+  db.patients[index] = {
+    ...db.patients[index],
+    ...data,
+    ...(data.fin ? { fin: data.fin.trim().toUpperCase() } : {}),
+    updatedAt: new Date().toISOString()
+  };
+  writeDb(db);
+  return {
+    ...db.patients[index],
+    encounters: db.encounters.filter(e => e.patientId === id)
+  };
+}
+
+export function deletePatient(id: string): boolean {
+  const db = readDb();
+  const initialLen = db.patients.length;
+  db.patients = db.patients.filter(p => p.id !== id);
+  db.encounters = db.encounters.filter(e => e.patientId !== id);
+  writeDb(db);
+  return db.patients.length < initialLen;
 }
 
 export function addClinicalEncounter(patientId: string, data: Omit<ClinicalEncounter, 'id' | 'patientId' | 'encounterDate'>): ClinicalEncounter {

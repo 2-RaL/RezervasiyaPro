@@ -44,6 +44,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
   const [submitting, setSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
+  const [bookingError, setBookingError] = useState<{ message: string; isBlocked?: boolean } | null>(null);
 
   // Booked slots tracking
   const [bookedSlots, setBookedSlots] = useState<{ date: string; timeSlot: string; staffId: string }[]>([]);
@@ -342,10 +343,21 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
       const data = await res.json();
       if (data.success && data.booking) {
         setConfirmedBooking(data.booking);
+        setBookingError(null);
       } else {
-        alert(data.error || 'Rezervasiya qeydə alınmadı');
+        const isBlocked = Boolean(data.blocked || res.status === 403);
+        setBookingError({
+          message: data.error || 'Rezervasiya qeydə alınmadı',
+          isBlocked
+        });
+        if (isBlocked) {
+          alert('🚫 DİQQƏT: ' + (data.error || 'Bu nömrə, FİN və ya qurğudan rezervasiya etmək bloklanıb.'));
+        } else {
+          alert(data.error || 'Rezervasiya qeydə alınmadı');
+        }
       }
     } catch (err) {
+      setBookingError({ message: 'Xəta baş verdi, zəhmət olmasa yenidən cəhd edin' });
       alert('Xəta baş verdi, zəhmət olmasa yenidən cəhd edin');
     } finally {
       setSubmitting(false);
@@ -948,6 +960,28 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 )}
               </div>
             </div>
+
+            {/* Booking Error or Block Alert */}
+            {bookingError && (
+              <div className={`p-4 rounded-2xl border flex items-start gap-3 animate-in fade-in ${
+                bookingError.isBlocked 
+                  ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-500/40 text-rose-900 dark:text-rose-200' 
+                  : 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
+              }`}>
+                <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <div className="font-bold text-sm">
+                    {bookingError.isBlocked ? '🚫 Onlayn Rezervasiya Məhdudlaşdırılıb' : 'Rezervasiya Xətası'}
+                  </div>
+                  <p className="mt-1 leading-relaxed">{bookingError.message}</p>
+                  {bookingError.isBlocked && tenant?.phone && (
+                    <div className="mt-2 text-xs font-semibold">
+                      Müəssisə ilə birbaşa əlaqə: <a href={`tel:${tenant.phone}`} className="underline font-bold text-indigo-600 dark:text-indigo-400">{tenant.phone}</a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Submit Action */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/30 rounded-2xl p-6 shadow-md transition-colors">
