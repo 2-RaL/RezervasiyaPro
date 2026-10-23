@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPatients, createPatient, addClinicalEncounter } from '@/lib/dataStore';
+import { getPatients, createPatient, addClinicalEncounter } from '../../../../lib/dataStore';
 
 export const dynamic = 'force-dynamic';
 

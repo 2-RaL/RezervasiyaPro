@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'RezervasiyaPro - Onlayn Rezervasiya və İdarəetmə Sistemi',
-  description: 'Gözəllik mərkəzləri, klinikalar və xidmət sahələri üçün tam funksional növbə və admin idarəetmə sistemi',
+  title: 'Osteopat.az - Manuel Terapiya və Reabilitasiya Mərkəzi',
+  description: 'Onurğa və oynaq xəstəliklərinin peşəkar osteopatik müayinəsi, müalicəsi və onlayn həkim qəbulu',
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="az">
-      <body className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+      <body className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white">
         {children}
       </body>
     </html>

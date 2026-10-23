@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getTenants, createTenant, updateTenant, deleteTenant } from '@/lib/dataStore';
+import { getTenants, createTenant, updateTenant, deleteTenant } from '../../../../lib/dataStore';
 
 export const dynamic = 'force-dynamic';
 

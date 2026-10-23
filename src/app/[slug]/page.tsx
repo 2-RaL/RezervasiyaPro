@@ -18,7 +18,7 @@ import {
   ChevronRight,
   AlertCircle
 } from 'lucide-react';
-import { Tenant, Service, Staff } from '@/lib/types';
+import { Tenant, Service, Staff } from '../../lib/types';
 
 export default function TenantBookingPage({ params }: { params: { slug: string } }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);

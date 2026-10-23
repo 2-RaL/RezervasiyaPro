@@ -32,7 +32,7 @@ import {
   ShieldCheck,
   UserCheck
 } from 'lucide-react';
-import { Tenant, Service, Staff, Booking, Patient, BookingStatus } from '@/lib/types';
+import { Tenant, Service, Staff, Booking, Patient, BookingStatus } from '../../lib/types';
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'tenants' | 'services' | 'staff' | 'medical' | 'settings'>('overview');

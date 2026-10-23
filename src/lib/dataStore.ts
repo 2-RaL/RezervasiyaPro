@@ -17,6 +17,18 @@ const dataFilePath = path.join(dataDir, 'db.json');
 const defaultData: DatabaseSchema = {
   tenants: [
     {
+      id: 'tenant-osteopat',
+      name: 'Osteopat.az - Manuel Terapiya və Reabilitasiya Mərkəzi',
+      slug: 'osteopat',
+      sector: 'Osteopatiya & Səhiyyə',
+      status: 'ACTIVE',
+      medicalEnabled: true,
+      phone: '+994 50 700 80 90',
+      address: 'Bakı şəh., Zərifə Əliyeva küç. 24',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
       id: 'tenant-1',
       name: 'Gözəllik və Estetik Mərkəzi',
       slug: 'gozellik-merkezi',
@@ -54,6 +66,51 @@ const defaultData: DatabaseSchema = {
     }
   ],
   services: [
+    {
+      id: 'srv-ost-1',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Osteopatik İlkin Müayinə və Diaqnostika',
+      nameEn: 'Osteopathic Initial Examination & Diagnosis',
+      duration: 60,
+      price: 80,
+      category: 'Müayinə'
+    },
+    {
+      id: 'srv-ost-2',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Onurğa və Oynaqlarda Manuel Terapiya',
+      nameEn: 'Spine & Joint Manual Therapy',
+      duration: 45,
+      price: 60,
+      category: 'Manuel Terapiya'
+    },
+    {
+      id: 'srv-ost-3',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Skolioz və Kifoz Korreksiyası (Fizioterapiya)',
+      nameEn: 'Scoliosis & Kyphosis Correction',
+      duration: 45,
+      price: 50,
+      category: 'Reabilitasiya'
+    },
+    {
+      id: 'srv-ost-4',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Kəskin Bel və Boyun Ağrılarının Aradan Qaldırılması',
+      nameEn: 'Acute Neck & Back Pain Relief',
+      duration: 40,
+      price: 70,
+      category: 'Ağrı Müalicəsi'
+    },
+    {
+      id: 'srv-ost-5',
+      tenantId: 'tenant-osteopat',
+      nameAz: 'Müalicəvi Bərpa Massajı',
+      nameEn: 'Medical Recovery Massage',
+      duration: 50,
+      price: 55,
+      category: 'Massaj'
+    },
     {
       id: 'srv-1',
       tenantId: 'tenant-1',
@@ -101,6 +158,24 @@ const defaultData: DatabaseSchema = {
     }
   ],
   staff: [
+    {
+      id: 'stf-ost-1',
+      tenantId: 'tenant-osteopat',
+      name: 'Dr. Elmir Məmmədov',
+      role: 'Baş Həkim-Osteopat'
+    },
+    {
+      id: 'stf-ost-2',
+      tenantId: 'tenant-osteopat',
+      name: 'Dr. Leyla Rəhimova',
+      role: 'Fizioterapevt / Reabilitoloq'
+    },
+    {
+      id: 'stf-ost-3',
+      tenantId: 'tenant-osteopat',
+      name: 'Tural Əliyev',
+      role: 'Manuel Terapevt'
+    },
     {
       id: 'stf-1',
       tenantId: 'tenant-1',
@@ -245,7 +320,11 @@ export function getTenants(): Tenant[] {
 
 export function getTenantBySlug(slug: string): Tenant | null {
   const db = readDb();
-  const t = db.tenants.find(x => x.slug.toLowerCase() === slug.toLowerCase());
+  const searchSlug = slug.toLowerCase().trim();
+  const t = db.tenants.find(x => 
+    x.slug.toLowerCase() === searchSlug ||
+    (searchSlug === 'osteopatiya' && x.slug === 'osteopat')
+  );
   if (!t) return null;
   return {
     ...t,

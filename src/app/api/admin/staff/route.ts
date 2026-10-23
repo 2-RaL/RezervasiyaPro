@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStaff, createStaff, updateStaff, deleteStaff } from '@/lib/dataStore';
+import { getStaff, createStaff, updateStaff, deleteStaff } from '../../../../lib/dataStore';
 
 export const dynamic = 'force-dynamic';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'RezervasiyaPro - İdarəetmə Paneli (Admin)',
+  title: 'Osteopat.az - İdarəetmə Paneli (Admin)',
   description: 'Müəssisələrin, xidmətlərin, növbələrin və pasiyentlərin vahid idarəetmə sistemi',
 };
 

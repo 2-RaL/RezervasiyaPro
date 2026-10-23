@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServices, createService, updateService, deleteService } from '@/lib/dataStore';
+import { getServices, createService, updateService, deleteService } from '../../../../lib/dataStore';
 
 export const dynamic = 'force-dynamic';
 

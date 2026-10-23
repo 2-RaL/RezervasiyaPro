@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getBookings, createBooking, updateBookingStatus, deleteBooking } from '@/lib/dataStore';
-import { BookingStatus } from '@/lib/types';
+import { getBookings, createBooking, updateBookingStatus, deleteBooking } from '../../../../lib/dataStore';
+import { BookingStatus } from '../../../../lib/types';
 
 export const dynamic = 'force-dynamic';
 
