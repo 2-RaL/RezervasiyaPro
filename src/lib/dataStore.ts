@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { Tenant, Service, Staff, Booking, Patient, ClinicalEncounter, BookingStatus } from './types';
+import { Tenant, Service, Staff, Booking, Patient, ClinicalEncounter, BookingStatus, User, UserRole } from './types';
 
 interface DatabaseSchema {
+  users: User[];
   tenants: Tenant[];
   services: Service[];
   staff: Staff[];
@@ -15,6 +16,58 @@ const dataDir = path.resolve(process.cwd(), 'data');
 const dataFilePath = path.join(dataDir, 'db.json');
 
 const defaultData: DatabaseSchema = {
+  users: [
+    {
+      id: 'usr-super',
+      username: 'superadmin',
+      password: 'admin123',
+      fullName: 'Super Administrator',
+      role: 'SUPER_ADMIN',
+      tenantId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'usr-admin',
+      username: 'admin',
+      password: 'admin123',
+      fullName: 'Baş İnzibatçı',
+      role: 'SUPER_ADMIN',
+      tenantId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'usr-admin-gozellik',
+      username: 'admin_gozellik',
+      password: 'admin123',
+      fullName: 'Aysel Xanım (Gözəllik Admini)',
+      role: 'ADMIN',
+      tenantId: 'tenant-1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'usr-admin-klinika',
+      username: 'admin_klinika',
+      password: 'admin123',
+      fullName: 'Dr. Rəşad Əliyev (Klinika Admini)',
+      role: 'ADMIN',
+      tenantId: 'tenant-2',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'usr-editor-gozellik',
+      username: 'editor_gozellik',
+      password: 'editor123',
+      fullName: 'Nərmin Məmmədova (Redaktor)',
+      role: 'EDITOR',
+      tenantId: 'tenant-1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ],
   tenants: [
     {
       id: 'tenant-1',
@@ -335,6 +388,7 @@ function readDb(): DatabaseSchema {
     const content = fs.readFileSync(dataFilePath, 'utf-8');
     const parsed = JSON.parse(content);
     return {
+      users: parsed.users || defaultData.users,
       tenants: parsed.tenants || defaultData.tenants,
       services: parsed.services || defaultData.services,
       staff: parsed.staff || defaultData.staff,
@@ -603,14 +657,156 @@ export function addClinicalEncounter(patientId: string, data: Omit<ClinicalEncou
   return newEncounter;
 }
 
+// ── USERS & AUTHENTICATION API ─────────────────────────────────────────
+export function getUsers(tenantId?: string | null): User[] {
+  const db = readDb();
+  let list = db.users || [];
+  if (tenantId) {
+    list = list.filter(u => u.tenantId === tenantId);
+  }
+  return list.map(u => {
+    const tenant = u.tenantId ? db.tenants.find(t => t.id === u.tenantId) : null;
+    return {
+      ...u,
+      tenantName: tenant ? tenant.name : (u.role === 'SUPER_ADMIN' ? 'Bütün Sistem (Super Admin)' : 'Təyin edilməyib')
+    };
+  });
+}
+
+export function getUserByUsername(username: string): User | undefined {
+  const db = readDb();
+  const search = username.toLowerCase().trim();
+  return (db.users || []).find(u => u.username.toLowerCase() === search);
+}
+
+export function getUserById(id: string): User | undefined {
+  const db = readDb();
+  return (db.users || []).find(u => u.id === id);
+}
+
+export function validateUserCredentials(username: string, password: string): User | null {
+  const db = readDb();
+  const user = (db.users || []).find(
+    u => u.username.toLowerCase() === username.toLowerCase().trim() && u.password === password.trim()
+  );
+  if (!user) return null;
+  const tenant = user.tenantId ? db.tenants.find(t => t.id === user.tenantId) : null;
+  return {
+    ...user,
+    tenantName: tenant ? tenant.name : (user.role === 'SUPER_ADMIN' ? 'Bütün Sistem' : undefined)
+  };
+}
+
+export function createUser(data: {
+  username: string;
+  password?: string;
+  fullName: string;
+  role: UserRole;
+  tenantId?: string | null;
+  createdBy?: string | null;
+}): { success: boolean; user?: User; error?: string } {
+  const db = readDb();
+  const cleanUsername = data.username.toLowerCase().trim();
+
+  // Check unique username
+  const existing = (db.users || []).find(u => u.username.toLowerCase() === cleanUsername);
+  if (existing) {
+    return { success: false, error: 'Bu istifadəçi adı artıq mövcuddur' };
+  }
+
+  // Check if role is EDITOR: only 1 editor allowed per tenant/company!
+  if (data.role === 'EDITOR') {
+    if (!data.tenantId) {
+      return { success: false, error: 'Redaktor üçün filial təyin edilməlidir' };
+    }
+    const existingEditor = (db.users || []).find(u => u.tenantId === data.tenantId && u.role === 'EDITOR');
+    if (existingEditor) {
+      return { 
+        success: false, 
+        error: `Bu filial üçün artıq redaktor (${existingEditor.fullName}) təyin edilib. Şirkət üzrə yalnız 1 redaktor ola bilər.` 
+      };
+    }
+  }
+
+  const newUser: User = {
+    id: 'usr-' + Date.now(),
+    username: cleanUsername,
+    password: data.password || 'admin123',
+    fullName: data.fullName.trim(),
+    role: data.role,
+    tenantId: data.tenantId || null,
+    createdBy: data.createdBy || null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  if (!db.users) db.users = [];
+  db.users.push(newUser);
+  writeDb(db);
+
+  const tenant = newUser.tenantId ? db.tenants.find(t => t.id === newUser.tenantId) : null;
+  return { 
+    success: true, 
+    user: { ...newUser, tenantName: tenant ? tenant.name : undefined } 
+  };
+}
+
+export function updateUser(id: string, updates: Partial<User>): User | null {
+  const db = readDb();
+  if (!db.users) db.users = [];
+  const index = db.users.findIndex(u => u.id === id);
+  if (index === -1) return null;
+
+  // If changing role to EDITOR, check uniqueness per tenant
+  if (updates.role === 'EDITOR' && updates.tenantId) {
+    const existingEditor = db.users.find(u => u.id !== id && u.tenantId === updates.tenantId && u.role === 'EDITOR');
+    if (existingEditor) return null;
+  }
+
+  db.users[index] = {
+    ...db.users[index],
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  writeDb(db);
+  return db.users[index];
+}
+
+export function deleteUser(id: string): boolean {
+  const db = readDb();
+  if (!db.users) return false;
+  const initialLen = db.users.length;
+  db.users = db.users.filter(u => u.id !== id);
+  writeDb(db);
+  return db.users.length < initialLen;
+}
+
+export function getEditorForTenant(tenantId: string): User | null {
+  const db = readDb();
+  return (db.users || []).find(u => u.tenantId === tenantId && u.role === 'EDITOR') || null;
+}
+
 // ── DASHBOARD STATS ────────────────────────────────────────────────────
-export function getDashboardStats() {
+export function getDashboardStats(tenantId?: string | null) {
   const db = readDb();
   const todayStr = new Date().toISOString().split('T')[0];
-  const todayBookings = db.bookings.filter(b => b.date === todayStr);
+
+  let relevantBookings = db.bookings;
+  let relevantServices = db.services;
+  let relevantStaff = db.staff;
+  let relevantTenants = db.tenants;
+
+  if (tenantId && tenantId !== 'all') {
+    relevantBookings = db.bookings.filter(b => b.tenantId === tenantId);
+    relevantServices = db.services.filter(s => s.tenantId === tenantId);
+    relevantStaff = db.staff.filter(st => st.tenantId === tenantId);
+    relevantTenants = db.tenants.filter(t => t.id === tenantId);
+  }
+
+  const todayBookings = relevantBookings.filter(b => b.date === todayStr);
 
   let totalRevenue = 0;
-  db.bookings.forEach(b => {
+  relevantBookings.forEach(b => {
     if (b.status === 'CONFIRMED' || b.status === 'COMPLETED') {
       const srv = db.services.find(s => s.id === b.serviceId);
       if (srv) totalRevenue += Number(srv.price);
@@ -618,18 +814,19 @@ export function getDashboardStats() {
   });
 
   return {
-    totalBookings: db.bookings.length,
+    totalBookings: relevantBookings.length,
     todayBookingsCount: todayBookings.length,
-    activeTenantsCount: db.tenants.filter(t => t.status === 'ACTIVE').length,
-    totalServicesCount: db.services.length,
-    totalStaffCount: db.staff.length,
+    activeTenantsCount: relevantTenants.filter(t => t.status === 'ACTIVE').length,
+    totalServicesCount: relevantServices.length,
+    totalStaffCount: relevantStaff.length,
     totalRevenue,
-    pendingBookings: db.bookings.filter(b => b.status === 'CONFIRMED').length,
-    completedBookings: db.bookings.filter(b => b.status === 'COMPLETED').length,
-    cancelledBookings: db.bookings.filter(b => b.status === 'CANCELLED').length
+    pendingBookings: relevantBookings.filter(b => b.status === 'CONFIRMED').length,
+    completedBookings: relevantBookings.filter(b => b.status === 'COMPLETED').length,
+    cancelledBookings: relevantBookings.filter(b => b.status === 'CANCELLED').length
   };
 }
 
 export function resetDemoData(): void {
   writeDb(defaultData);
 }
+

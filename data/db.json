@@ -1,4 +1,56 @@
 {
+  "users": [
+    {
+      "id": "usr-super",
+      "username": "superadmin",
+      "password": "admin123",
+      "fullName": "Super Administrator",
+      "role": "SUPER_ADMIN",
+      "tenantId": null,
+      "createdAt": "2026-10-23T04:02:11.321Z",
+      "updatedAt": "2026-10-23T04:02:11.321Z"
+    },
+    {
+      "id": "usr-admin",
+      "username": "admin",
+      "password": "admin123",
+      "fullName": "Baş İnzibatçı",
+      "role": "SUPER_ADMIN",
+      "tenantId": null,
+      "createdAt": "2026-10-23T04:02:11.321Z",
+      "updatedAt": "2026-10-23T04:02:11.321Z"
+    },
+    {
+      "id": "usr-admin-gozellik",
+      "username": "admin_gozellik",
+      "password": "admin123",
+      "fullName": "Aysel Xanım (Gözəllik Admini)",
+      "role": "ADMIN",
+      "tenantId": "tenant-1",
+      "createdAt": "2026-10-23T04:02:11.321Z",
+      "updatedAt": "2026-10-23T04:02:11.321Z"
+    },
+    {
+      "id": "usr-admin-klinika",
+      "username": "admin_klinika",
+      "password": "admin123",
+      "fullName": "Dr. Rəşad Əliyev (Klinika Admini)",
+      "role": "ADMIN",
+      "tenantId": "tenant-2",
+      "createdAt": "2026-10-23T04:02:11.321Z",
+      "updatedAt": "2026-10-23T04:02:11.321Z"
+    },
+    {
+      "id": "usr-editor-gozellik",
+      "username": "editor_gozellik",
+      "password": "editor123",
+      "fullName": "Nərmin Məmmədova (Redaktor)",
+      "role": "EDITOR",
+      "tenantId": "tenant-1",
+      "createdAt": "2026-10-23T04:02:11.321Z",
+      "updatedAt": "2026-10-23T04:02:11.321Z"
+    }
+  ],
   "tenants": [
     {
       "id": "tenant-1",

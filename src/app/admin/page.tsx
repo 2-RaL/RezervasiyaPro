@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -12,32 +13,40 @@ import {
   Settings,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
   XCircle,
-  Clock,
-  ExternalLink,
   Trash2,
   RefreshCw,
-  Phone,
-  Calendar,
-  AlertCircle,
-  FileText,
-  DollarSign,
   TrendingUp,
   SlidersHorizontal,
   Home,
   Check,
-  Activity,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Crown,
+  LogOut,
+  UserPlus,
+  Lock,
+  Mail,
+  AlertCircle,
+  ExternalLink,
+  DollarSign
 } from 'lucide-react';
-import { Tenant, Service, Staff, Booking, Patient, BookingStatus } from '../../lib/types';
+import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'tenants' | 'services' | 'staff' | 'medical' | 'settings'>('overview');
-  
+  const router = useRouter();
+
+  // Current Logged In User State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Active Tab
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'bookings' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'settings'
+  >('overview');
+
   // Data states
   const [stats, setStats] = useState<any>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -45,6 +54,7 @@ export default function AdminDashboardPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [usersList, setUsersList] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -56,6 +66,7 @@ export default function AdminDashboardPage() {
   // Modals state
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
   const [isEncounterModalOpen, setIsEncounterModalOpen] = useState(false);
@@ -79,7 +90,23 @@ export default function AdminDashboardPage() {
     sector: 'Gözəllik & Kosmetologiya',
     phone: '+994 ',
     address: 'Bakı şəh.',
-    medicalEnabled: false
+    medicalEnabled: false,
+    assignedAdminId: ''
+  });
+
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    password: '',
+    fullName: '',
+    role: 'ADMIN' as UserRole,
+    tenantId: ''
+  });
+
+  // Editor form for Company Admin
+  const [newEditorData, setNewEditorData] = useState({
+    fullName: '',
+    username: '',
+    password: ''
   });
 
   const [newServiceData, setNewServiceData] = useState({
@@ -104,10 +131,51 @@ export default function AdminDashboardPage() {
     prescription: ''
   });
 
-  // Fetch all initial data
-  const loadData = async () => {
+  // Company Admin Settings Form
+  const [companySettingsData, setCompanySettingsData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    sector: '',
+    medicalEnabled: false
+  });
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // 1. Verify Authentication against Database
+  const checkAuth = async () => {
+    try {
+      setAuthLoading(true);
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+
+      if (!res.ok || !data.success || !data.user) {
+        // Not authenticated in DB - immediately deny and redirect
+        router.push('/login');
+        return null;
+      }
+
+      setCurrentUser(data.user);
+      return data.user;
+    } catch {
+      router.push('/login');
+      return null;
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // 2. Load all dashboard data
+  const loadData = async (userParam?: User) => {
+    const user = userParam || currentUser;
+    if (!user) return;
+
     try {
       setLoading(true);
+
       const [statsRes, tenantsRes, bookingsRes, servicesRes, staffRes, patientsRes] = await Promise.all([
         fetch('/api/admin/stats').then(r => r.json()),
         fetch('/api/admin/tenants').then(r => r.json()),
@@ -119,17 +187,31 @@ export default function AdminDashboardPage() {
 
       if (statsRes.success) setStats(statsRes.stats);
       if (tenantsRes.success) {
-        setTenants(tenantsRes.tenants);
+        setTenants(tenantsRes.tenants || []);
+
+        // If company admin, initialize company settings
+        if (user.role === 'ADMIN' && tenantsRes.tenants.length > 0) {
+          const myT = tenantsRes.tenants[0];
+          setCompanySettingsData({
+            name: myT.name || '',
+            phone: myT.phone || '',
+            address: myT.address || '',
+            sector: myT.sector || 'Gözəllik & Kosmetologiya',
+            medicalEnabled: Boolean(myT.medicalEnabled)
+          });
+        }
+
         if (tenantsRes.tenants.length > 0 && !newBookingData.tenantId) {
           setNewBookingData(prev => ({ ...prev, tenantId: tenantsRes.tenants[0].id }));
           setNewServiceData(prev => ({ ...prev, tenantId: tenantsRes.tenants[0].id }));
           setNewStaffData(prev => ({ ...prev, tenantId: tenantsRes.tenants[0].id }));
         }
       }
-      if (bookingsRes.success) setBookings(bookingsRes.bookings);
-      if (servicesRes.success) setServices(servicesRes.services);
-      if (staffRes.success) setStaffList(staffRes.staff);
-      if (patientsRes.success) setPatients(patientsRes.patients);
+
+      if (bookingsRes.success) setBookings(bookingsRes.bookings || []);
+      if (servicesRes.success) setServices(servicesRes.services || []);
+      if (staffRes.success) setStaffList(staffRes.staff || []);
+      if (patientsRes.success) setPatients(patientsRes.patients || []);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -137,16 +219,39 @@ export default function AdminDashboardPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+  // 3. Load Users
+  const loadUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      if (data.success) {
+        setUsersList(data.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    }
   };
 
-  // Status Updater for Bookings
+  useEffect(() => {
+    checkAuth().then(user => {
+      if (user) {
+        loadData(user);
+        loadUsers();
+      }
+    });
+  }, []);
+
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
+    } catch {
+      router.push('/login');
+    }
+  };
+
+  // Booking Status Updater
   const handleUpdateBookingStatus = async (id: string, status: BookingStatus) => {
     try {
       const res = await fetch('/api/admin/bookings', {
@@ -175,7 +280,7 @@ export default function AdminDashboardPage() {
         loadData();
       }
     } catch (err) {
-      alert('Silinərkən xəta baş verdi');
+      alert('Silinmədi');
     }
   };
 
@@ -183,14 +288,15 @@ export default function AdminDashboardPage() {
   const handleCreateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const tenantToUse = currentUser?.role === 'SUPER_ADMIN' ? newBookingData.tenantId : currentUser?.tenantId;
       const res = await fetch('/api/admin/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBookingData)
+        body: JSON.stringify({ ...newBookingData, tenantId: tenantToUse })
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Yeni rezervasiya uğurla əlavə edildi');
+        showToast('Yeni rezervasiya uğurla qeyd edildi');
         setIsBookingModalOpen(false);
         setNewBookingData({
           tenantId: tenants[0]?.id || '',
@@ -211,26 +317,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Toggle Tenant Active Status
-  const handleToggleTenantStatus = async (t: Tenant) => {
-    const nextStatus = t.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    try {
-      const res = await fetch('/api/admin/tenants', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: t.id, status: nextStatus })
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(`Filial statusu: ${nextStatus}`);
-        loadData();
-      }
-    } catch (err) {
-      alert('Status dəyişdirilmədi');
-    }
-  };
-
-  // Submit New Tenant
+  // Submit New Tenant (Super Admin only)
   const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -241,7 +328,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Yeni filial uğurla yaradıldı');
+        showToast('Yeni şirkət/filial uğurla yaradıldı');
         setIsTenantModalOpen(false);
         setNewTenantData({
           name: '',
@@ -249,9 +336,11 @@ export default function AdminDashboardPage() {
           sector: 'Gözəllik & Kosmetologiya',
           phone: '+994 ',
           address: 'Bakı şəh.',
-          medicalEnabled: false
+          medicalEnabled: false,
+          assignedAdminId: ''
         });
         loadData();
+        loadUsers();
       } else {
         alert(data.error || 'Xəta baş verdi');
       }
@@ -260,29 +349,157 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Delete Tenant
+  // Delete Tenant (Super Admin only)
   const handleDeleteTenant = async (id: string, name: string) => {
-    if (!confirm(`"${name}" filialını və onun bütün xidmətlərini silmək istəyirsiniz?`)) return;
+    if (!confirm(`"${name}" filialını və onun bütün məlumatlarını silmək istəyirsiniz?`)) return;
     try {
       const res = await fetch(`/api/admin/tenants?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         showToast('Filial silindi');
         loadData();
+        loadUsers();
       }
     } catch (err) {
       alert('Silinmədi');
     }
   };
 
-  // Submit New Service
+  // Toggle Tenant Active/Suspended
+  const handleToggleTenantStatus = async (tenant: Tenant) => {
+    const newStatus = tenant.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    try {
+      const res = await fetch('/api/admin/tenants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: tenant.id, status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Status dəyişdirildi: ${newStatus}`);
+        loadData();
+      }
+    } catch (err) {
+      alert('Yenilənmədi');
+    }
+  };
+
+  // Company Admin saves own company settings
+  const handleSaveCompanySettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser?.tenantId) return;
+
+    try {
+      const res = await fetch('/api/admin/tenants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentUser.tenantId,
+          name: companySettingsData.name,
+          phone: companySettingsData.phone,
+          address: companySettingsData.address,
+          sector: companySettingsData.sector,
+          medicalEnabled: companySettingsData.medicalEnabled
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Şirkət parametrləri uğurla yadda saxlanıldı');
+        loadData();
+      } else {
+        alert(data.error || 'Yadda saxlanılmadı');
+      }
+    } catch {
+      alert('Xəta baş verdi');
+    }
+  };
+
+  // Create User (Super Admin only)
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUserData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('İstifadəçi bazaya əlavə edildi');
+        setIsUserModalOpen(false);
+        setNewUserData({
+          username: '',
+          password: '',
+          fullName: '',
+          role: 'ADMIN',
+          tenantId: ''
+        });
+        loadUsers();
+      } else {
+        alert(data.error || 'İstifadəçi yaradılmadı');
+      }
+    } catch {
+      alert('Xəta baş verdi');
+    }
+  };
+
+  // Create Editor (Company Admin only - 1 Editor Rule)
+  const handleCreateEditor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser?.tenantId) {
+      alert('Şirkət təyin edilməyib');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newEditorData,
+          role: 'EDITOR',
+          tenantId: currentUser.tenantId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Şirkətiniz üçün 1 nəfər rəsmi Redaktor təyin edildi');
+        setNewEditorData({ fullName: '', username: '', password: '' });
+        loadUsers();
+      } else {
+        alert(data.error || 'Redaktor əlavə edilmədi');
+      }
+    } catch {
+      alert('Xəta baş verdi');
+    }
+  };
+
+  // Delete User (Super Admin or Company Admin deleting their editor)
+  const handleDeleteUser = async (id: string, name: string) => {
+    if (!confirm(`"${name}" adlı istifadəçini silmək istədiyinizdən əminsiniz?`)) return;
+    try {
+      const res = await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('İstifadəçi silindi');
+        loadUsers();
+      } else {
+        alert(data.error || 'Silinmədi');
+      }
+    } catch {
+      alert('Xəta baş verdi');
+    }
+  };
+
+  // Service CRUD
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const tenantToUse = currentUser?.role === 'SUPER_ADMIN' ? newServiceData.tenantId : currentUser?.tenantId;
       const res = await fetch('/api/admin/services', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newServiceData)
+        body: JSON.stringify({ ...newServiceData, tenantId: tenantToUse })
       });
       const data = await res.json();
       if (data.success) {
@@ -300,12 +517,11 @@ export default function AdminDashboardPage() {
       } else {
         alert(data.error || 'Xəta baş verdi');
       }
-    } catch (err) {
+    } catch {
       alert('Xidmət əlavə olunmadı');
     }
   };
 
-  // Delete Service
   const handleDeleteService = async (id: string) => {
     if (!confirm('Bu xidməti silmək istədiyinizdən əminsiniz?')) return;
     try {
@@ -315,19 +531,20 @@ export default function AdminDashboardPage() {
         showToast('Xidmət silindi');
         loadData();
       }
-    } catch (err) {
+    } catch {
       alert('Silinmədi');
     }
   };
 
-  // Submit New Staff
+  // Staff CRUD
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const tenantToUse = currentUser?.role === 'SUPER_ADMIN' ? newStaffData.tenantId : currentUser?.tenantId;
       const res = await fetch('/api/admin/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStaffData)
+        body: JSON.stringify({ ...newStaffData, tenantId: tenantToUse })
       });
       const data = await res.json();
       if (data.success) {
@@ -342,12 +559,11 @@ export default function AdminDashboardPage() {
       } else {
         alert(data.error || 'Xəta baş verdi');
       }
-    } catch (err) {
+    } catch {
       alert('İşçi əlavə olunmadı');
     }
   };
 
-  // Delete Staff
   const handleDeleteStaff = async (id: string) => {
     if (!confirm('Bu mütəxəssisi silmək istədiyinizdən əminsiniz?')) return;
     try {
@@ -357,12 +573,12 @@ export default function AdminDashboardPage() {
         showToast('Mütəxəssis silindi');
         loadData();
       }
-    } catch (err) {
+    } catch {
       alert('Silinmədi');
     }
   };
 
-  // Submit Encounter for Patient
+  // Medical Encounter
   const handleCreateEncounter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatientForEncounter) return;
@@ -390,7 +606,7 @@ export default function AdminDashboardPage() {
       } else {
         alert(data.error || 'Xəta baş verdi');
       }
-    } catch (err) {
+    } catch {
       alert('Əlavə edilmədi');
     }
   };
@@ -404,8 +620,9 @@ export default function AdminDashboardPage() {
       if (data.success) {
         showToast('Demo verilənlər bərpa edildi');
         loadData();
+        loadUsers();
       }
-    } catch (err) {
+    } catch {
       alert('Bərpa edilmədi');
     }
   };
@@ -421,6 +638,23 @@ export default function AdminDashboardPage() {
       (b.customerFin && b.customerFin.toLowerCase().includes(bookingSearch.toLowerCase()));
     return matchTenant && matchStatus && matchSearch;
   });
+
+  // Check if Company Admin currently has an editor
+  const currentCompanyEditor = usersList.find(
+    u => u.tenantId === currentUser?.tenantId && u.role === 'EDITOR'
+  );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">İcazələr yoxlanılır...</p>
+      </div>
+    );
+  }
+
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const isCompanyAdmin = currentUser?.role === 'ADMIN';
 
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
@@ -442,8 +676,12 @@ export default function AdminDashboardPage() {
                 <CalendarCheck className="w-5 h-5 text-white" />
               </div>
               <div>
-                <span className="font-extrabold text-lg text-slate-900 dark:text-white">Rezervasiya<span className="text-indigo-600 dark:text-indigo-400">Pro</span></span>
-                <span className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold">Admin Panel</span>
+                <span className="font-extrabold text-lg text-slate-900 dark:text-white">
+                  Rezervasiya<span className="text-indigo-600 dark:text-indigo-400">Pro</span>
+                </span>
+                <span className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold">
+                  {isSuperAdmin ? 'Super Admin Panel' : 'Şirkət Admin Paneli'}
+                </span>
               </div>
             </Link>
           </div>
@@ -476,31 +714,94 @@ export default function AdminDashboardPage() {
                 <CalendarCheck className="w-4 h-4" />
                 <span>Rezervasiyalar</span>
               </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                activeTab === 'bookings' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
-              }`}>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'bookings'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                }`}
+              >
                 {bookings.length}
               </span>
             </button>
 
-            <button
-              onClick={() => setActiveTab('tenants')}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === 'tenants'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Building2 className="w-4 h-4" />
-                <span>Şirkət & Filiallar</span>
-              </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                activeTab === 'tenants' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
-              }`}>
-                {tenants.length}
-              </span>
-            </button>
+            {/* Super Admin Tab: Səhifələr və Şirkətlər */}
+            {isSuperAdmin && (
+              <button
+                onClick={() => setActiveTab('tenants')}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === 'tenants'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-4 h-4" />
+                  <span>Şirkətlər (Filiallar)</span>
+                </div>
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    activeTab === 'tenants'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {tenants.length}
+                </span>
+              </button>
+            )}
+
+            {/* Super Admin Tab: İstifadəçilər və Rollar */}
+            {isSuperAdmin && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === 'users'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <UserPlus className="w-4 h-4" />
+                  <span>İstifadəçilər & İcazələr</span>
+                </div>
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    activeTab === 'users'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {usersList.length}
+                </span>
+              </button>
+            )}
+
+            {/* Company Admin Tab: Redaktor İdarəetməsi (Strictly 1 Editor Rule) */}
+            {isCompanyAdmin && (
+              <button
+                onClick={() => setActiveTab('editor')}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === 'editor'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <UserCheck className="w-4 h-4" />
+                  <span>Redaktor Təyini</span>
+                </div>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    currentCompanyEditor
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
+                      : 'bg-amber-500/20 text-amber-600 dark:text-amber-300'
+                  }`}
+                >
+                  {currentCompanyEditor ? '1 Təyin Edilib' : '0 / 1'}
+                </span>
+              </button>
+            )}
 
             <button
               onClick={() => setActiveTab('services')}
@@ -514,9 +815,13 @@ export default function AdminDashboardPage() {
                 <Briefcase className="w-4 h-4" />
                 <span>Xidmətlər və Qiymətlər</span>
               </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                activeTab === 'services' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
-              }`}>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'services'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                }`}
+              >
                 {services.length}
               </span>
             </button>
@@ -533,9 +838,13 @@ export default function AdminDashboardPage() {
                 <Users className="w-4 h-4" />
                 <span>Mütəxəssislər / İşçilər</span>
               </div>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                activeTab === 'staff' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
-              }`}>
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  activeTab === 'staff'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                }`}
+              >
                 {staffList.length}
               </span>
             </button>
@@ -567,7 +876,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <Settings className="w-4 h-4" />
-                <span>Tənzimləmələr</span>
+                <span>{isSuperAdmin ? 'Sistem Parametrləri' : 'Şirkət Tənzimləmələri'}</span>
               </div>
             </button>
           </nav>
@@ -596,32 +905,70 @@ export default function AdminDashboardPage() {
             <h1 className="text-lg font-bold text-slate-900 dark:text-white capitalize">
               {activeTab === 'overview' && 'Sistemin Ümumi Göstəriciləri'}
               {activeTab === 'bookings' && 'Rezervasiyaların İdarə Edilməsi'}
-              {activeTab === 'tenants' && 'Filiallar və Şirkətlər'}
+              {activeTab === 'tenants' && 'Şirkət və Filialların İdarəsi (Super Admin)'}
+              {activeTab === 'users' && 'Sistem İstifadəçiləri və Rollar (Super Admin)'}
+              {activeTab === 'editor' && 'Şirkət Redaktoru İdarəetməsi (1 Redaktor Limiti)'}
               {activeTab === 'services' && 'Xidmətlər və Qiymət Tarifləri'}
               {activeTab === 'staff' && 'İşçi Heyəti və Mütəxəssislər'}
               {activeTab === 'medical' && 'Tibbi Qeydiyyat və FİN Xəstəlik Tarixçəsi'}
-              {activeTab === 'settings' && 'Sistem Parametrləri'}
+              {activeTab === 'settings' && (isSuperAdmin ? 'Sistem Parametrləri' : 'Şirkət və Səhifə Tənzimləmələri')}
             </h1>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* User Profile Badge */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs">
+              {isSuperAdmin ? (
+                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold">
+                  <Crown className="w-3.5 h-3.5" />
+                  <span>Super Admin</span>
+                </div>
+              ) : isCompanyAdmin ? (
+                <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>{currentUser?.tenantName || 'Şirkət Admini'}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Redaktor: {currentUser?.tenantName}</span>
+                </div>
+              )}
+              <span className="text-slate-400 dark:text-slate-500">•</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{currentUser?.fullName}</span>
+            </div>
+
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
+            {/* Refresh */}
             <button
-              onClick={loadData}
+              onClick={() => {
+                loadData();
+                loadUsers();
+              }}
               title="Yenilə"
               className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 transition-all shadow-sm"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
+            {/* New Booking Button */}
             <button
               onClick={() => setIsBookingModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all"
             >
               <Plus className="w-4 h-4" />
               <span>Yeni Rezervasiya</span>
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              title="Sistemdən Çıxış"
+              className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 transition-all shadow-sm"
+            >
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </header>
@@ -636,8 +983,12 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 relative overflow-hidden shadow-sm transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ümumi Rezervasiyalar</p>
-                      <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">{stats?.totalBookings || 0}</h3>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        {isSuperAdmin ? 'Bütün Rezervasiyalar' : 'Şirkət Rezervasiyaları'}
+                      </p>
+                      <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
+                        {stats?.totalBookings || 0}
+                      </h3>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                       <CalendarCheck className="w-5 h-5" />
@@ -652,143 +1003,125 @@ export default function AdminDashboardPage() {
                 <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 relative overflow-hidden shadow-sm transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Təxmini Gəlir (AZN)</p>
-                      <h3 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{stats?.totalRevenue || 0} ₼</h3>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Təxmini Gəlir (AZN)
+                      </p>
+                      <h3 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                        {stats?.totalRevenue || 0} ₼
+                      </h3>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                       <DollarSign className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Təsdiqlənmiş & icra olunmuş</span>
+                  <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    Tamamlanmış və təsdiq olunmuşlar
                   </div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 relative overflow-hidden shadow-sm transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Aktiv Filiallar</p>
-                      <h3 className="text-3xl font-black text-sky-600 dark:text-sky-400 mt-1">{stats?.activeTenantsCount || 0}</h3>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Xidmət Sayı
+                      </p>
+                      <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
+                        {stats?.totalServicesCount || 0}
+                      </h3>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-                      <Building2 className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                      <Briefcase className="w-5 h-5" />
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Cəmi xidmət: {stats?.totalServicesCount || 0}</span>
+                  <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    Aktiv qiymət paketləri
                   </div>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 relative overflow-hidden shadow-sm transition-colors">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">İşçi Heyəti</p>
-                      <h3 className="text-3xl font-black text-purple-600 dark:text-purple-400 mt-1">{stats?.totalStaffCount || 0}</h3>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        {isSuperAdmin ? 'Aktiv Filiallar' : 'Mütəxəssis Sayı'}
+                      </p>
+                      <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
+                        {isSuperAdmin ? stats?.activeTenantsCount || 0 : stats?.totalStaffCount || 0}
+                      </h3>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                      <Users className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      {isSuperAdmin ? <Building2 className="w-5 h-5" /> : <Users className="w-5 h-5" />}
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Həkimlər, ustalar, məşqçilər</span>
+                  <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    {isSuperAdmin ? 'Sistemə qoşulmuş müəssisələr' : 'Xidmət göstərən həkim və işçilər'}
                   </div>
                 </div>
               </div>
 
-              {/* Status Breakdown Badges */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between">
+              {/* Recent Bookings Table in Overview */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                <div className="p-5 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
                   <div>
-                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold uppercase">Təsdiqlənmiş (Gözləyir)</span>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{stats?.pendingBookings || 0}</p>
-                  </div>
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-
-                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-blue-700 dark:text-blue-400 font-semibold uppercase">Tamamlanmış</span>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{stats?.completedBookings || 0}</p>
-                  </div>
-                  <Check className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-
-                <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs text-rose-700 dark:text-rose-400 font-semibold uppercase">Ləğv Olunmuş</span>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{stats?.cancelledBookings || 0}</p>
-                  </div>
-                  <XCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
-                </div>
-              </div>
-
-              {/* Quick Actions & Recent Bookings */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm transition-colors">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Son Rezervasiyalar və Status İdarəetməsi</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Canlı qeydiyyat cədvəli və anında status dəyişməsi</p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Son Rezervasiyalar</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Ən son daxil olmuş müraciətlər</p>
                   </div>
                   <button
                     onClick={() => setActiveTab('bookings')}
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold flex items-center gap-1"
+                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
                   >
-                    <span>Bütün rezervasiyaları gör ({bookings.length})</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    Bütün siyahıya bax →
                   </button>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                        <th className="pb-3">Müştəri / Əlaqə</th>
-                        <th className="pb-3">Filial</th>
-                        <th className="pb-3">Xidmət & Qiymət</th>
-                        <th className="pb-3">Tarix & Saat</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-right">Əməliyyat</th>
+                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold">
+                        <th className="p-3.5">Müştəri</th>
+                        <th className="p-3.5">Filial</th>
+                        <th className="p-3.5">Xidmət</th>
+                        <th className="p-3.5">Tarix & Saat</th>
+                        <th className="p-3.5">Status</th>
+                        <th className="p-3.5 text-right">Əməliyyat</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                      {bookings.slice(0, 6).map(b => (
-                        <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                          <td className="py-3">
-                            <p className="font-semibold text-slate-900 dark:text-white">{b.customerName}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{b.customerPhone}</p>
-                            {b.customerFin && (
-                              <span className="text-[10px] font-mono bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30">
-                                FİN: {b.customerFin}
-                              </span>
-                            )}
+                    <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                      {bookings.slice(0, 5).map(b => (
+                        <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                          <td className="p-3.5 font-bold text-slate-900 dark:text-white">
+                            <div>{b.customerName}</div>
+                            <div className="text-[11px] font-normal text-slate-500">{b.customerPhone}</div>
                           </td>
-                          <td className="py-3 text-xs font-medium text-slate-700 dark:text-slate-300">
-                            {b.tenantName}
+                          <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
+                            {b.tenantName || 'Filial'}
                           </td>
-                          <td className="py-3">
-                            <p className="font-medium text-slate-900 dark:text-white text-xs">{b.serviceName}</p>
-                            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{b.servicePrice} AZN</p>
+                          <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
+                            {b.serviceName || 'Xidmət'}
                           </td>
-                          <td className="py-3 text-xs">
-                            <p className="text-slate-700 dark:text-slate-300">{b.date}</p>
-                            <p className="text-indigo-600 dark:text-indigo-400 font-bold">{b.timeSlot}</p>
+                          <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                            <span className="font-semibold">{b.date}</span> • {b.timeSlot}
                           </td>
-                          <td className="py-3">
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${
-                              b.status === 'CONFIRMED' ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300' :
-                              b.status === 'COMPLETED' ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-500 text-blue-700 dark:text-blue-300' :
-                              b.status === 'CANCELLED' ? 'bg-rose-50 dark:bg-rose-950 border-rose-200 dark:border-rose-500 text-rose-700 dark:text-rose-300' :
-                              'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-500 text-amber-700 dark:text-amber-300'
-                            }`}>
-                              {b.status === 'CONFIRMED' ? 'Təsdiqləndi' : b.status === 'COMPLETED' ? 'Tamamlandı' : b.status === 'CANCELLED' ? 'Ləğv edildi' : 'Gəlmədi'}
+                          <td className="p-3.5">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                b.status === 'CONFIRMED'
+                                  ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                  : b.status === 'COMPLETED'
+                                  ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30'
+                                  : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                              }`}
+                            >
+                              {b.status === 'CONFIRMED' && 'Təsdiqləndi'}
+                              {b.status === 'COMPLETED' && 'Tamamlandı'}
+                              {b.status === 'CANCELLED' && 'Ləğv edildi'}
                             </span>
                           </td>
-                          <td className="py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td className="p-3.5 text-right">
+                            <div className="inline-flex items-center gap-1.5">
                               {b.status !== 'COMPLETED' && (
                                 <button
                                   onClick={() => handleUpdateBookingStatus(b.id, 'COMPLETED')}
-                                  title="Tamamla"
+                                  title="Tamamlandı et"
                                   className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 dark:bg-emerald-500/10 dark:hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white transition-all"
                                 >
                                   <Check className="w-3.5 h-3.5" />
@@ -832,17 +1165,19 @@ export default function AdminDashboardPage() {
                     />
                   </div>
 
-                  {/* Tenant Select */}
-                  <select
-                    value={bookingTenantFilter}
-                    onChange={(e) => setBookingTenantFilter(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="all">Bütün Filiallar</option>
-                    {tenants.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
+                  {/* Tenant Select (Only for Super Admin) */}
+                  {isSuperAdmin && (
+                    <select
+                      value={bookingTenantFilter}
+                      onChange={(e) => setBookingTenantFilter(e.target.value)}
+                      className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="all">Bütün Filiallar</option>
+                      {tenants.map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  )}
 
                   {/* Status Select */}
                   <select
@@ -854,103 +1189,111 @@ export default function AdminDashboardPage() {
                     <option value="CONFIRMED">Təsdiqləndi</option>
                     <option value="COMPLETED">Tamamlandı</option>
                     <option value="CANCELLED">Ləğv edildi</option>
-                    <option value="NO_SHOW">Gəlmədi</option>
                   </select>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsBookingModalOpen(true)}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Rezervasiya Əlavə Et</span>
-                  </button>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold self-end md:self-auto">
+                  Cəmi tapıldı: <span className="text-indigo-600 dark:text-indigo-400">{filteredBookings.length}</span> rezervasiya
                 </div>
               </div>
 
               {/* Bookings Table */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm transition-colors">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                      <tr>
-                        <th className="p-4">ID</th>
-                        <th className="p-4">Müştəri & FİN</th>
-                        <th className="p-4">Filial</th>
-                        <th className="p-4">Xidmət & Mütəxəssis</th>
-                        <th className="p-4">Tarix & Saat</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4 text-right">Əməliyyatlar</th>
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold">
+                        <th className="p-3.5">ID</th>
+                        <th className="p-3.5">Müştəri Məlumatı</th>
+                        {isSuperAdmin && <th className="p-3.5">Filial</th>}
+                        <th className="p-3.5">Xidmət & Qiymət</th>
+                        <th className="p-3.5">Mütəxəssis</th>
+                        <th className="p-3.5">Tarix & Saat</th>
+                        <th className="p-3.5">Status</th>
+                        <th className="p-3.5 text-right">Əməliyyatlar</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                      {filteredBookings.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="p-8 text-center text-slate-500 text-sm">
-                            Uyğun rezervasiya tapılmadı
+                    <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                      {filteredBookings.map(b => (
+                        <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                          <td className="p-3.5 font-mono text-[11px] text-slate-400">{b.id}</td>
+                          <td className="p-3.5 font-bold text-slate-900 dark:text-white">
+                            <div>{b.customerName}</div>
+                            <div className="text-[11px] font-normal text-slate-500">{b.customerPhone}</div>
+                            {b.customerFin && (
+                              <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                FİN: {b.customerFin}
+                              </div>
+                            )}
                           </td>
-                        </tr>
-                      ) : (
-                        filteredBookings.map(b => (
-                          <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                            <td className="p-4 font-mono text-xs text-indigo-600 dark:text-indigo-400 font-bold">{b.id}</td>
-                            <td className="p-4">
-                              <p className="font-bold text-slate-900 dark:text-white">{b.customerName}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">{b.customerPhone}</p>
-                              {b.customerFin && (
-                                <span className="inline-block mt-1 text-[10px] font-mono bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30">
-                                  FİN: {b.customerFin}
-                                </span>
+                          {isSuperAdmin && (
+                            <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
+                              {b.tenantName || 'Filial'}
+                            </td>
+                          )}
+                          <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                            <div className="font-semibold">{b.serviceName || 'Xidmət'}</div>
+                            {b.servicePrice !== undefined && (
+                              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                {b.servicePrice} ₼
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-slate-600 dark:text-slate-300 font-medium">
+                            {b.staffName || 'İxtiyari Mütəxəssis'}
+                          </td>
+                          <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                            <span className="font-semibold">{b.date}</span>
+                            <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-mono">
+                              {b.timeSlot}
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                b.status === 'CONFIRMED'
+                                  ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                  : b.status === 'COMPLETED'
+                                  ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30'
+                                  : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                              }`}
+                            >
+                              {b.status === 'CONFIRMED' && 'Təsdiqləndi'}
+                              {b.status === 'COMPLETED' && 'Tamamlandı'}
+                              {b.status === 'CANCELLED' && 'Ləğv edildi'}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              {b.status !== 'COMPLETED' && (
+                                <button
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'COMPLETED')}
+                                  title="Tamamlandı et"
+                                  className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 dark:bg-emerald-500/10 dark:hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white transition-all"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                </button>
                               )}
-                            </td>
-                            <td className="p-4 text-xs font-medium text-slate-700 dark:text-slate-300">
-                              {b.tenantName}
-                            </td>
-                            <td className="p-4">
-                              <p className="font-semibold text-slate-900 dark:text-white text-xs">{b.serviceName}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">İşçi: {b.staffName}</p>
-                              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{b.servicePrice} AZN</p>
-                            </td>
-                            <td className="p-4 text-xs">
-                              <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
-                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                <span>{b.date}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold mt-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{b.timeSlot}</span>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <select
-                                value={b.status}
-                                onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as BookingStatus)}
-                                className={`text-xs font-bold rounded-lg px-2.5 py-1.5 border focus:outline-none ${
-                                  b.status === 'CONFIRMED' ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-300 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300' :
-                                  b.status === 'COMPLETED' ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-500 text-blue-700 dark:text-blue-300' :
-                                  b.status === 'CANCELLED' ? 'bg-rose-50 dark:bg-rose-950 border-rose-300 dark:border-rose-500 text-rose-700 dark:text-rose-300' :
-                                  'bg-amber-50 dark:bg-amber-950 border-amber-300 dark:border-amber-500 text-amber-700 dark:text-amber-300'
-                                }`}
-                              >
-                                <option value="CONFIRMED">Təsdiqləndi</option>
-                                <option value="COMPLETED">Tamamlandı</option>
-                                <option value="CANCELLED">Ləğv edildi</option>
-                                <option value="NO_SHOW">Gəlmədi</option>
-                              </select>
-                            </td>
-                            <td className="p-4 text-right">
+                              {b.status !== 'CANCELLED' && (
+                                <button
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'CANCELLED')}
+                                  title="Ləğv et"
+                                  className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-500 text-amber-700 dark:text-amber-300 hover:text-white transition-all"
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDeleteBooking(b.id)}
                                 title="Sil"
-                                className="p-2 rounded-lg bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-700 dark:text-rose-300 hover:text-white transition-all"
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-700 dark:text-rose-300 hover:text-white transition-all"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -958,26 +1301,31 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ═══════════ TAB 3: TENANTS ═══════════ */}
-          {activeTab === 'tenants' && (
+          {/* ═══════════ TAB 3: TENANTS (SUPER ADMIN ONLY) ═══════════ */}
+          {activeTab === 'tenants' && isSuperAdmin && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Bütün Müəssisə və Filiallar</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Şirkətləri yaradın, statusunu dəyişin və ya tibbi modulu idarə edin</p>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Şirkət və Filiallar</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Yalnız Super Admin yeni şirkət/səhifə yarada və şirkət admini təyin edə bilər
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsTenantModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Yeni Filial Əlavə Et</span>
+                  <span>Yeni Şirkət / Səhifə Əlavə Et</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {tenants.map(t => (
-                  <div key={t.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 relative flex flex-col justify-between shadow-sm transition-colors">
+                  <div
+                    key={t.id}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 relative flex flex-col justify-between shadow-sm transition-colors"
+                  >
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
@@ -998,13 +1346,51 @@ export default function AdminDashboardPage() {
                       <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t.name}</h4>
                       <p className="text-xs font-mono text-indigo-600 dark:text-indigo-400 mb-3">Slug: /{t.slug}</p>
 
+                      {/* Assigned Admin user badge */}
+                      <div className="mb-3 p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-xs">
+                        <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
+                          Təyin Edilmiş Admin User:
+                        </div>
+                        {(t as any).assignedAdmin ? (
+                          <div className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5" />
+                            <span>{(t as any).assignedAdmin.fullName} (@{(t as any).assignedAdmin.username})</span>
+                          </div>
+                        ) : (
+                          <div className="text-amber-600 dark:text-amber-400 font-medium">
+                            Təyin edilməyib
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Assigned Editor badge */}
+                      <div className="mb-3 p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-xs">
+                        <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
+                          Filial Redaktoru (Maks. 1):
+                        </div>
+                        {(t as any).assignedEditor ? (
+                          <div className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>{(t as any).assignedEditor.fullName} (@{(t as any).assignedEditor.username})</span>
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 font-normal">
+                            Redaktor təyin edilməyib
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4">
                         {t.phone && <p>Tel: {t.phone}</p>}
                         {t.address && <p>Ünvan: {t.address}</p>}
                         <div className="pt-1 flex items-center gap-2">
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
-                            t.medicalEnabled ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                          }`}>
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
+                              t.medicalEnabled
+                                ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            }`}
+                          >
                             {t.medicalEnabled ? 'Tibbi Modul: Aktiv (FİN)' : 'Tibbi Modul: Yoxdur'}
                           </span>
                         </div>
@@ -1034,188 +1420,263 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ═══════════ TAB 4: SERVICES ═══════════ */}
+          {/* ═══════════ TAB 4: USERS (SUPER ADMIN ONLY) ═══════════ */}
+          {activeTab === 'users' && isSuperAdmin && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">İstifadəçilər və İcazələr</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Bütün sistem istifadəçiləri burada saxlanılır. İstifadəçi olmayan heç kim sistemə daxil ola bilməz.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsUserModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Yeni İstifadəçi Əlavə Et</span>
+                </button>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold">
+                        <th className="p-3.5">Tam Adı</th>
+                        <th className="p-3.5">İstifadəçi Adı</th>
+                        <th className="p-3.5">Rolu</th>
+                        <th className="p-3.5">Təyin Edilmiş Şirkət / Filial</th>
+                        <th className="p-3.5">Qeydiyyat Tarixi</th>
+                        <th className="p-3.5 text-right">Əməliyyat</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+                      {usersList.map(u => (
+                        <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                          <td className="p-3.5 font-bold text-slate-900 dark:text-white">
+                            {u.fullName}
+                          </td>
+                          <td className="p-3.5 font-mono text-indigo-600 dark:text-indigo-400 font-semibold">
+                            @{u.username}
+                          </td>
+                          <td className="p-3.5">
+                            {u.role === 'SUPER_ADMIN' && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">
+                                <Crown className="w-3 h-3" />
+                                <span>Super Admin</span>
+                              </span>
+                            )}
+                            {u.role === 'ADMIN' && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 inline-flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                <span>Şirkət Admini</span>
+                              </span>
+                            )}
+                            {u.role === 'EDITOR' && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1">
+                                <UserCheck className="w-3 h-3" />
+                                <span>Redaktor</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-slate-700 dark:text-slate-300 font-medium">
+                            {u.tenantName || 'Təyin edilməyib'}
+                          </td>
+                          <td className="p-3.5 text-slate-500 dark:text-slate-400">
+                            {new Date(u.createdAt).toLocaleDateString('az-AZ')}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            {u.id !== currentUser?.id ? (
+                              <button
+                                onClick={() => handleDeleteUser(u.id, u.fullName)}
+                                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                                title="İstifadəçini Sil"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">Hazırkı Sessiya</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════ TAB 5: EDITOR MANAGEMENT (COMPANY ADMIN ONLY) ═══════════ */}
+          {activeTab === 'editor' && isCompanyAdmin && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Şirkət Redaktorunun İdarə Edilməsi
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {currentUser?.tenantName} üçün redaktor təyini. Qaydaya əsasən şirkət üzrə <b>yalnız 1 redaktor</b> əlavə edilə bilər.
+                </p>
+              </div>
+
+              {currentCompanyEditor ? (
+                /* Card showing the 1 existing editor */
+                <div className="bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                    <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                    <span>Şirkətiniz üzrə 1 nəfər rəsmi Redaktor təyin edilib:</span>
+                  </div>
+
+                  <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>{currentCompanyEditor.fullName}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">
+                          Aktiv Redaktor
+                        </span>
+                      </div>
+                      <div className="text-xs font-mono text-indigo-600 dark:text-indigo-400">
+                        İstifadəçi adı: @{currentCompanyEditor.username}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Şirkət: <b>{currentUser?.tenantName}</b> • Təyin edilib: {new Date(currentCompanyEditor.createdAt).toLocaleDateString('az-AZ')}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteUser(currentCompanyEditor.id, currentCompanyEditor.fullName)}
+                      className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5 self-start md:self-auto"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Redaktoru Ləğv Et (Sil)</span>
+                    </button>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Sistem Məhdudiyyəti: </span>
+                      Şirkət üzrə eyni vaxtda yalnız 1 redaktor ola bilər. Başqa bir şəxsi redaktor təyin etmək istəyirsinizsə, əvvəlcə yuxarıdakı mövcud redaktoru silməlisiniz.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Form to create the single allowed editor */
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm space-y-6">
+                  <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/50 text-xs text-indigo-800 dark:text-indigo-300 flex items-start gap-2.5">
+                    <UserPlus className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Yeni Redaktor Təyini: </span>
+                      Hazırda şirkətiniz üçün heç bir redaktor təyin edilməyib. Aşağıdakı formadan istifadə edərək şirkətiniz üzrə 1 nəfər səlahiyyətli redaktor əlavə edə bilərsiniz.
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleCreateEditor} className="space-y-4 max-w-lg">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Redaktorun Tam Adı (Ad və Soyad)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="məs. Aytən Qasımova"
+                        value={newEditorData.fullName}
+                        onChange={(e) => setNewEditorData({ ...newEditorData, fullName: e.target.value })}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        İstifadəçi Adı (Giriş üçün)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="məs. editor_brend"
+                        value={newEditorData.username}
+                        onChange={(e) => setNewEditorData({ ...newEditorData, username: e.target.value })}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Şifrə
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={newEditorData.password}
+                        onChange={(e) => setNewEditorData({ ...newEditorData, password: e.target.value })}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>1 Nəfər Redaktor Təyin Et</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═══════════ TAB 6: SERVICES ═══════════ */}
           {activeTab === 'services' && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Xidmətlər və Qiymətlər</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Filiallar üzrə təqdim olunan bütün xidmətlər, müddət və qiymətlər</p>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Xidmət Tarifləri və Kateqoriyalar</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Müştərilərin rezervasiya zamanı seçəcəyi xidmət paketləri
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsServiceModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Yeni Xidmət Əlavə Et</span>
                 </button>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                    <tr>
-                      <th className="p-4">Xidmət Adı (AZ / EN)</th>
-                      <th className="p-4">Aid Olduğu Filial</th>
-                      <th className="p-4">Kateqoriya</th>
-                      <th className="p-4">Müddət</th>
-                      <th className="p-4">Qiymət (AZN)</th>
-                      <th className="p-4 text-right">Əməliyyat</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {services.map(s => {
-                      const t = tenants.find(x => x.id === s.tenantId);
-                      return (
-                        <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                          <td className="p-4">
-                            <p className="font-bold text-slate-900 dark:text-white">{s.nameAz}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{s.nameEn}</p>
-                          </td>
-                          <td className="p-4 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                            {t ? t.name : 'Naməlum'}
-                          </td>
-                          <td className="p-4">
-                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300">
-                              {s.category}
-                            </span>
-                          </td>
-                          <td className="p-4 text-xs text-slate-600 dark:text-slate-300">
-                            {s.duration} dəqiqə
-                          </td>
-                          <td className="p-4 font-bold text-emerald-600 dark:text-emerald-400">
-                            {s.price} AZN
-                          </td>
-                          <td className="p-4 text-right">
-                            <button
-                              onClick={() => handleDeleteService(s.id)}
-                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-700 dark:text-rose-300 hover:text-white transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════ TAB 5: STAFF ═══════════ */}
-          {activeTab === 'staff' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Mütəxəssis və İşçi Heyəti</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Həkimlər, ustalar, məşqçilər və mütəxəssislərin filiallar üzrə cədvəli</p>
-                </div>
-                <button
-                  onClick={() => setIsStaffModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Yeni Mütəxəssis Əlavə Et</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {staffList.map(st => {
-                  const t = tenants.find(x => x.id === st.tenantId);
-                  return (
-                    <div key={st.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 flex items-center justify-between shadow-sm transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                          {st.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{st.name}</h4>
-                          <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">{st.role}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{t ? t.name : 'Naməlum Filial'}</p>
-                        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {services.map(s => (
+                  <div
+                    key={s.id}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm transition-colors flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300">
+                          {s.category}
+                        </span>
+                        <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                          {s.price} ₼
+                        </span>
                       </div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{s.nameAz}</h4>
+                      <p className="text-xs text-slate-400 italic mb-3">{s.nameEn}</p>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Müddət: <b>{s.duration} dəqiqə</b>
+                      </div>
+                    </div>
 
+                    <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/10 flex justify-end">
                       <button
-                        onClick={() => handleDeleteStaff(st.id)}
-                        className="p-2 rounded-lg bg-rose-50 hover:bg-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500 text-rose-700 dark:text-rose-300 hover:text-white transition-all"
+                        onClick={() => handleDeleteService(s.id)}
+                        className="text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-semibold p-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════ TAB 6: MEDICAL & PATIENTS ═══════════ */}
-          {activeTab === 'medical' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Tibbi Qeydiyyat & FİN İnteqrasiyası</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Pasiyentlərin tibbi kartı, diaqnozları, müalicəsi və verilən reseptlər</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {patients.map(p => (
-                  <div key={p.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 space-y-4 shadow-sm transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-900 dark:text-white text-base">{p.fullName}</h4>
-                          <span className="text-xs font-mono font-bold bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/30">
-                            FİN: {p.fin}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Doğum tarixi: {p.birthDate || 'Qeyd olunmayıb'}</p>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setSelectedPatientForEncounter(p);
-                          setIsEncounterModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1 shadow-md shadow-emerald-600/20"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Klinik Baxış Əlavə Et</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-white/5 rounded-xl p-3">
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400">Qan Qrupu:</span>
-                        <p className="font-semibold text-slate-900 dark:text-white">{p.bloodGroup || 'Qeyd yoxdur'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400">Allergiyalar:</span>
-                        <p className="font-semibold text-slate-900 dark:text-white">{p.allergies || 'Yoxdur'}</p>
-                      </div>
-                    </div>
-
-                    {/* Encounters History */}
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Baxış Tarixçəsi və Diaqnozlar ({p.encounters?.length || 0})</h5>
-                      <div className="space-y-2">
-                        {p.encounters && p.encounters.length > 0 ? (
-                          p.encounters.map(e => (
-                            <div key={e.id} className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200 dark:border-white/5 text-xs space-y-1">
-                              <div className="flex justify-between items-center">
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">{e.doctorName}</span>
-                                <span className="text-[11px] text-slate-400">{e.encounterDate.split('T')[0]}</span>
-                              </div>
-                              <p className="text-slate-800 dark:text-slate-200"><span className="text-slate-500 dark:text-slate-400">Diaqnoz:</span> {e.diagnosis}</p>
-                              <p className="text-slate-800 dark:text-slate-200"><span className="text-slate-500 dark:text-slate-400">Müalicə:</span> {e.treatment}</p>
-                              {e.prescription && (
-                                <p className="text-indigo-600 dark:text-indigo-300 pt-1 border-t border-slate-200 dark:border-white/5"><span className="text-slate-500 dark:text-slate-400">Resept:</span> {e.prescription}</p>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-slate-400 italic">Hələ ki, kliniki baxış əlavə edilməyib.</p>
-                        )}
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -1223,44 +1684,271 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ═══════════ TAB 7: SETTINGS ═══════════ */}
-          {activeTab === 'settings' && (
-            <div className="space-y-6 max-w-2xl animate-in fade-in duration-200">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 space-y-4 shadow-sm transition-colors">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Sistem Məlumatları</h3>
-                <div className="space-y-2 text-xs font-mono text-slate-700 dark:text-slate-300 divide-y divide-slate-100 dark:divide-white/5">
-                  <div className="flex justify-between py-2">
-                    <span className="text-slate-500 dark:text-slate-400">Layihə Adı:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">RezervasiyaPro Multi-Tenant SaaS</span>
-                  </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-slate-500 dark:text-slate-400">Platforma & Server:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400">Hostinger Cloud / Node.js 18+ / Next.js 14</span>
-                  </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-slate-500 dark:text-slate-400">Verilənlər Bazası:</span>
-                    <span className="text-indigo-600 dark:text-indigo-400">PostgreSQL (Prisma) + Fail-safe JSON Store</span>
-                  </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-slate-500 dark:text-slate-400">Git Repozitoriya:</span>
-                    <span className="text-sky-600 dark:text-sky-400">https://github.com/2-RaL/RezervasiyaPro.git</span>
-                  </div>
+          {/* ═══════════ TAB 7: STAFF ═══════════ */}
+          {activeTab === 'staff' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">İşçi Heyəti və Mütəxəssislər</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Xidməti icra edən həkim, usta və mütəxəssislər
+                  </p>
                 </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-500/20 rounded-2xl p-6 space-y-4 shadow-sm transition-colors">
-                <h3 className="text-base font-bold text-rose-600 dark:text-rose-400">Demo Verilənləri Bərpa Et</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Bütün demo filialları, xidmətləri, işçiləri və rezervasiyaları ilkin standart vəziyyətinə qaytarmaq üçün aşağıdakı düyməni sıxın.
-                </p>
                 <button
-                  onClick={handleResetDemoData}
-                  className="px-5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-600 dark:bg-rose-600/20 dark:hover:bg-rose-600 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:text-white font-semibold text-xs transition-all flex items-center gap-2"
+                  onClick={() => setIsStaffModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Demo Datanı Sıfırla və Bərpa Et</span>
+                  <Plus className="w-4 h-4" />
+                  <span>Yeni İşçi Əlavə Et</span>
                 </button>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {staffList.map(st => (
+                  <div
+                    key={st.id}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm transition-colors flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg mb-3">
+                        {st.name.charAt(0)}
+                      </div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{st.name}</h4>
+                      <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">{st.role}</p>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/10 flex justify-end">
+                      <button
+                        onClick={() => handleDeleteStaff(st.id)}
+                        className="text-rose-600 dark:text-rose-400 hover:text-rose-700 text-xs font-semibold p-1.5 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════ TAB 8: MEDICAL ═══════════ */}
+          {activeTab === 'medical' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Tibbi Qeydiyyat və FİN Xəstəlik Tarixçəsi</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Osteopatiya, klinika və tibb mərkəzləri üçün pasiyent kartları və diaqnoz jurnalı
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Patient List */}
+                <div className="lg:col-span-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-3">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pasiyentlər</h4>
+                  <div className="space-y-2">
+                    {patients.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedPatientForEncounter(p)}
+                        className={`w-full text-left p-3 rounded-xl border transition-all ${
+                          selectedPatientForEncounter?.id === p.id
+                            ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-300 dark:border-indigo-500/40'
+                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-white/5 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="font-bold text-xs text-slate-900 dark:text-white">{p.fullName}</div>
+                        <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">FİN: {p.fin}</div>
+                        {p.bloodGroup && (
+                          <div className="text-[10px] text-slate-400">Qan qrupu: {p.bloodGroup}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Patient Medical History */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
+                  {selectedPatientForEncounter ? (
+                    <div>
+                      <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                        <div>
+                          <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                            {selectedPatientForEncounter.fullName}
+                          </h4>
+                          <p className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
+                            FİN: {selectedPatientForEncounter.fin} • Qan Qrupu: {selectedPatientForEncounter.bloodGroup || 'Qeyd edilməyib'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setIsEncounterModalOpen(true)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Diaqnoz və Baxış Əlavə Et</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Tibbi Baxış və Diaqnoz Tarixçəsi
+                        </h5>
+                        {(selectedPatientForEncounter.encounters || []).length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">Heç bir diaqnoz və ya baxış qeyd edilməyib.</p>
+                        ) : (
+                          (selectedPatientForEncounter.encounters || []).map((enc: any) => (
+                            <div
+                              key={enc.id}
+                              className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 space-y-1.5 text-xs"
+                            >
+                              <div className="flex justify-between text-[11px] font-semibold text-slate-400">
+                                <span>Həkim: <b className="text-slate-800 dark:text-slate-200">{enc.doctorName}</b></span>
+                                <span>{new Date(enc.encounterDate).toLocaleDateString('az-AZ')}</span>
+                              </div>
+                              <div className="font-bold text-slate-900 dark:text-white">
+                                Diaqnoz: <span className="text-indigo-600 dark:text-indigo-400">{enc.diagnosis}</span>
+                              </div>
+                              <div className="text-slate-600 dark:text-slate-300">
+                                <b>Müalicə planı:</b> {enc.treatment}
+                              </div>
+                              {enc.prescription && (
+                                <div className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
+                                  Resept: {enc.prescription}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-xs text-slate-400">
+                      Ətraflı tibbi kart və diaqnoz tarixçəsini görmək üçün soldakı siyahıdan bir pasiyent seçin.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════ TAB 9: SETTINGS ═══════════ */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6 animate-in fade-in duration-200 max-w-2xl">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  {isSuperAdmin ? 'Sistem Parametrləri' : 'Şirkət və Səhifə Tənzimləmələri'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isSuperAdmin
+                    ? 'RezervasiyaPro platformasının qlobal tənzimləmələri'
+                    : 'Öz şirkətinizin məlumatlarını və funksiyalarını idarə edin'}
+                </p>
+              </div>
+
+              {/* Company Admin Settings Form */}
+              {isCompanyAdmin && (
+                <form
+                  onSubmit={handleSaveCompanySettings}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm space-y-4"
+                >
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Şirkət Rekvizitləri</h4>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Şirkətin Rəsmi Adı
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={companySettingsData.name}
+                      onChange={(e) => setCompanySettingsData({ ...companySettingsData, name: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Əlaqə Nömrəsi
+                      </label>
+                      <input
+                        type="tel"
+                        value={companySettingsData.phone}
+                        onChange={(e) => setCompanySettingsData({ ...companySettingsData, phone: e.target.value })}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Sektor
+                      </label>
+                      <select
+                        value={companySettingsData.sector}
+                        onChange={(e) => setCompanySettingsData({ ...companySettingsData, sector: e.target.value })}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                      >
+                        <option value="Gözəllik & Kosmetologiya">Gözəllik & Kosmetologiya</option>
+                        <option value="Səhiyyə & Diaqnostika">Səhiyyə & Diaqnostika</option>
+                        <option value="Bərbərxana & Stil">Bərbərxana & Stil</option>
+                        <option value="Avtomobil & Detailing">Avtomobil & Detailing</option>
+                        <option value="İdman & Fitnes">İdman & Fitnes</option>
+                        <option value="Təhsil & Fərdi Dərslər">Təhsil & Fərdi Dərslər</option>
+                        <option value="Reabilitasiya & Osteopatiya">Reabilitasiya & Osteopatiya</option>
+                        <option value="Digər Xidmətlər">Digər Xidmətlər</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Ünvan
+                    </label>
+                    <input
+                      type="text"
+                      value={companySettingsData.address}
+                      onChange={(e) => setCompanySettingsData({ ...companySettingsData, address: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="compMedEnabled"
+                      checked={companySettingsData.medicalEnabled}
+                      onChange={(e) => setCompanySettingsData({ ...companySettingsData, medicalEnabled: e.target.checked })}
+                      className="rounded border-slate-300 dark:border-white/10 text-indigo-600 focus:ring-0"
+                    />
+                    <label htmlFor="compMedEnabled" className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold cursor-pointer">
+                      Tibbi Modul Aktiv Olsun (FİN ilə pasiyent bazası)
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Şirkət Məlumatlarını Yadda Saxla</span>
+                  </button>
+                </form>
+              )}
+
+              {/* Super Admin Reset Demo Data Section */}
+              {isSuperAdmin && (
+                <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-500/20 rounded-2xl p-6 space-y-4 shadow-sm transition-colors">
+                  <h3 className="text-base font-bold text-rose-600 dark:text-rose-400">Demo Verilənləri Bərpa Et</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Bütün demo filialları, xidmətləri, işçiləri və rezervasiyaları ilkin standart vəziyyətinə qaytarmaq üçün aşağıdakı düyməni sıxın.
+                  </p>
+                  <button
+                    onClick={handleResetDemoData}
+                    className="px-5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-600 dark:bg-rose-600/20 dark:hover:bg-rose-600 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 hover:text-white font-semibold text-xs transition-all flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Demo Datanı Sıfırla və Bərpa Et</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1278,29 +1966,31 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={handleCreateBooking} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial Seçin</label>
-                <select
-                  value={newBookingData.tenantId}
-                  onChange={(e) => {
-                    const tid = e.target.value;
-                    const tenantSrvs = services.filter(s => s.tenantId === tid);
-                    const tenantStf = staffList.filter(st => st.tenantId === tid);
-                    setNewBookingData({
-                      ...newBookingData,
-                      tenantId: tid,
-                      serviceId: tenantSrvs[0]?.id || '',
-                      staffId: tenantStf[0]?.id || ''
-                    });
-                  }}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
-                  required
-                >
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
+              {isSuperAdmin && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial Seçin</label>
+                  <select
+                    value={newBookingData.tenantId}
+                    onChange={(e) => {
+                      const tid = e.target.value;
+                      const tenantSrvs = services.filter(s => s.tenantId === tid);
+                      const tenantStf = staffList.filter(st => st.tenantId === tid);
+                      setNewBookingData({
+                        ...newBookingData,
+                        tenantId: tid,
+                        serviceId: tenantSrvs[0]?.id || '',
+                        staffId: tenantStf[0]?.id || ''
+                      });
+                    }}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    required
+                  >
+                    {tenants.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1348,11 +2038,11 @@ export default function AdminDashboardPage() {
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                     required
                   >
-                    <option value="">Seçin</option>
+                    <option value="">-- Xidmət seçin --</option>
                     {services
-                      .filter(s => !newBookingData.tenantId || s.tenantId === newBookingData.tenantId)
+                      .filter(s => isSuperAdmin ? s.tenantId === newBookingData.tenantId : true)
                       .map(s => (
-                        <option key={s.id} value={s.id}>{s.nameAz} ({s.price} AZN)</option>
+                        <option key={s.id} value={s.id}>{s.nameAz} ({s.price} ₼)</option>
                       ))}
                   </select>
                 </div>
@@ -1364,9 +2054,9 @@ export default function AdminDashboardPage() {
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                     required
                   >
-                    <option value="">Seçin</option>
+                    <option value="">-- Mütəxəssis seçin --</option>
                     {staffList
-                      .filter(st => !newBookingData.tenantId || st.tenantId === newBookingData.tenantId)
+                      .filter(st => isSuperAdmin ? st.tenantId === newBookingData.tenantId : true)
                       .map(st => (
                         <option key={st.id} value={st.id}>{st.name} ({st.role})</option>
                       ))}
@@ -1386,11 +2076,10 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Saat</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaxt</label>
                   <input
-                    type="text"
+                    type="time"
                     required
-                    placeholder="Məs: 14:30"
                     value={newBookingData.timeSlot}
                     onChange={(e) => setNewBookingData({ ...newBookingData, timeSlot: e.target.value })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
@@ -1410,7 +2099,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
                 >
-                  Təsdiq Et və Əlavə Et
+                  Rezervasiyanı Təsdiqlə
                 </button>
               </div>
             </form>
@@ -1418,12 +2107,12 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ═══════════ MODAL 2: NEW TENANT ═══════════ */}
-      {isTenantModalOpen && (
+      {/* ═══════════ MODAL 2: NEW TENANT (SUPER ADMIN ONLY) ═══════════ */}
+      {isTenantModalOpen && isSuperAdmin && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Yeni Filial / Şirkət Qeydiyyatı</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Yeni Şirkət / Filial Yarat</h3>
               <button onClick={() => setIsTenantModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <XCircle className="w-5 h-5" />
               </button>
@@ -1431,16 +2120,16 @@ export default function AdminDashboardPage() {
 
             <form onSubmit={handleCreateTenant} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial / Şirkət Adı</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Müəssisə / Şirkət Adı</label>
                 <input
                   type="text"
                   required
-                  placeholder="Məs: Baku Smile Dental"
+                  placeholder="məs. Elite Estetik Mərkəzi"
                   value={newTenantData.name}
                   onChange={(e) => {
-                    const name = e.target.value;
-                    const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-                    setNewTenantData({ ...newTenantData, name, slug });
+                    const val = e.target.value;
+                    const slugVal = val.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                    setNewTenantData({ ...newTenantData, name: val, slug: slugVal });
                   }}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 />
@@ -1458,6 +2147,28 @@ export default function AdminDashboardPage() {
                     className="w-full bg-transparent text-indigo-600 dark:text-indigo-400 font-mono focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Requirement 3: Super Admin can assign this new company to an Admin user */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Cavabdeh Şirkət Admini Təyin Et (İstəyə bağlı)
+                </label>
+                <select
+                  value={newTenantData.assignedAdminId}
+                  onChange={(e) => setNewTenantData({ ...newTenantData, assignedAdminId: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                >
+                  <option value="">-- Təyin edilməsin (Sonra istifadəçilərdən təyin et) --</option>
+                  {usersList.filter(u => u.role === 'ADMIN').map(adminUser => (
+                    <option key={adminUser.id} value={adminUser.id}>
+                      {adminUser.fullName} (@{adminUser.username}) {adminUser.tenantName ? `[${adminUser.tenantName}]` : '[Təyin edilməyib]'}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Seçilmiş istifadəçi bu yeni filialın tam inzibatçısı olacaq.
+                </p>
               </div>
 
               <div>
@@ -1532,7 +2243,115 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ═══════════ MODAL 3: NEW SERVICE ═══════════ */}
+      {/* ═══════════ MODAL 3: NEW USER (SUPER ADMIN ONLY) ═══════════ */}
+      {isUserModalOpen && isSuperAdmin && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Yeni İstifadəçi Əlavə Et</h3>
+              <button onClick={() => setIsUserModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Ad və Soyad
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="məs. Rəşad Quliyev"
+                  value={newUserData.fullName}
+                  onChange={(e) => setNewUserData({ ...newUserData, fullName: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  İstifadəçi Adı (Giriş üçün)
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="məs. admin_filial"
+                  value={newUserData.username}
+                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Şifrə
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  İstifadəçi Rolu
+                </label>
+                <select
+                  value={newUserData.role}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value as UserRole })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                >
+                  <option value="ADMIN">Şirkət Admini (ADMIN)</option>
+                  <option value="SUPER_ADMIN">Super Administrator (SUPER_ADMIN)</option>
+                  <option value="EDITOR">Filial Redaktoru (EDITOR)</option>
+                </select>
+              </div>
+
+              {newUserData.role !== 'SUPER_ADMIN' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Təyin Ediləcək Şirkət / Filial
+                  </label>
+                  <select
+                    value={newUserData.tenantId}
+                    onChange={(e) => setNewUserData({ ...newUserData, tenantId: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    required
+                  >
+                    <option value="">-- Şirkət seçin --</option>
+                    {tenants.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUserModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  İmtina
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
+                >
+                  İstifadəçini Yarat
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════ MODAL 4: NEW SERVICE ═══════════ */}
       {isServiceModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
@@ -1544,26 +2363,28 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={handleCreateService} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial</label>
-                <select
-                  value={newServiceData.tenantId}
-                  onChange={(e) => setNewServiceData({ ...newServiceData, tenantId: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
-                  required
-                >
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
+              {isSuperAdmin && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial</label>
+                  <select
+                    value={newServiceData.tenantId}
+                    onChange={(e) => setNewServiceData({ ...newServiceData, tenantId: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    required
+                  >
+                    {tenants.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Xidmət Adı (Azərbaycan dilində)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Xidmətin Adı (AZ)</label>
                 <input
                   type="text"
                   required
-                  placeholder="Məs: Plomb qoyulması"
+                  placeholder="məs. Üz Təmizlənməsi və Baxım"
                   value={newServiceData.nameAz}
                   onChange={(e) => setNewServiceData({ ...newServiceData, nameAz: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
@@ -1571,12 +2392,12 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kateqoriya</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Xidmətin Adı (EN)</label>
                 <input
                   type="text"
-                  placeholder="Məs: Stomatologiya, Saç kəsimi"
-                  value={newServiceData.category}
-                  onChange={(e) => setNewServiceData({ ...newServiceData, category: e.target.value })}
+                  placeholder="məs. Facial Cleansing"
+                  value={newServiceData.nameEn}
+                  onChange={(e) => setNewServiceData({ ...newServiceData, nameEn: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 />
               </div>
@@ -1586,25 +2407,35 @@ export default function AdminDashboardPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Qiymət (AZN)</label>
                   <input
                     type="number"
-                    min="0"
                     required
+                    min={0}
                     value={newServiceData.price}
                     onChange={(e) => setNewServiceData({ ...newServiceData, price: Number(e.target.value) })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Müddət (dəqiqə)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Müddət (dəq)</label>
                   <input
                     type="number"
-                    min="5"
-                    step="5"
                     required
+                    min={5}
                     value={newServiceData.duration}
                     onChange={(e) => setNewServiceData({ ...newServiceData, duration: Number(e.target.value) })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kateqoriya</label>
+                <input
+                  type="text"
+                  placeholder="məs. Dəri qulluğu"
+                  value={newServiceData.category}
+                  onChange={(e) => setNewServiceData({ ...newServiceData, category: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                />
               </div>
 
               <div className="pt-3 flex justify-end gap-2">
@@ -1619,7 +2450,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
                 >
-                  Xidməti Əlavə Et
+                  Xidməti Yarat
                 </button>
               </div>
             </form>
@@ -1627,7 +2458,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ═══════════ MODAL 4: NEW STAFF ═══════════ */}
+      {/* ═══════════ MODAL 5: NEW STAFF ═══════════ */}
       {isStaffModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
@@ -1639,26 +2470,28 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={handleCreateStaff} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial</label>
-                <select
-                  value={newStaffData.tenantId}
-                  onChange={(e) => setNewStaffData({ ...newStaffData, tenantId: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
-                  required
-                >
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
+              {isSuperAdmin && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filial</label>
+                  <select
+                    value={newStaffData.tenantId}
+                    onChange={(e) => setNewStaffData({ ...newStaffData, tenantId: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    required
+                  >
+                    {tenants.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Mütəxəssisin Adı və Soyadı</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ad və Soyad</label>
                 <input
                   type="text"
                   required
-                  placeholder="Məs: Dr. Samir İsmayılov"
+                  placeholder="məs. Dr. Nərgiz Məmmədova"
                   value={newStaffData.name}
                   onChange={(e) => setNewStaffData({ ...newStaffData, name: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
@@ -1670,7 +2503,7 @@ export default function AdminDashboardPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Məs: Baş Terapevt, Master Barber, Lazeroloq"
+                  placeholder="məs. Kosmetoloq-Dermatoloq"
                   value={newStaffData.role}
                   onChange={(e) => setNewStaffData({ ...newStaffData, role: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
@@ -1689,7 +2522,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md shadow-indigo-600/30"
                 >
-                  Mütəxəssisi Əlavə Et
+                  Mütəxəssisi Yarat
                 </button>
               </div>
             </form>
@@ -1697,16 +2530,14 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ═══════════ MODAL 5: NEW CLINICAL ENCOUNTER ═══════════ */}
+      {/* ═══════════ MODAL 6: MEDICAL ENCOUNTER ═══════════ */}
       {isEncounterModalOpen && selectedPatientForEncounter && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 transition-colors">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Klinik Baxış və Diaqnoz Qeydi</h3>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-                  Pasiyent: {selectedPatientForEncounter.fullName} (FİN: {selectedPatientForEncounter.fin})
-                </p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tibbi Baxış və Diaqnoz Qeydi</h3>
+                <p className="text-xs text-slate-500">Pasiyent: {selectedPatientForEncounter.fullName} (FİN: {selectedPatientForEncounter.fin})</p>
               </div>
               <button onClick={() => setIsEncounterModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <XCircle className="w-5 h-5" />
@@ -1719,7 +2550,7 @@ export default function AdminDashboardPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Məs: Dr. Rəşad Əliyev"
+                  placeholder="məs. Dr. Şahin Əhmədov"
                   value={newEncounterData.doctorName}
                   onChange={(e) => setNewEncounterData({ ...newEncounterData, doctorName: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
@@ -1731,7 +2562,7 @@ export default function AdminDashboardPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Məs: Kəskin pulpitis, sol yuxarı 6-cı diş"
+                  placeholder="məs. Servikal fəqərə osteoxondrozu"
                   value={newEncounterData.diagnosis}
                   onChange={(e) => setNewEncounterData({ ...newEncounterData, diagnosis: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
@@ -1739,25 +2570,25 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Görülən Müalicə / Prosedur</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Müalicə / Terapiya Təyinatı</label>
                 <textarea
                   rows={2}
                   required
-                  placeholder="Məs: Sinir çıxarıldı, kanallar dezinfeksiya edildi və müvəqqəti plomblə bağlandı."
+                  placeholder="məs. 5 seans osteopatik korreksiya və müalicəvi gimnastika"
                   value={newEncounterData.treatment}
                   onChange={(e) => setNewEncounterData({ ...newEncounterData, treatment: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white resize-none"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Yazılan Resept / Dərmanlar</label>
-                <textarea
-                  rows={2}
-                  placeholder="Məs: Nimesil gündə 2 dəfə yeməkdən sonra, Asepta balzam"
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Dərman Resepti (İstəyə bağlı)</label>
+                <input
+                  type="text"
+                  placeholder="məs. Maqnezium B6 1x2, Kondroprotektor"
                   value={newEncounterData.prescription}
                   onChange={(e) => setNewEncounterData({ ...newEncounterData, prescription: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white resize-none font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono"
                 />
               </div>
 
@@ -1773,7 +2604,7 @@ export default function AdminDashboardPage() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-md shadow-emerald-600/30"
                 >
-                  Tarixçəyə Əlavə Et
+                  Diaqnozu Qeyd Et
                 </button>
               </div>
             </form>

@@ -2,6 +2,21 @@ export type TenantStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED';
 
 export type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
 
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR';
+
+export interface User {
+  id: string;
+  username: string;
+  password?: string;
+  fullName: string;
+  role: UserRole;
+  tenantId?: string | null;
+  tenantName?: string;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Tenant {
   id: string;
   name: string;
