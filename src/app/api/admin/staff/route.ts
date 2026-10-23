@@ -46,7 +46,8 @@ export async function POST(request: Request) {
     const staffMember = createStaff({
       tenantId,
       name: body.name,
-      role: body.role
+      role: body.role,
+      serviceIds: Array.isArray(body.serviceIds) ? body.serviceIds : []
     });
 
     return NextResponse.json({ success: true, staff: staffMember });

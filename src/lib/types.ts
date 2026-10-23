@@ -12,6 +12,9 @@ export interface User {
   role: UserRole;
   tenantId?: string | null;
   tenantName?: string;
+  fin?: string;
+  phone?: string;
+  isActive?: boolean; // Aktiv və ya bloklanmış olması
   createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +55,7 @@ export interface Staff {
   tenantId: string;
   name: string;
   role: string;
+  serviceIds?: string[]; // Mütəxəssisə təhkim edilmiş xidmətlərin ID siyahısı
 }
 
 export interface Booking {

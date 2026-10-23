@@ -7,6 +7,9 @@
       "fullName": "Super Administrator",
       "role": "SUPER_ADMIN",
       "tenantId": null,
+      "fin": "1ABC123",
+      "phone": "+994 50 111 22 33",
+      "isActive": true,
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -17,6 +20,9 @@
       "fullName": "Baş İnzibatçı",
       "role": "SUPER_ADMIN",
       "tenantId": null,
+      "fin": "2ABC123",
+      "phone": "+994 50 222 33 44",
+      "isActive": true,
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -27,6 +33,9 @@
       "fullName": "Aysel Xanım (Gözəllik Admini)",
       "role": "ADMIN",
       "tenantId": "tenant-1",
+      "fin": "3ABC123",
+      "phone": "+994 50 333 44 55",
+      "isActive": true,
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -37,6 +46,9 @@
       "fullName": "Dr. Rəşad Əliyev (Klinika Admini)",
       "role": "ADMIN",
       "tenantId": "tenant-2",
+      "fin": "4ABC123",
+      "phone": "+994 50 444 55 66",
+      "isActive": true,
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     },
@@ -47,6 +59,9 @@
       "fullName": "Nərmin Məmmədova (Redaktor)",
       "role": "EDITOR",
       "tenantId": "tenant-1",
+      "fin": "5ABC123",
+      "phone": "+994 50 555 66 77",
+      "isActive": true,
       "createdAt": "2026-10-23T04:02:11.321Z",
       "updatedAt": "2026-10-23T04:02:11.321Z"
     }
@@ -293,79 +308,92 @@
       "id": "stf-1",
       "tenantId": "tenant-1",
       "name": "Aysel Quliyeva",
-      "role": "Baş Kosmetoloq"
+      "role": "Baş Kosmetoloq",
+      "serviceIds": ["srv-2"]
     },
     {
       "id": "stf-2",
       "tenantId": "tenant-1",
       "name": "Nərmin Məmmədova",
-      "role": "Lazer Mütəxəssisi"
+      "role": "Lazer Mütəxəssisi",
+      "serviceIds": ["srv-1"]
     },
     {
       "id": "stf-3",
       "tenantId": "tenant-2",
       "name": "Dr. Rəşad Əliyev",
-      "role": "Ortodont / Stomatoloq"
+      "role": "Ortodont / Stomatoloq",
+      "serviceIds": ["srv-3", "srv-4"]
     },
     {
       "id": "stf-4",
       "tenantId": "tenant-2",
       "name": "Dr. Günel Həsənova",
-      "role": "Terapevt-Stomatoloq"
+      "role": "Terapevt-Stomatoloq",
+      "serviceIds": ["srv-3"]
     },
     {
       "id": "stf-5",
       "tenantId": "tenant-3",
       "name": "Kamran Əhmədov",
-      "role": "Top Barber Master"
+      "role": "Top Barber Master",
+      "serviceIds": ["srv-5"]
     },
     {
       "id": "stf-auto-1",
       "tenantId": "tenant-4",
       "name": "Elçin Qasımov",
-      "role": "Baş Detailing Ustası"
+      "role": "Baş Detailing Ustası",
+      "serviceIds": ["srv-auto-1"]
     },
     {
       "id": "stf-auto-2",
       "tenantId": "tenant-4",
       "name": "Ramil Məmmədov",
-      "role": "Avto Diaqnost"
+      "role": "Avto Diaqnost",
+      "serviceIds": ["srv-auto-2", "srv-auto-3"]
     },
     {
       "id": "stf-fit-1",
       "tenantId": "tenant-5",
       "name": "Murad Əliyev",
-      "role": "Sertifikatlı Fitnes Təlimçisi"
+      "role": "Sertifikatlı Fitnes Təlimçisi",
+      "serviceIds": ["srv-fit-1"]
     },
     {
       "id": "stf-fit-2",
       "tenantId": "tenant-5",
       "name": "Ayan Qasımzadə",
-      "role": "Yoga & Pilates Mütəxəssisi"
+      "role": "Yoga & Pilates Mütəxəssisi",
+      "serviceIds": ["srv-fit-2"]
     },
     {
       "id": "stf-edu-1",
       "tenantId": "tenant-6",
       "name": "Nigar Əhmədova",
-      "role": "IELTS Baş Təlimçi (C2)"
+      "role": "IELTS Baş Təlimçi (C2)",
+      "serviceIds": ["srv-edu-1"]
     },
     {
       "id": "stf-edu-2",
       "tenantId": "tenant-6",
       "name": "Fərid İsmayılov",
-      "role": "Senior Proqramçı / Mentor"
+      "role": "Senior Proqramçı / Mentor",
+      "serviceIds": ["srv-edu-2"]
     },
     {
       "id": "stf-ost-1",
       "tenantId": "tenant-osteopat",
       "name": "Dr. Elmir Məmmədov",
-      "role": "Baş Həkim-Osteopat"
+      "role": "Baş Həkim-Osteopat",
+      "serviceIds": ["srv-ost-1", "srv-ost-2"]
     },
     {
       "id": "stf-ost-2",
       "tenantId": "tenant-osteopat",
       "name": "Dr. Leyla Rəhimova",
-      "role": "Fizioterapevt / Reabilitoloq"
+      "role": "Fizioterapevt / Reabilitoloq",
+      "serviceIds": ["srv-ost-3"]
     }
   ],
   "bookings": [

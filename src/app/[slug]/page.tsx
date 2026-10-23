@@ -45,6 +45,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const [submitting, setSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
 
+  // Booked slots tracking
+  const [bookedSlots, setBookedSlots] = useState<{ date: string; timeSlot: string; staffId: string }[]>([]);
+
   // Quality & Reviews state
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [reviewRating, setReviewRating] = useState<number>(5);
@@ -62,6 +65,27 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
   ];
 
+  // Real-time input handlers: strictly letters for name, strictly digits for phone
+  const handleCustomerNameChange = (val: string) => {
+    const cleaned = val.replace(/[^a-zA-Z\səıöğçşƏIİÖĞÇŞ'-]/g, '');
+    setCustomerName(cleaned);
+  };
+
+  const handleCustomerPhoneChange = (val: string) => {
+    const cleaned = val.replace(/[^\d+\s()-]/g, '');
+    setCustomerPhone(cleaned);
+  };
+
+  const handleReviewNameChange = (val: string) => {
+    const cleaned = val.replace(/[^a-zA-Z\səıöğçşƏIİÖĞÇŞ'-]/g, '');
+    setReviewName(cleaned);
+  };
+
+  const handleReviewPhoneChange = (val: string) => {
+    const cleaned = val.replace(/[^\d+\s()-]/g, '');
+    setReviewPhone(cleaned);
+  };
+
   const loadReviews = async (tenantId: string) => {
     try {
       const res = await fetch(`/api/reviews?tenantId=${tenantId}`);
@@ -74,6 +98,20 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     }
   };
 
+  const loadBookedSlots = async (tenantId: string, date: string, staffId?: string) => {
+    try {
+      let url = `/api/bookings?tenantId=${tenantId}&date=${date}`;
+      if (staffId) url += `&staffId=${staffId}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.bookedSlots)) {
+        setBookedSlots(data.bookedSlots);
+      }
+    } catch (e) {
+      console.error('Failed to load booked slots:', e);
+    }
+  };
+
   useEffect(() => {
     async function loadTenant() {
       try {
@@ -83,14 +121,24 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         if (data.success && data.tenant) {
           setTenant(data.tenant);
           const activeServices = (data.tenant.services || []).filter((s: Service) => s.isActive !== false);
+          let initialStaffId = '';
           if (activeServices.length > 0) {
             setSelectedServiceId(activeServices[0].id);
             setReviewServiceName(activeServices[0].nameAz);
-          }
-          if (data.tenant.staff && data.tenant.staff.length > 0) {
+            // Specialist matching the first service
+            const matchingStaff = (data.tenant.staff || []).filter((st: Staff) => 
+              !st.serviceIds || st.serviceIds.length === 0 || st.serviceIds.includes(activeServices[0].id)
+            );
+            if (matchingStaff.length > 0) {
+              initialStaffId = matchingStaff[0].id;
+              setSelectedStaffId(matchingStaff[0].id);
+            }
+          } else if (data.tenant.staff && data.tenant.staff.length > 0) {
+            initialStaffId = data.tenant.staff[0].id;
             setSelectedStaffId(data.tenant.staff[0].id);
           }
           loadReviews(data.tenant.id);
+          loadBookedSlots(data.tenant.id, selectedDate, initialStaffId);
         } else {
           setError(data.error || 'Müəssisə tapılmadı');
         }
@@ -102,6 +150,28 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     }
     loadTenant();
   }, [params.slug]);
+
+  // Load booked slots whenever date or staff changes
+  useEffect(() => {
+    if (tenant?.id && selectedDate) {
+      loadBookedSlots(tenant.id, selectedDate, selectedStaffId);
+    }
+  }, [tenant?.id, selectedDate, selectedStaffId]);
+
+  // Auto-switch selected time slot if current selected slot is booked
+  useEffect(() => {
+    const isCurrentBooked = bookedSlots.some(
+      b => b.timeSlot === selectedTime && (!selectedStaffId || b.staffId === selectedStaffId)
+    );
+    if (isCurrentBooked) {
+      const freeSlot = timeSlots.find(
+        t => !bookedSlots.some(b => b.timeSlot === t && (!selectedStaffId || b.staffId === selectedStaffId))
+      );
+      if (freeSlot) {
+        setSelectedTime(freeSlot);
+      }
+    }
+  }, [bookedSlots, selectedTime, selectedStaffId]);
 
   // Submit Quality Review
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -214,6 +284,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   }
 
   const selectedService = tenant.services?.find(s => s.id === selectedServiceId);
+  const availableStaff = (tenant.staff || []).filter(stf => {
+    if (stf.serviceIds && stf.serviceIds.length > 0) {
+      return stf.serviceIds.includes(selectedServiceId);
+    }
+    return true;
+  });
   const selectedStaff = tenant.staff?.find(s => s.id === selectedStaffId);
 
   return (
@@ -353,17 +429,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   setCustomerName('');
                   setCustomerPhone('+994 ');
                   setCustomerFin('');
+                  if (tenant?.id && selectedDate) {
+                    loadBookedSlots(tenant.id, selectedDate, selectedStaffId);
+                  }
                 }}
-                className="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white font-semibold text-sm transition-all"
+                className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
               >
-                Yeni Rezervasiya Et
+                <Calendar className="w-4 h-4" />
+                <span>Yeni Rezervasiya Et</span>
               </button>
-              <Link
-                href="/admin"
-                className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all"
-              >
-                Admin Paneldə Bax
-              </Link>
             </div>
           </div>
         ) : (
@@ -388,6 +462,13 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       onClick={() => {
                         setSelectedServiceId(srv.id);
                         setReviewServiceName(srv.nameAz);
+                        // Check if current specialist provides this service
+                        const matches = (tenant.staff || []).filter(st => 
+                          !st.serviceIds || st.serviceIds.length === 0 || st.serviceIds.includes(srv.id)
+                        );
+                        if (matches.length > 0 && !matches.some(st => st.id === selectedStaffId)) {
+                          setSelectedStaffId(matches[0].id);
+                        }
                       }}
                       className={`cursor-pointer rounded-2xl p-4 border transition-all ${
                         isSelected 
@@ -412,38 +493,47 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               </div>
             </div>
 
-            {/* Step 2: Select Specialist */}
+            {/* Step 2: Select Specialist (Filtered by Selected Service) */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">2</div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Mütəxəssis Seçimi</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Xidmət almaq istədiyiniz mütəxəssisi seçin</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Seçilmiş xidmət üzrə təyin edilmiş mütəxəssisi seçin
+                  </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {tenant.staff?.map(stf => {
-                  const isSelected = selectedStaffId === stf.id;
-                  return (
-                    <div
-                      key={stf.id}
-                      onClick={() => setSelectedStaffId(stf.id)}
-                      className={`cursor-pointer rounded-2xl p-4 border transition-all text-center ${
-                        isSelected 
-                          ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
-                          : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
-                      }`}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-bold text-base mx-auto mb-3 shadow-md">
-                        {stf.name.split(' ').map(n => n[0]).join('')}
+              {availableStaff.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {availableStaff.map(stf => {
+                    const isSelected = selectedStaffId === stf.id;
+                    return (
+                      <div
+                        key={stf.id}
+                        onClick={() => setSelectedStaffId(stf.id)}
+                        className={`cursor-pointer rounded-2xl p-4 border transition-all text-center ${
+                          isSelected 
+                            ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
+                            : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-bold text-base mx-auto mb-3 shadow-md">
+                          {stf.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{stf.name}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{stf.role}</p>
                       </div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{stf.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{stf.role}</p>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Bu xidmət üzrə aktiv mütəxəssis təyin edilməyib. Zəhmət olmasa başqa xidmət seçin və ya müəssisə ilə əlaqə saxlayın.</span>
+                </div>
+              )}
             </div>
 
             {/* Step 3: Date & Time Slot */}
@@ -470,10 +560,40 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Mövcud Saatlar</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Mövcud Saatlar</label>
+                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Boş
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Dolu (Rezerv edilib)
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     {timeSlots.map(time => {
+                      const isBooked = bookedSlots.some(
+                        b => b.timeSlot === time && (!selectedStaffId || b.staffId === selectedStaffId)
+                      );
                       const isSelected = selectedTime === time;
+
+                      if (isBooked) {
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            disabled={true}
+                            title="Bu saat artıq doludur və seçilə bilməz"
+                            className="py-2.5 px-2 rounded-xl text-xs font-bold transition-all bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/40 text-rose-500 dark:text-rose-400 line-through cursor-not-allowed opacity-70 flex flex-col items-center justify-center gap-0.5"
+                          >
+                            <span>{time}</span>
+                            <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 no-underline">Dolu</span>
+                          </button>
+                        );
+                      }
+
                       return (
                         <button
                           key={time}
@@ -506,25 +626,29 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ad və Soyad *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Ad və Soyad * (Yalnız hərflər)
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="Məs: Əli Əliyev"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => handleCustomerNameChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Mobil Nömrə *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Mobil Nömrə * (Yalnız rəqəmlər)
+                  </label>
                   <input
                     type="tel"
                     required
                     placeholder="+994 50 123 45 67"
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onChange={(e) => handleCustomerPhoneChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
@@ -668,27 +792,27 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Adınız və Soyadınız *
+                    Adınız və Soyadınız * (Yalnız hərflər)
                   </label>
                   <input
                     type="text"
                     required
                     placeholder="Məs: Günel Əhmədova"
                     value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
+                    onChange={(e) => handleReviewNameChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Mobil Nömrəniz (İstəyə bağlı)
+                    Mobil Nömrəniz (İstəyə bağlı, yalnız rəqəmlər)
                   </label>
                   <input
                     type="tel"
                     placeholder="+994 50 123 45 67"
                     value={reviewPhone}
-                    onChange={(e) => setReviewPhone(e.target.value)}
+                    onChange={(e) => handleReviewPhoneChange(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
                   />
                 </div>

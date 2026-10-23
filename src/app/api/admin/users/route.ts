@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUsers, createUser, deleteUser, getUserById, getTenants } from '../../../../lib/dataStore';
+import { getUsers, createUser, updateUser, deleteUser, getUserById, getTenants } from '../../../../lib/dataStore';
 import { getSessionUser } from '../../../../lib/auth';
 import { UserRole } from '../../../../lib/types';
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { username, password, fullName, role, tenantId } = body;
+    const { username, password, fullName, role, tenantId, fin, phone } = body;
 
     if (!username || !password || !fullName || !role) {
       return NextResponse.json(
@@ -59,6 +59,8 @@ export async function POST(request: Request) {
         fullName,
         role: role as UserRole,
         tenantId: tenantId || null,
+        fin: fin || '',
+        phone: phone || '',
         createdBy: currentUser.id
       });
 
@@ -104,6 +106,8 @@ export async function POST(request: Request) {
         fullName,
         role: 'EDITOR',
         tenantId: currentUser.tenantId,
+        fin: fin || '',
+        phone: phone || '',
         createdBy: currentUser.id
       });
 
@@ -115,6 +119,68 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: false, error: 'Bu əməliyyat üçün icazəniz yoxdur' }, { status: 403 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const currentUser = getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ success: false, error: 'Giriş edilməyib' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, username, fullName, role, tenantId, fin, phone, password, isActive } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'İstifadəçi ID-si tələb olunur' }, { status: 400 });
+    }
+
+    const targetUser = getUserById(id);
+    if (!targetUser) {
+      return NextResponse.json({ success: false, error: 'İstifadəçi tapılmadı' }, { status: 404 });
+    }
+
+    // Super Admin can edit any user
+    if (currentUser.role === 'SUPER_ADMIN') {
+      const updates: any = {};
+      if (username !== undefined) updates.username = username;
+      if (fullName !== undefined) updates.fullName = fullName;
+      if (role !== undefined) updates.role = role;
+      if (tenantId !== undefined) updates.tenantId = tenantId;
+      if (fin !== undefined) updates.fin = fin;
+      if (phone !== undefined) updates.phone = phone;
+      if (password && password.trim() !== '') updates.password = password;
+      if (isActive !== undefined) updates.isActive = isActive;
+
+      const updated = updateUser(id, updates);
+      if (!updated) {
+        return NextResponse.json({ success: false, error: 'Yenilənmə alınmadı (İstifadəçi adı artıq mövcuddur və ya xətalı parametrlər)' }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, user: updated, message: 'İstifadəçi məlumatları yeniləndi' });
+    }
+
+    // Company Admin can ONLY edit their own company's editor
+    if (currentUser.role === 'ADMIN') {
+      if (targetUser.role !== 'EDITOR' || targetUser.tenantId !== currentUser.tenantId) {
+        return NextResponse.json({ success: false, error: 'Yalnız öz şirkətinizin redaktorunu redaktə edə bilərsiniz' }, { status: 403 });
+      }
+
+      const updates: any = {};
+      if (fullName !== undefined) updates.fullName = fullName;
+      if (fin !== undefined) updates.fin = fin;
+      if (phone !== undefined) updates.phone = phone;
+      if (password && password.trim() !== '') updates.password = password;
+      if (isActive !== undefined) updates.isActive = isActive;
+
+      const updated = updateUser(id, updates);
+      return NextResponse.json({ success: true, user: updated, message: 'Redaktor məlumatları yeniləndi' });
+    }
+
+    return NextResponse.json({ success: false, error: 'İcazə verilmədi' }, { status: 403 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

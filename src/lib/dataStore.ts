@@ -626,6 +626,7 @@ export function createStaff(data: Omit<Staff, 'id'>): Staff {
   const db = readDb();
   const newStaff: Staff = {
     ...data,
+    serviceIds: Array.isArray(data.serviceIds) ? data.serviceIds : [],
     id: 'stf-' + Date.now()
   };
   db.staff.push(newStaff);
@@ -792,6 +793,9 @@ export function validateUserCredentials(username: string, password: string): Use
     u => u.username.toLowerCase() === username.toLowerCase().trim() && u.password === password.trim()
   );
   if (!user) return null;
+  if (user.isActive === false) {
+    throw new Error('Hesabınız bloklanıb! Zəhmət olmasa baş administratorla əlaqə saxlayın.');
+  }
   const tenant = user.tenantId ? db.tenants.find(t => t.id === user.tenantId) : null;
   return {
     ...user,
@@ -805,6 +809,9 @@ export function createUser(data: {
   fullName: string;
   role: UserRole;
   tenantId?: string | null;
+  fin?: string;
+  phone?: string;
+  isActive?: boolean;
   createdBy?: string | null;
 }): { success: boolean; user?: User; error?: string } {
   const db = readDb();
@@ -837,6 +844,9 @@ export function createUser(data: {
     fullName: data.fullName.trim(),
     role: data.role,
     tenantId: data.tenantId || null,
+    fin: data.fin ? data.fin.trim().toUpperCase() : '',
+    phone: data.phone ? data.phone.trim() : '',
+    isActive: data.isActive !== undefined ? data.isActive : true,
     createdBy: data.createdBy || null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -859,15 +869,32 @@ export function updateUser(id: string, updates: Partial<User>): User | null {
   const index = db.users.findIndex(u => u.id === id);
   if (index === -1) return null;
 
+  // If changing username, check uniqueness
+  if (updates.username) {
+    const cleanUsername = updates.username.toLowerCase().trim();
+    const existing = db.users.find(u => u.id !== id && u.username.toLowerCase() === cleanUsername);
+    if (existing) return null;
+    updates.username = cleanUsername;
+  }
+
   // If changing role to EDITOR, check uniqueness per tenant
   if (updates.role === 'EDITOR' && updates.tenantId) {
     const existingEditor = db.users.find(u => u.id !== id && u.tenantId === updates.tenantId && u.role === 'EDITOR');
     if (existingEditor) return null;
   }
 
+  // If password was empty string, do not overwrite with empty
+  const cleanUpdates = { ...updates };
+  if (cleanUpdates.password !== undefined && cleanUpdates.password.trim() === '') {
+    delete cleanUpdates.password;
+  }
+  if (cleanUpdates.fin) {
+    cleanUpdates.fin = cleanUpdates.fin.trim().toUpperCase();
+  }
+
   db.users[index] = {
     ...db.users[index],
-    ...updates,
+    ...cleanUpdates,
     updatedAt: new Date().toISOString()
   };
   writeDb(db);

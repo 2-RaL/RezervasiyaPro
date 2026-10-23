@@ -54,9 +54,10 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
+    const isBlocked = error.message?.includes('bloklanıb');
     return NextResponse.json(
       { success: false, error: error.message || 'Giriş zamanı xəta baş verdi' },
-      { status: 500 }
+      { status: isBlocked ? 403 : 500 }
     );
   }
 }
