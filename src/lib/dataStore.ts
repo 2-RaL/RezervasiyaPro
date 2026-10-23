@@ -969,6 +969,13 @@ export function getReviews(tenantId?: string): CustomerReview[] {
   return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+export function hasIpReviewed(clientIp: string, tenantId?: string): boolean {
+  if (!clientIp) return false;
+  const db = readDb();
+  if (!db.reviews || db.reviews.length === 0) return false;
+  return db.reviews.some(r => r.clientIp === clientIp && (!tenantId || r.tenantId === tenantId));
+}
+
 export function createReview(data: Omit<CustomerReview, 'id' | 'createdAt'>): CustomerReview {
   const db = readDb();
   if (!db.reviews) db.reviews = [];
@@ -978,6 +985,7 @@ export function createReview(data: Omit<CustomerReview, 'id' | 'createdAt'>): Cu
     id: 'rev-' + Date.now(),
     tenantName: data.tenantName || (tenant ? tenant.name : 'Müəssisə'),
     rating: Math.max(1, Math.min(5, Number(data.rating) || 5)),
+    clientIp: data.clientIp || undefined,
     createdAt: new Date().toISOString()
   };
   db.reviews.unshift(newReview);

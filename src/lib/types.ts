@@ -112,6 +112,7 @@ export interface CustomerReview {
   rating: number; // 1 - 5 ulduz
   comment: string;
   serviceName?: string;
+  clientIp?: string; // Rəy yazan istifadəçinin IP ünvanı (təkrar rəy məhdudiyyəti üçün)
   createdAt: string;
 }
 
