@@ -37,6 +37,14 @@ export interface TranslationDictionary {
   noStaffForService: string;
   noSlotsAvailable: string;
   allServicesAssigned: string;
+  openDaysLegend: string;
+  blockedDaysLegend: string;
+  pastDaysLegend: string;
+  dayBlockedWarning: string;
+  closedDay: string;
+  openDay: string;
+  selectedDay: string;
+  workingHoursLabel: string;
 
   // Customer Form
   fullName: string;
@@ -152,6 +160,14 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noStaffForService: 'Bu xidmət üzrə aktiv mütəxəssis təyin edilməyib. Zəhmət olmasa başqa xidmət seçin və ya müəssisə ilə əlaqə saxlayın.',
     noSlotsAvailable: 'Bu tarix üçün heç bir boş saat qalmayıb.',
     allServicesAssigned: 'Bütün xidmətlər (Məhdudiyyətsiz)',
+    openDaysLegend: 'Açıq günlər (Rezervasiya aktivdir)',
+    blockedDaysLegend: 'Qırmızı: Bloklanmış günlər (Qapalı / Seçmək olmur)',
+    pastDaysLegend: 'Keçmiş tarixlər',
+    dayBlockedWarning: 'Seçilmiş gün admin tərəfindən bloklanıb və qapalıdır. Zəhmət olmasa təqvimdən açıq günləri seçin.',
+    closedDay: 'Qapalı',
+    openDay: 'Açıq',
+    selectedDay: 'Seçildi',
+    workingHoursLabel: 'Açıq İş Saatları',
 
     fullName: 'Ad və Soyad',
     phone: 'Mobil Nömrə',
@@ -260,6 +276,14 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noStaffForService: 'Для этой услуги в данный момент нет назначенного специалиста. Пожалуйста, выберите другую услугу или свяжитесь с нами.',
     noSlotsAvailable: 'На выбранную дату нет свободных слотов.',
     allServicesAssigned: 'Все услуги (Без ограничений)',
+    openDaysLegend: 'Открытые дни (Запись доступна)',
+    blockedDaysLegend: 'Красный: Заблокировано (Закрыто / Выбор недоступен)',
+    pastDaysLegend: 'Прошедшие даты',
+    dayBlockedWarning: 'Выбранный день заблокирован администратором и закрыт. Пожалуйста, выберите открытый день в календаре.',
+    closedDay: 'Закрыто',
+    openDay: 'Открыто',
+    selectedDay: 'Выбрано',
+    workingHoursLabel: 'Часы работы',
 
     fullName: 'Имя и Фамилия',
     phone: 'Номер телефона',
@@ -368,6 +392,14 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     noStaffForService: 'No specialist is currently assigned to this service. Please choose another service or contact the branch directly.',
     noSlotsAvailable: 'No available time slots on this date.',
     allServicesAssigned: 'All services (Unrestricted)',
+    openDaysLegend: 'Open days (Booking available)',
+    blockedDaysLegend: 'Red: Blocked days (Closed / Cannot be selected)',
+    pastDaysLegend: 'Past dates',
+    dayBlockedWarning: 'Selected date is blocked by administrator and closed. Please choose an open date from the calendar.',
+    closedDay: 'Closed',
+    openDay: 'Open',
+    selectedDay: 'Selected',
+    workingHoursLabel: 'Working Hours',
 
     fullName: 'Full Name',
     phone: 'Phone Number',

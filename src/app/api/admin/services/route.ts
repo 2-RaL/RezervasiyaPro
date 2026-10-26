@@ -63,7 +63,11 @@ export async function POST(request: Request) {
       isActive: body.isActive !== undefined ? body.isActive : true,
       description: body.description || '',
       descriptionRu: body.descriptionRu || '',
-      descriptionEn: body.descriptionEn || ''
+      descriptionEn: body.descriptionEn || '',
+      blockedDays: Array.isArray(body.blockedDays) ? body.blockedDays : [],
+      blockedDates: Array.isArray(body.blockedDates) ? body.blockedDates : [],
+      workStartTime: body.workStartTime || '09:00',
+      workEndTime: body.workEndTime || '21:00'
     }, actor);
 
     return NextResponse.json({ success: true, service });

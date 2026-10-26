@@ -38,6 +38,10 @@ export interface Tenant {
   facebook?: string | null;   // Facebook səhifəsi
   tiktok?: string | null;     // TikTok profili
   telegram?: string | null;   // Telegram kanalı və ya istifadəçi adı
+  blockedDays?: number[];     // Şirkət üzrə həftəlik qeyri-iş günləri (0=Bazar, ...)
+  blockedDates?: string[];    // Şirkət üzrə bayram və qeyri-iş tarixləri
+  workStartTime?: string;     // Ümumi iş başlama saatı (məs: '09:00')
+  workEndTime?: string;       // Ümumi iş bitmə saatı (məs: '21:00')
   createdAt: string;
   updatedAt: string;
   services?: Service[];
@@ -60,6 +64,10 @@ export interface Service {
   description?: string;
   descriptionRu?: string;
   descriptionEn?: string;
+  blockedDays?: number[];   // Həftənin bloklanmış günləri: 0=Bazar, 1=B.e, 2=Ç.a, 3=Ç, 4=C.a, 5=C, 6=Şənbə
+  blockedDates?: string[];  // Fərdi bloklanmış tarixlər: ['2026-10-31', '2026-11-01']
+  workStartTime?: string;   // Xidmət üçün iş başlama saatı (məs: '09:00')
+  workEndTime?: string;     // Xidmət üçün iş bitmə saatı (məs: '21:00')
 }
 
 export interface Staff {

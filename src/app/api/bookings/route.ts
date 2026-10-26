@@ -78,6 +78,44 @@ export async function POST(request: Request) {
     const staffList = getStaff(body.tenantId);
     const service = services.find(s => s.id === body.serviceId);
     const staff = staffList.find(st => st.id === body.staffId);
+    const tenant = getTenantById(body.tenantId);
+
+    // Validate that the date is NOT blocked by Admin or Editor
+    const [bYear, bMonth, bDay] = body.date.split('-').map(Number);
+    const bookingDateObj = new Date(bYear, bMonth - 1, bDay);
+    const dayOfWeek = bookingDateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+    const isDayBlocked = 
+      (service?.blockedDays && service.blockedDays.includes(dayOfWeek)) ||
+      (service?.blockedDates && service.blockedDates.includes(body.date)) ||
+      (tenant?.blockedDays && tenant.blockedDays.includes(dayOfWeek)) ||
+      (tenant?.blockedDates && tenant.blockedDates.includes(body.date));
+
+    if (isDayBlocked) {
+      return NextResponse.json({
+        success: false,
+        error: `Seçilmiş tarix (${body.date}) admin və ya redaktor tərəfindən bloklanıb və qapalıdır. Yalnız təqvimdə açıq olan günlərə rezervasiya edilə bilər.`
+      }, { status: 400 });
+    }
+
+    // Validate that timeSlot falls strictly within open working hours
+    const workStartTime = service?.workStartTime || tenant?.workStartTime || '09:00';
+    const workEndTime = service?.workEndTime || tenant?.workEndTime || '21:00';
+    const [startH, startMin] = workStartTime.split(':').map(Number);
+    const [endH, endMin] = workEndTime.split(':').map(Number);
+    const startM = (startH || 9) * 60 + (startMin || 0);
+    const endM = (endH || 21) * 60 + (endMin || 0);
+
+    const [slotH, slotMin] = body.timeSlot.split(':').map(Number);
+    const slotM = (slotH || 0) * 60 + (slotMin || 0);
+
+    if (slotM < startM || slotM > endM) {
+      return NextResponse.json({
+        success: false,
+        error: `Seçilmiş saat (${body.timeSlot}) bu xidmət üçün təyin edilmiş açıq iş saatlarından (${workStartTime} - ${workEndTime}) kənardadır.`
+      }, { status: 400 });
+    }
+
     const bookingDuration = (staff?.slotDuration && staff.slotDuration > 0) ? staff.slotDuration : (service?.duration || 30);
 
     // Check if time slot is already booked or overlaps with existing bookings for this staff on this date
@@ -110,7 +148,6 @@ export async function POST(request: Request) {
       clientIp
     });
 
-    const tenant = getTenantById(body.tenantId);
     const tenantName = tenant?.name || 'Müəssisə';
     const whatsappNotification = prepareWhatsAppBookingNotification({
       tenantName,

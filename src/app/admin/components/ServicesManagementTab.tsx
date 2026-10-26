@@ -14,7 +14,11 @@ import {
   XCircle, 
   AlertCircle,
   Building2,
-  DollarSign
+  DollarSign,
+  Calendar,
+  Lock,
+  Unlock,
+  X
 } from 'lucide-react';
 import { Service, Tenant, User } from '../../../lib/types';
 import { SectorConfig } from '../../../lib/sectorUtils';
@@ -38,6 +42,16 @@ const DURATION_PRESETS = [
   { label: '1.5 saat', value: 90 },
   { label: '2 saat', value: 120 },
   { label: '3 saat', value: 180 },
+];
+
+const WEEKDAYS = [
+  { day: 1, name: 'Bazar ertəsi', short: 'B.e' },
+  { day: 2, name: 'Çərşənbə axşamı', short: 'Ç.a' },
+  { day: 3, name: 'Çərşənbə', short: 'Çər' },
+  { day: 4, name: 'Cümə axşamı', short: 'C.a' },
+  { day: 5, name: 'Cümə', short: 'Cüm' },
+  { day: 6, name: 'Şənbə', short: 'Şən' },
+  { day: 0, name: 'Bazar', short: 'Baz' },
 ];
 
 interface ServicesManagementTabProps {
@@ -80,8 +94,15 @@ export default function ServicesManagementTab({
     duration: 30,
     category: 'Ümumi',
     description: '',
-    isActive: true
+    isActive: true,
+    blockedDays: [] as number[],
+    blockedDates: [] as string[],
+    workStartTime: '09:00',
+    workEndTime: '21:00'
   });
+
+  const [newBlockedDateInput, setNewBlockedDateInput] = useState('');
+  const [editBlockedDateInput, setEditBlockedDateInput] = useState('');
 
   // Editing Service Data
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -133,7 +154,11 @@ export default function ServicesManagementTab({
           ...newService,
           tenantId: tenantToUse,
           price: Number(newService.price) || 0,
-          duration: Number(newService.duration) || 30
+          duration: Number(newService.duration) || 30,
+          blockedDays: newService.blockedDays || [],
+          blockedDates: newService.blockedDates || [],
+          workStartTime: newService.workStartTime || '09:00',
+          workEndTime: newService.workEndTime || '21:00'
         })
       });
 
@@ -150,8 +175,13 @@ export default function ServicesManagementTab({
           duration: 30,
           category: 'Ümumi',
           description: '',
-          isActive: true
+          isActive: true,
+          blockedDays: [],
+          blockedDates: [],
+          workStartTime: '09:00',
+          workEndTime: '21:00'
         });
+        setNewBlockedDateInput('');
         onRefresh();
       } else {
         alert(data.error || 'Yaradılmadı');
@@ -165,7 +195,14 @@ export default function ServicesManagementTab({
 
   // 2. Open Edit Modal
   const openEditModal = (service: Service) => {
-    setEditingService({ ...service });
+    setEditingService({
+      ...service,
+      blockedDays: service.blockedDays || [],
+      blockedDates: service.blockedDates || [],
+      workStartTime: service.workStartTime || '09:00',
+      workEndTime: service.workEndTime || '21:00'
+    });
+    setEditBlockedDateInput('');
     setIsEditModalOpen(true);
   };
 
@@ -182,7 +219,11 @@ export default function ServicesManagementTab({
         body: JSON.stringify({
           ...editingService,
           price: Number(editingService.price) || 0,
-          duration: Number(editingService.duration) || 30
+          duration: Number(editingService.duration) || 30,
+          blockedDays: editingService.blockedDays || [],
+          blockedDates: editingService.blockedDates || [],
+          workStartTime: editingService.workStartTime || '09:00',
+          workEndTime: editingService.workEndTime || '21:00'
         })
       });
 
@@ -249,6 +290,70 @@ export default function ServicesManagementTab({
     } catch {
       alert('Silinmədi');
     }
+  };
+
+  // Day & Date Blocking Helpers
+  const toggleNewBlockedDay = (day: number) => {
+    setNewService(prev => {
+      const exists = prev.blockedDays?.includes(day);
+      const updated = exists 
+        ? prev.blockedDays.filter(d => d !== day)
+        : [...(prev.blockedDays || []), day];
+      return { ...prev, blockedDays: updated };
+    });
+  };
+
+  const addNewBlockedDate = () => {
+    if (!newBlockedDateInput) return;
+    if (newService.blockedDates.includes(newBlockedDateInput)) return;
+    setNewService(prev => ({
+      ...prev,
+      blockedDates: [...(prev.blockedDates || []), newBlockedDateInput].sort()
+    }));
+    setNewBlockedDateInput('');
+  };
+
+  const removeNewBlockedDate = (dateStr: string) => {
+    setNewService(prev => ({
+      ...prev,
+      blockedDates: (prev.blockedDates || []).filter(d => d !== dateStr)
+    }));
+  };
+
+  const toggleEditBlockedDay = (day: number) => {
+    if (!editingService) return;
+    setEditingService(prev => {
+      if (!prev) return null;
+      const exists = prev.blockedDays?.includes(day);
+      const updated = exists 
+        ? (prev.blockedDays || []).filter(d => d !== day)
+        : [...(prev.blockedDays || []), day];
+      return { ...prev, blockedDays: updated };
+    });
+  };
+
+  const addEditBlockedDate = () => {
+    if (!editBlockedDateInput || !editingService) return;
+    if ((editingService.blockedDates || []).includes(editBlockedDateInput)) return;
+    setEditingService(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        blockedDates: [...(prev.blockedDates || []), editBlockedDateInput].sort()
+      };
+    });
+    setEditBlockedDateInput('');
+  };
+
+  const removeEditBlockedDate = (dateStr: string) => {
+    if (!editingService) return;
+    setEditingService(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        blockedDates: (prev.blockedDates || []).filter(d => d !== dateStr)
+      };
+    });
   };
 
   return (
@@ -430,6 +535,44 @@ export default function ServicesManagementTab({
                       {s.description}
                     </p>
                   )}
+
+                  {/* Schedule & Working Days Info */}
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 mb-3 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                        <span>Həftəlik rejim:</span>
+                      </span>
+                      {s.blockedDays && s.blockedDays.length > 0 ? (
+                        <span className="font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-900 flex items-center gap-1">
+                          <Ban className="w-3 h-3 shrink-0" />
+                          <span>Qapalı: {s.blockedDays.map(d => WEEKDAYS.find(w => w.day === d)?.short).join(', ')}</span>
+                        </span>
+                      ) : (
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-900 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 shrink-0" />
+                          <span>Hər gün açıq</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                        <span>Açıq saatlar:</span>
+                      </span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {s.workStartTime || '09:00'} - {s.workEndTime || '21:00'}
+                      </span>
+                    </div>
+
+                    {s.blockedDates && s.blockedDates.length > 0 && (
+                      <div className="text-[10px] text-rose-600 dark:text-rose-400 flex items-center gap-1 font-semibold pt-1 border-t border-slate-200/50 dark:border-white/5">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        <span>{s.blockedDates.length} xüsusi tarix bloklanıb ({s.blockedDates.slice(0, 2).join(', ')}{s.blockedDates.length > 2 ? '...' : ''})</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Card Action Controls: Block/Unblock, Edit, Delete */}
@@ -487,7 +630,7 @@ export default function ServicesManagementTab({
       {/* ═══════════ MODAL 1: CREATE NEW SERVICE ═══════════ */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5 mb-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -634,6 +777,126 @@ export default function ServicesManagementTab({
                 </div>
               </div>
 
+              {/* Working Days & Schedule Blocking */}
+              <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-3.5">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>İş Günləri və Təqvimdə Bloklama</span>
+                    </h4>
+                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                      Qırmızı = Qapalı (Seçmək olmur)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    Müştərilərin təqvimində qırmızı rəngdə görünəcək və seçilməsi qadağan olacaq günləri seçin. Yalnız açıq günlər və saatlar rezervasiyaya icazə verəcək.
+                  </p>
+                </div>
+
+                {/* Həftəlik Günlər Togglları */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Həftənin Günləri (Bloklamaq üçün klikləyin):
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-1.5">
+                    {WEEKDAYS.map((w) => {
+                      const isBlocked = (newService.blockedDays || []).includes(w.day);
+                      return (
+                        <button
+                          key={w.day}
+                          type="button"
+                          onClick={() => toggleNewBlockedDay(w.day)}
+                          className={`p-2 rounded-xl text-center border transition-all flex flex-col items-center justify-center gap-1 ${
+                            isBlocked
+                              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 shadow-sm'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:border-emerald-400'
+                          }`}
+                        >
+                          <span className="text-[11px] font-bold">{w.short}</span>
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                            isBlocked ? 'bg-rose-200/80 dark:bg-rose-900 text-rose-900 dark:text-rose-200' : 'bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200'
+                          }`}>
+                            {isBlocked ? <Ban className="w-2.5 h-2.5" /> : <CheckCircle2 className="w-2.5 h-2.5" />}
+                            <span>{isBlocked ? 'Qapalı' : 'Açıq'}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* İş Saatları Aralığı */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-indigo-100/80 dark:border-indigo-900/40">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>İş Başlama Saatı</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={newService.workStartTime || '09:00'}
+                      onChange={(e) => setNewService({ ...newService, workStartTime: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>İş Bitmə Saatı</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={newService.workEndTime || '21:00'}
+                      onChange={(e) => setNewService({ ...newService, workEndTime: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Xüsusi Bloklanmış Tarixlər */}
+                <div className="pt-2 border-t border-indigo-100/80 dark:border-indigo-900/40">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Konkret Qeyri-İş Tarixlərini Blokla (Bayramlar, təmir və s.):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={newBlockedDateInput}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setNewBlockedDateInput(e.target.value)}
+                      className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={addNewBlockedDate}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-all"
+                    >
+                      + Tarixi Blokla
+                    </button>
+                  </div>
+                  {newService.blockedDates && newService.blockedDates.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {newService.blockedDates.map(dateStr => (
+                        <span
+                          key={dateStr}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                        >
+                          <span>{dateStr}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeNewBlockedDate(dateStr)}
+                            className="text-rose-600 hover:text-rose-900 dark:hover:text-white ml-0.5"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/5">
                 <button
                   type="button"
@@ -659,7 +922,7 @@ export default function ServicesManagementTab({
       {/* ═══════════ MODAL 2: EDIT EXISTING SERVICE ═══════════ */}
       {isEditModalOpen && editingService && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5 mb-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -801,6 +1064,126 @@ export default function ServicesManagementTab({
                   <option value="active">🟢 Aktiv (Sifariş üçün açıqdır)</option>
                   <option value="blocked">🔴 Bloklanıb (Sifariş üçün qapalıdır)</option>
                 </select>
+              </div>
+
+              {/* Working Days & Schedule Blocking */}
+              <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-3.5">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>İş Günləri və Təqvimdə Bloklama</span>
+                    </h4>
+                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                      Qırmızı = Qapalı (Seçmək olmur)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    Müştərilərin təqvimində qırmızı rəngdə görünəcək və seçilməsi qadağan olacaq günləri seçin. Yalnız açıq günlər və saatlar rezervasiyaya icazə verəcək.
+                  </p>
+                </div>
+
+                {/* Həftəlik Günlər Togglları */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Həftənin Günləri (Bloklamaq üçün klikləyin):
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-1.5">
+                    {WEEKDAYS.map((w) => {
+                      const isBlocked = (editingService.blockedDays || []).includes(w.day);
+                      return (
+                        <button
+                          key={w.day}
+                          type="button"
+                          onClick={() => toggleEditBlockedDay(w.day)}
+                          className={`p-2 rounded-xl text-center border transition-all flex flex-col items-center justify-center gap-1 ${
+                            isBlocked
+                              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 shadow-sm'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:border-emerald-400'
+                          }`}
+                        >
+                          <span className="text-[11px] font-bold">{w.short}</span>
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                            isBlocked ? 'bg-rose-200/80 dark:bg-rose-900 text-rose-900 dark:text-rose-200' : 'bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200'
+                          }`}>
+                            {isBlocked ? <Ban className="w-2.5 h-2.5" /> : <CheckCircle2 className="w-2.5 h-2.5" />}
+                            <span>{isBlocked ? 'Qapalı' : 'Açıq'}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* İş Saatları Aralığı */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-indigo-100/80 dark:border-indigo-900/40">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>İş Başlama Saatı</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={editingService.workStartTime || '09:00'}
+                      onChange={(e) => setEditingService({ ...editingService, workStartTime: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>İş Bitmə Saatı</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={editingService.workEndTime || '21:00'}
+                      onChange={(e) => setEditingService({ ...editingService, workEndTime: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Xüsusi Bloklanmış Tarixlər */}
+                <div className="pt-2 border-t border-indigo-100/80 dark:border-indigo-900/40">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Konkret Qeyri-İş Tarixlərini Blokla (Bayramlar, təmir və s.):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={editBlockedDateInput}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setEditBlockedDateInput(e.target.value)}
+                      className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={addEditBlockedDate}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-all"
+                    >
+                      + Tarixi Blokla
+                    </button>
+                  </div>
+                  {editingService.blockedDates && editingService.blockedDates.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {editingService.blockedDates.map(dateStr => (
+                        <span
+                          key={dateStr}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                        >
+                          <span>{dateStr}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeEditBlockedDate(dateStr)}
+                            className="text-rose-600 hover:text-rose-900 dark:hover:text-white ml-0.5"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-white/5">

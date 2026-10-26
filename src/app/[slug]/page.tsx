@@ -16,6 +16,8 @@ import {
   CalendarCheck,
   ShieldCheck,
   ChevronRight,
+  ChevronLeft,
+  Ban,
   AlertCircle,
   Star,
   MessageSquare,
@@ -27,6 +29,18 @@ import { Tenant, Service, Staff, CustomerReview } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
 import LanguageSelector from '../../components/LanguageSelector';
 import { useLanguage } from '../../lib/languageContext';
+
+const MONTH_NAMES: Record<string, string[]> = {
+  az: ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'],
+  ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+};
+
+const WEEKDAY_NAMES: Record<string, string[]> = {
+  az: ['B.e', 'Ç.a', 'Çər', 'C.a', 'Cüm', 'Şən', 'Baz'],
+  ru: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+  en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+};
 
 export default function TenantBookingPage({ params }: { params: { slug: string } }) {
   const { lang, t, formatDuration, getServiceName, getCategoryName } = useLanguage();
@@ -41,6 +55,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => new Date());
   const [selectedTime, setSelectedTime] = useState<string>('10:00');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('+994 ');
@@ -83,18 +98,151 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     return (parts[0] || 0) * 60 + (parts[1] || 0);
   };
 
-  // 24 saatlıq tam rejim üzrə dinamik vaxt cədvəli (08:00 - 23:00) təyin edilmiş aralıqla
+  // Seçilmiş xidmət və onun iş saatları
+  const selectedService = useMemo(() => {
+    return tenant?.services?.find(s => s.id === selectedServiceId);
+  }, [tenant, selectedServiceId]);
+
+  const workStartTime = selectedService?.workStartTime || tenant?.workStartTime || '09:00';
+  const workEndTime = selectedService?.workEndTime || tenant?.workEndTime || '21:00';
+
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  // Yoxlayır: tarix həftəlik və ya xüsusi günlər üzrə admin/redaktor tərəfindən bloklanıbmı?
+  const isDateBlocked = (dateStr: string, dayOfWeek: number) => {
+    if (selectedService) {
+      if (selectedService.blockedDays && selectedService.blockedDays.includes(dayOfWeek)) {
+        return true;
+      }
+      if (selectedService.blockedDates && selectedService.blockedDates.includes(dateStr)) {
+        return true;
+      }
+    }
+    if (tenant?.blockedDays && tenant.blockedDays.includes(dayOfWeek)) {
+      return true;
+    }
+    if (tenant?.blockedDates && tenant.blockedDates.includes(dateStr)) {
+      return true;
+    }
+    return false;
+  };
+
+  // Əgər cari seçilmiş tarix bloklanıbsa, avtomatik ən yaxın açıq günə yönləndir
+  useEffect(() => {
+    if (!selectedDate) return;
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const dayOfWeek = new Date(y, m - 1, d).getDay();
+    if (isDateBlocked(selectedDate, dayOfWeek)) {
+      const probe = new Date();
+      for (let i = 0; i < 90; i++) {
+        const probeStr = `${probe.getFullYear()}-${String(probe.getMonth() + 1).padStart(2, '0')}-${String(probe.getDate()).padStart(2, '0')}`;
+        const probeDow = probe.getDay();
+        if (!isDateBlocked(probeStr, probeDow) && probeStr >= todayStr) {
+          setSelectedDate(probeStr);
+          setCalendarMonth(new Date(probe.getFullYear(), probe.getMonth(), 1));
+          break;
+        }
+        probe.setDate(probe.getDate() + 1);
+      }
+    }
+  }, [selectedServiceId, tenant]);
+
+  const isCurrentDateBlocked = useMemo(() => {
+    if (!selectedDate) return false;
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    return isDateBlocked(selectedDate, dow);
+  }, [selectedDate, selectedService, tenant]);
+
+  // Aylıq təqvim üçün xanaların generasiyası
+  const calendarData = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth(); // 0-indexed
+    
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    let startCol = firstDay.getDay() - 1;
+    if (startCol < 0) startCol = 6; // Bazar 6-cı indeks (həftə Bazar ertəsindən başlayır)
+
+    const prevDays = [];
+    for (let i = startCol - 1; i >= 0; i--) {
+      prevDays.push({ day: daysInPrevMonth - i });
+    }
+
+    const monthDays = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dow = new Date(year, month, d).getDay();
+      const isPast = dateStr < todayStr;
+      const isBlocked = isDateBlocked(dateStr, dow);
+      const isSelected = selectedDate === dateStr;
+
+      monthDays.push({
+        day: d,
+        dateStr,
+        dayOfWeek: dow,
+        isPast,
+        isBlocked,
+        isSelected
+      });
+    }
+
+    const totalCells = prevDays.length + monthDays.length;
+    const remainingCols = (7 - (totalCells % 7)) % 7;
+    const nextDays = [];
+    for (let d = 1; d <= remainingCols; d++) {
+      nextDays.push({ day: d });
+    }
+
+    return {
+      year,
+      month,
+      prevDays,
+      monthDays,
+      nextDays
+    };
+  }, [calendarMonth, selectedService, tenant, selectedDate, todayStr]);
+
+  const prevMonth = () => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+  const nextMonth = () => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+  const goToToday = () => {
+    const now = new Date();
+    setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+    const nowDow = now.getDay();
+    if (!isDateBlocked(todayStr, nowDow)) {
+      setSelectedDate(todayStr);
+    }
+  };
+
+  // Yalnız adminin və redaktorun təyin etdiyi açıq iş saatları üzrə slotlar
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
-    const startM = 8 * 60;  // 08:00
-    const endM = 23 * 60;   // 23:00
+    const [startH, startMin] = (workStartTime || '09:00').split(':').map(Number);
+    const [endH, endMin] = (workEndTime || '21:00').split(':').map(Number);
+    const startM = (startH || 9) * 60 + (startMin || 0);
+    const endM = (endH || 21) * 60 + (endMin || 0);
     for (let m = startM; m <= endM; m += activeInterval) {
       const hh = String(Math.floor(m / 60)).padStart(2, '0');
       const mm = String(m % 60).padStart(2, '0');
       slots.push(`${hh}:${mm}`);
     }
     return slots;
-  }, [activeInterval]);
+  }, [activeInterval, workStartTime, workEndTime]);
+
+  useEffect(() => {
+    if (timeSlots.length > 0 && !timeSlots.includes(selectedTime)) {
+      setSelectedTime(timeSlots[0]);
+    }
+  }, [timeSlots, selectedTime]);
 
   const [timeFilter, setTimeFilter] = useState<'ALL' | 'MORNING' | 'AFTERNOON' | 'EVENING'>('ALL');
 
@@ -430,7 +578,6 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     );
   }
 
-  const selectedService = tenant.services?.find(s => s.id === selectedServiceId);
   const availableStaff = (tenant.staff || []).filter(stf => {
     if (stf.serviceIds && stf.serviceIds.length > 0) {
       return stf.serviceIds.includes(selectedServiceId);
@@ -873,143 +1020,291 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                    {t('bookingDate')}
-                  </label>
-                  <input
-                    type="date"
-                    min={new Date().toISOString().split('T')[0]}
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
-                    required
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <span>{t('availableHours')}</span>
-                      </label>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
-                        <span>{t('slotInterval')}: {formatDuration(activeInterval)}</span>
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
-                        {t('twentyFourHourMode')}
-                      </span>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* Sol Tərəf: İnteraktiv Aylıq Təqvim (Bloklanmış günlər Qırmızı, seçilməz) */}
+                <div className="lg:col-span-6 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5">
+                  
+                  {/* Təqvim Başlığı: Ay, İl və Keçid Düymələri */}
+                  <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-white/10">
+                    <div>
+                      <h4 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        <span>
+                          {MONTH_NAMES[lang]?.[calendarData.month] || MONTH_NAMES.az[calendarData.month]} {calendarData.year}
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        {t('bookingDate')}: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{selectedDate}</strong>
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {t('free')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> {t('booked')}
-                      </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={goToToday}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition-colors"
+                      >
+                        Bugün
+                      </button>
+                      <button
+                        type="button"
+                        onClick={prevMonth}
+                        aria-label="Əvvəlki ay"
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={nextMonth}
+                        aria-label="Növbəti ay"
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Vaxt Filtrləri (24 saatlıq) */}
-                  <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setTimeFilter('ALL')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                        timeFilter === 'ALL'
-                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                      }`}
-                    >
-                      {t('allHours')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTimeFilter('MORNING')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                        timeFilter === 'MORNING'
-                          ? 'bg-amber-500 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                      }`}
-                    >
-                      {t('morning')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTimeFilter('AFTERNOON')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                        timeFilter === 'AFTERNOON'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                      }`}
-                    >
-                      {t('afternoon')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTimeFilter('EVENING')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                        timeFilter === 'EVENING'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                      }`}
-                    >
-                      {t('evening')}
-                    </button>
+                  {/* Həftənin Günləri Başlığı (B.e - Baz) */}
+                  <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                    {(WEEKDAY_NAMES[lang] || WEEKDAY_NAMES.az).map((wd, idx) => (
+                      <div key={idx} className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-1">
+                        {wd}
+                      </div>
+                    ))}
                   </div>
 
-                  {/* 24-Saatlıq Slotlar Qridi */}
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto pr-1">
-                    {filteredTimeSlots.map(time => {
-                      const isBooked = checkSlotBooked(time);
-                      const isSelected = selectedTime === time;
+                  {/* Günlər Qridi */}
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {/* Əvvəlki aydan qalan xanalar */}
+                    {calendarData.prevDays.map((p, i) => (
+                      <div
+                        key={`prev-${i}`}
+                        className="h-12 rounded-xl flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none opacity-40"
+                      >
+                        {p.day}
+                      </div>
+                    ))}
 
-                      if (isBooked) {
+                    {/* Cari Ayın Günləri */}
+                    {calendarData.monthDays.map((item) => {
+                      if (item.isPast) {
                         return (
-                          <button
-                            key={time}
-                            type="button"
-                            disabled={true}
-                            title={t('booked')}
-                            className="py-2.5 px-2 rounded-xl text-xs font-bold transition-all bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/40 text-rose-500 dark:text-rose-400 line-through cursor-not-allowed opacity-70 flex flex-col items-center justify-center gap-0.5"
+                          <div
+                            key={item.dateStr}
+                            title="Keçmiş tarix"
+                            className="h-12 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-100/50 dark:bg-slate-800/20 text-slate-400 dark:text-slate-600 flex flex-col items-center justify-center text-xs cursor-not-allowed select-none"
                           >
-                            <span>{time}</span>
-                            <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 no-underline">
-                              {t('bookedShort')}
-                            </span>
-                          </button>
+                            <span className="font-medium">{item.day}</span>
+                            <span className="text-[8px] text-slate-400">{t('pastDaysLegend')}</span>
+                          </div>
                         );
                       }
 
+                      if (item.isBlocked) {
+                        return (
+                          <div
+                            key={item.dateStr}
+                            title="Bu gün admin və ya redaktor tərəfindən bloklanıb və qapalıdır"
+                            className="h-12 rounded-xl border-2 border-rose-300 dark:border-rose-700/80 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex flex-col items-center justify-center text-xs font-black cursor-not-allowed select-none shadow-sm relative group"
+                          >
+                            <span className="line-through">{item.day}</span>
+                            <span className="text-[8px] font-black uppercase text-rose-600 dark:text-rose-400 tracking-tighter">
+                              {t('closedDay')}
+                            </span>
+                            <Ban className="w-2.5 h-2.5 text-rose-500 absolute top-1 right-1" />
+                          </div>
+                        );
+                      }
+
+                      // Açıq və seçilə bilən gün
                       return (
                         <button
-                          key={time}
+                          key={item.dateStr}
                           type="button"
-                          onClick={() => setSelectedTime(time)}
-                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-                            isSelected
-                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400'
-                              : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                          onClick={() => setSelectedDate(item.dateStr)}
+                          className={`h-12 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer select-none ${
+                            item.isSelected
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-400 scale-105 z-10'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-100 hover:border-emerald-500 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/30'
                           }`}
                         >
-                          {time}
+                          <span>{item.day}</span>
+                          <span className={`text-[8px] font-bold ${item.isSelected ? 'text-indigo-200' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {item.isSelected ? t('selectedDay') : t('openDay')}
+                          </span>
                         </button>
                       );
                     })}
+
+                    {/* Növbəti aydan qalan xanalar */}
+                    {calendarData.nextDays.map((n, i) => (
+                      <div
+                        key={`next-${i}`}
+                        className="h-12 rounded-xl flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none opacity-40"
+                      >
+                        {n.day}
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Seçilmiş saat göstəricisi */}
-                  <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-white/5 flex-wrap gap-2">
-                    <span className="text-slate-500">{t('selectedTime')}:</span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{selectedTime} ({formatDuration(activeInterval)}, {t('twentyFourHourMode')})</span>
-                    </span>
+                  {/* Təqvim İzahı (Legend) */}
+                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span>{t('openDaysLegend')}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-bold text-rose-600 dark:text-rose-400">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+                      <span>{t('blockedDaysLegend')}</span>
+                    </div>
                   </div>
+
                 </div>
+
+                {/* Sağ Tərəf: Seçilmiş Günün Saatları (Yalnız açıq saatlar) */}
+                <div className="lg:col-span-6 space-y-4">
+                  
+                  {isCurrentDateBlocked ? (
+                    <div className="p-6 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-center">
+                      <Ban className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+                      <h4 className="font-bold text-sm mb-1">{t('dayBlockedWarning')}</h4>
+                      <p className="text-xs text-rose-600 dark:text-rose-400">
+                        Admin və ya redaktor bu günü qapalı elan edib. Zəhmət olmasa təqvimdə yaşıl rəngdə göstərilən açıq günlərdən birini seçin.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                            <span>{t('availableHours')}</span>
+                          </label>
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
+                            <span>{t('slotInterval')}: {formatDuration(activeInterval)}</span>
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                            {workStartTime} - {workEndTime}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {t('free')}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> {t('booked')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Vaxt Filtrləri */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setTimeFilter('ALL')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            timeFilter === 'ALL'
+                              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {t('allHours')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTimeFilter('MORNING')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            timeFilter === 'MORNING'
+                              ? 'bg-amber-500 text-white shadow-sm'
+                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {t('morning')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTimeFilter('AFTERNOON')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            timeFilter === 'AFTERNOON'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {t('afternoon')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTimeFilter('EVENING')}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            timeFilter === 'EVENING'
+                              ? 'bg-purple-600 text-white shadow-sm'
+                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {t('evening')}
+                        </button>
+                      </div>
+
+                      {/* Yalnız Açıq Qoyulmuş Saatlar Qridi */}
+                      {filteredTimeSlots.length === 0 ? (
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-center text-xs text-slate-500">
+                          {t('noSlotsAvailable')}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1">
+                          {filteredTimeSlots.map(time => {
+                            const isBooked = checkSlotBooked(time);
+                            const isSelected = selectedTime === time;
+
+                            if (isBooked) {
+                              return (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  disabled={true}
+                                  title={t('booked')}
+                                  className="py-2.5 px-2 rounded-xl text-xs font-bold transition-all bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/40 text-rose-500 dark:text-rose-400 line-through cursor-not-allowed opacity-70 flex flex-col items-center justify-center gap-0.5"
+                                >
+                                  <span>{time}</span>
+                                  <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 no-underline">
+                                    {t('bookedShort')}
+                                  </span>
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <button
+                                key={time}
+                                type="button"
+                                onClick={() => setSelectedTime(time)}
+                                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                                  isSelected
+                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400'
+                                    : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                                }`}
+                              >
+                                {time}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-1">
+                        <span className="font-semibold">{t('selectedTime')}:</span>
+                        <span className="font-black text-indigo-600 dark:text-indigo-400 text-xs">
+                          {selectedDate} / {selectedTime}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                </div>
+
               </div>
             </div>
 
