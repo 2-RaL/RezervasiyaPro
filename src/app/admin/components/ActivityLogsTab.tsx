@@ -63,6 +63,10 @@ export default function ActivityLogsTab({
 
   useEffect(() => {
     fetchLogs();
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Handle Revert Action
@@ -110,6 +114,9 @@ export default function ActivityLogsTab({
       if (actionFilter === 'STAFF' && !log.actionType.startsWith('STAFF')) return false;
       if (actionFilter === 'BOOKING' && !log.actionType.startsWith('BOOKING')) return false;
       if (actionFilter === 'CUSTOMER' && !log.actionType.startsWith('CUSTOMER')) return false;
+      if (actionFilter === 'TENANT' && !log.actionType.startsWith('TENANT')) return false;
+      if (actionFilter === 'USER' && !log.actionType.startsWith('USER')) return false;
+      if (actionFilter === 'PATIENT' && !log.actionType.startsWith('PATIENT')) return false;
     }
 
     // Role filter
@@ -173,6 +180,8 @@ export default function ActivityLogsTab({
         return { label: 'Şirkət Admini', bg: 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800' };
       case 'EDITOR':
         return { label: 'Redaktor', bg: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800' };
+      case 'USER':
+        return { label: 'Müştəri (Onlayn)', bg: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800' };
       default:
         return { label: role, bg: 'bg-slate-100 text-slate-700 border-slate-200' };
     }
@@ -237,6 +246,9 @@ export default function ActivityLogsTab({
               <option value="STAFF">Mütəxəssislər (Yaratma, Silmə, Redaktə)</option>
               <option value="BOOKING">Rezervasiyalar (Status, Ləğv, Silmə)</option>
               <option value="CUSTOMER">Müştəri Bloku (Qara siyahı)</option>
+              <option value="TENANT">Şirkət Rekvizitləri & Parametrlər</option>
+              <option value="USER">İstifadəçilər və Redaktorlar</option>
+              <option value="PATIENT">Tibbi Qeydiyyat & Diaqnozlar</option>
             </select>
           </div>
 
@@ -299,9 +311,12 @@ export default function ActivityLogsTab({
             <span>Fəaliyyət qeydləri yüklənir...</span>
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10">
+          <div className="p-12 text-center text-slate-400 text-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-white/10 space-y-2">
             <History className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
-            <span>Heç bir fəaliyyət qeydi tapılmadı</span>
+            <div className="font-semibold text-slate-700 dark:text-slate-300">Heç bir fəaliyyət qeydi yoxdur</div>
+            <p className="max-w-md mx-auto text-slate-500 dark:text-slate-400 text-[11px]">
+              Sistemdə yeni xidmət, mütəxəssis, rezervasiya əlavə edildikdə və ya redaktə edildikdə bütün fəaliyyətlər avtomatik burada canlı qeydə alınacaq və admin tərəfindən bir kliklə geri qaytarıla biləcək.
+            </p>
           </div>
         ) : (
           filteredLogs.map(log => {

@@ -72,6 +72,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Filial, pasiyentin tam adı və FİN kodu tələb olunur' }, { status: 400 });
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId || tenantId
+    };
+
     const patient = createPatient({
       tenantId,
       fullName: body.fullName.trim(),
@@ -81,7 +88,7 @@ export async function POST(request: Request) {
       bloodGroup: body.bloodGroup || null,
       allergies: body.allergies || null,
       notes: body.notes || null
-    });
+    }, actor);
 
     return NextResponse.json({ success: true, patient });
   } catch (error: any) {
@@ -140,7 +147,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'Bu pasiyenti silməyə icazəniz yoxdur' }, { status: 403 });
     }
 
-    const success = deletePatient(id);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: targetPatient.tenantId
+    };
+
+    const success = deletePatient(id, actor);
     if (!success) {
       return NextResponse.json({ success: false, error: 'Pasiyent tapılmadı və ya silinmədi' }, { status: 404 });
     }

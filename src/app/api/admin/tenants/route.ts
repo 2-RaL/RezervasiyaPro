@@ -58,6 +58,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Ad, slug və sektor sahələri vacibdir' }, { status: 400 });
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId
+    };
+
     const tenant = createTenant({
       name: body.name,
       slug: body.slug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-'),
@@ -74,11 +81,11 @@ export async function POST(request: Request) {
       facebook: body.facebook || null,
       tiktok: body.tiktok || null,
       telegram: body.telegram || null
-    });
+    }, actor);
 
     // Rule 3: Super Admin can assign this new company to an Admin user
     if (body.assignedAdminId) {
-      updateUser(body.assignedAdminId, { tenantId: tenant.id });
+      updateUser(body.assignedAdminId, { tenantId: tenant.id }, actor);
     }
 
     return NextResponse.json({ success: true, tenant });
@@ -105,7 +112,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: 'Yalnız öz şirkətinizi idarə edə bilərsiniz' }, { status: 403 });
     }
 
-    const updated = updateTenant(id, updates);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: id
+    };
+
+    const updated = updateTenant(id, updates, actor);
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Müəssisə tapılmadı' }, { status: 404 });
     }
@@ -114,7 +128,7 @@ export async function PATCH(request: Request) {
     if (currentUser.role === 'SUPER_ADMIN' && assignedAdminId !== undefined) {
       // First unassign any other user currently assigned to this tenant if needed, or set new
       if (assignedAdminId) {
-        updateUser(assignedAdminId, { tenantId: id });
+        updateUser(assignedAdminId, { tenantId: id }, actor);
       }
     }
 
@@ -142,7 +156,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'ID tələb olunur' }, { status: 400 });
     }
 
-    const success = deleteTenant(id);
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: id
+    };
+
+    const success = deleteTenant(id, actor);
     return NextResponse.json({ success });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

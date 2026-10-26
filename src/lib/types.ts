@@ -197,7 +197,13 @@ export type ActivityActionType =
   | 'CUSTOMER_BLOCK'
   | 'CUSTOMER_UNBLOCK'
   | 'PATIENT_CREATE'
-  | 'PATIENT_DELETE';
+  | 'PATIENT_DELETE'
+  | 'TENANT_CREATE'
+  | 'TENANT_UPDATE'
+  | 'TENANT_DELETE'
+  | 'USER_CREATE'
+  | 'USER_UPDATE'
+  | 'USER_DELETE';
 
 export interface ActivityLog {
   id: string;
@@ -208,7 +214,7 @@ export interface ActivityLog {
   tenantId?: string | null;
   tenantName?: string;
   actionType: ActivityActionType;
-  entityType: 'SERVICE' | 'STAFF' | 'BOOKING' | 'CUSTOMER' | 'PATIENT';
+  entityType: 'SERVICE' | 'STAFF' | 'BOOKING' | 'CUSTOMER' | 'PATIENT' | 'TENANT' | 'USER';
   entityId: string;
   entityName: string;
   description: string;

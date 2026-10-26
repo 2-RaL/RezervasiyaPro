@@ -49,6 +49,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Bütün vacib sahələri doldurun' }, { status: 400 });
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId || tenantId
+    };
+
     const newBooking = createBooking({
       tenantId,
       customerName: body.customerName,
@@ -59,7 +66,7 @@ export async function POST(request: Request) {
       date: body.date,
       timeSlot: body.timeSlot,
       status: (body.status as BookingStatus) || 'CONFIRMED'
-    });
+    }, actor);
 
     return NextResponse.json({ success: true, booking: newBooking });
   } catch (error: any) {

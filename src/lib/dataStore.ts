@@ -495,53 +495,7 @@ const defaultData: DatabaseSchema = {
     }
   ],
   blockedCustomers: [],
-  activityLogs: [
-    {
-      id: 'act-101',
-      timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-      userId: 'usr-admin-gozellik',
-      userName: 'Aysel Xanım',
-      userRole: 'ADMIN',
-      tenantId: 'tenant-1',
-      tenantName: 'Gözəllik və Estetik Mərkəzi',
-      actionType: 'SERVICE_CREATE',
-      entityType: 'SERVICE',
-      entityId: 'srv-1',
-      entityName: 'Saç kəsimi və forma',
-      description: 'Yeni xidmət əlavə edildi: "Saç kəsimi və forma" (30 AZN)',
-      isReverted: false
-    },
-    {
-      id: 'act-102',
-      timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-      userId: 'usr-editor-gozellik',
-      userName: 'Nərmin Məmmədova',
-      userRole: 'EDITOR',
-      tenantId: 'tenant-1',
-      tenantName: 'Gözəllik və Estetik Mərkəzi',
-      actionType: 'STAFF_CREATE',
-      entityType: 'STAFF',
-      entityId: 'stf-1',
-      entityName: 'Günel Əliyeva',
-      description: 'Yeni mütəxəssis əlavə edildi: "Günel Əliyeva" (Stilist)',
-      isReverted: false
-    },
-    {
-      id: 'act-103',
-      timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
-      userId: 'usr-super',
-      userName: 'Super Administrator',
-      userRole: 'SUPER_ADMIN',
-      tenantId: 'tenant-2',
-      tenantName: 'Baku Medical Plaza',
-      actionType: 'SERVICE_CREATE',
-      entityType: 'SERVICE',
-      entityId: 'srv-5',
-      entityName: 'Kardioloq Qəbulu',
-      description: 'Yeni tibbi xidmət əlavə edildi: "Kardioloq Qəbulu" (60 AZN)',
-      isReverted: false
-    }
-  ]
+  activityLogs: []
 };
 
 function readDb(): DatabaseSchema {
@@ -578,7 +532,9 @@ function readDb(): DatabaseSchema {
       reviews: parsed.reviews || defaultData.reviews,
       feedbacks: parsed.feedbacks || defaultData.feedbacks,
       blockedCustomers: parsed.blockedCustomers || defaultData.blockedCustomers || [],
-      activityLogs: parsed.activityLogs || defaultData.activityLogs || [],
+      activityLogs: Array.isArray(parsed.activityLogs)
+        ? parsed.activityLogs.filter((l: any) => l && l.id && !l.id.startsWith('act-10'))
+        : [],
       whatsappLogs: parsed.whatsappLogs || defaultData.whatsappLogs || []
     };
 
@@ -645,7 +601,7 @@ export function getTenantById(id: string): Tenant | null {
   };
 }
 
-export function createTenant(data: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>): Tenant {
+export function createTenant(data: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>, actor?: ActorInfo): Tenant {
   const db = readDb();
   const newTenant: Tenant = {
     ...data,
@@ -655,30 +611,83 @@ export function createTenant(data: Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'
   };
   db.tenants.push(newTenant);
   writeDb(db);
+  const effectiveActor: ActorInfo = actor || {
+    id: 'super-admin',
+    name: 'Super Administrator',
+    role: 'SUPER_ADMIN',
+    tenantId: newTenant.id
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'TENANT_CREATE',
+    entityType: 'TENANT',
+    entityId: newTenant.id,
+    entityName: newTenant.name,
+    description: `Yeni şirkət/filial əlavə edildi: "${newTenant.name}" (${newTenant.sector || 'Sektor'})`,
+    tenantId: newTenant.id,
+    snapshotAfter: newTenant
+  });
   return newTenant;
 }
 
-export function updateTenant(id: string, data: Partial<Tenant>): Tenant | null {
+export function updateTenant(id: string, data: Partial<Tenant>, actor?: ActorInfo): Tenant | null {
   const db = readDb();
   const index = db.tenants.findIndex(t => t.id === id);
   if (index === -1) return null;
+  const snapshotBefore = { ...db.tenants[index] };
   db.tenants[index] = {
     ...db.tenants[index],
     ...data,
     updatedAt: new Date().toISOString()
   };
   writeDb(db);
+  const effectiveActor: ActorInfo = actor || {
+    id: 'admin',
+    name: db.tenants[index].name + ' Admini',
+    role: 'ADMIN',
+    tenantId: id
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'TENANT_UPDATE',
+    entityType: 'TENANT',
+    entityId: id,
+    entityName: db.tenants[index].name,
+    description: `Şirkət məlumatları və ya tənzimləmələri yeniləndi: "${db.tenants[index].name}"`,
+    tenantId: id,
+    snapshotBefore,
+    snapshotAfter: { ...db.tenants[index] }
+  });
   return db.tenants[index];
 }
 
-export function deleteTenant(id: string): boolean {
+export function deleteTenant(id: string, actor?: ActorInfo): boolean {
   const db = readDb();
+  const target = db.tenants.find(t => t.id === id);
+  if (!target) return false;
+  const snapshotBefore = { ...target };
   const initialLength = db.tenants.length;
   db.tenants = db.tenants.filter(t => t.id !== id);
   db.services = db.services.filter(s => s.tenantId !== id);
   db.staff = db.staff.filter(s => s.tenantId !== id);
   db.bookings = db.bookings.filter(b => b.tenantId !== id);
   writeDb(db);
+  const effectiveActor: ActorInfo = actor || {
+    id: 'super-admin',
+    name: 'Super Administrator',
+    role: 'SUPER_ADMIN',
+    tenantId: id
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'TENANT_DELETE',
+    entityType: 'TENANT',
+    entityId: id,
+    entityName: target.name,
+    description: `Şirkət/filial sistemdən silindi: "${target.name}"`,
+    tenantId: id,
+    snapshotBefore
+  });
   return db.tenants.length < initialLength;
 }
 
@@ -1074,7 +1083,7 @@ export function isTimeOverlapping(
   return startA < endB && startB < endA;
 }
 
-export function createBooking(data: Omit<Booking, 'id' | 'createdAt'>): Booking {
+export function createBooking(data: Omit<Booking, 'id' | 'createdAt'>, actor?: ActorInfo): Booking {
   const db = readDb();
   const service = db.services.find(s => s.id === data.serviceId);
   const staff = db.staff.find(st => st.id === data.staffId);
@@ -1095,6 +1104,24 @@ export function createBooking(data: Omit<Booking, 'id' | 'createdAt'>): Booking 
   };
   db.bookings.push(newBooking);
   writeDb(db);
+
+  const effectiveActor: ActorInfo = actor || {
+    id: 'cust-' + (data.customerPhone ? normalizePhone(data.customerPhone) : 'online'),
+    name: data.customerName || 'Müştəri (Onlayn)',
+    role: 'USER' as any,
+    tenantId: data.tenantId
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'BOOKING_CREATE',
+    entityType: 'BOOKING',
+    entityId: newBooking.id,
+    entityName: `${newBooking.customerName} (${newBooking.date} ${newBooking.timeSlot})`,
+    description: `Yeni rezervasiya qeydə alındı: "${newBooking.customerName}" - ${newBooking.serviceName || 'Xidmət'} (${newBooking.date} ${newBooking.timeSlot})`,
+    tenantId: newBooking.tenantId,
+    snapshotAfter: newBooking
+  });
+
   return newBooking;
 }
 
@@ -1200,7 +1227,7 @@ export function getPatientById(id: string): Patient | undefined {
   };
 }
 
-export function createPatient(data: Omit<Patient, 'id' | 'encounters'>): Patient {
+export function createPatient(data: Omit<Patient, 'id' | 'encounters'>, actor?: ActorInfo): Patient {
   const db = readDb();
   const newPatient: Patient = {
     ...data,
@@ -1214,6 +1241,18 @@ export function createPatient(data: Omit<Patient, 'id' | 'encounters'>): Patient
   };
   db.patients.push(newPatient);
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: 'PATIENT_CREATE',
+      entityType: 'PATIENT',
+      entityId: newPatient.id,
+      entityName: `${newPatient.fullName} (FİN: ${newPatient.fin})`,
+      description: `Yeni pasiyent kartı açıldı: "${newPatient.fullName}" (FİN: ${newPatient.fin})`,
+      tenantId: newPatient.tenantId,
+      snapshotAfter: newPatient
+    });
+  }
   return newPatient;
 }
 
@@ -1234,12 +1273,27 @@ export function updatePatient(id: string, data: Partial<Patient>): Patient | nul
   };
 }
 
-export function deletePatient(id: string): boolean {
+export function deletePatient(id: string, actor?: ActorInfo): boolean {
   const db = readDb();
+  const target = db.patients.find(p => p.id === id);
+  if (!target) return false;
+  const snapshotBefore = { ...target };
   const initialLen = db.patients.length;
   db.patients = db.patients.filter(p => p.id !== id);
   db.encounters = db.encounters.filter(e => e.patientId !== id);
   writeDb(db);
+  if (actor) {
+    logActivity({
+      actor,
+      actionType: 'PATIENT_DELETE',
+      entityType: 'PATIENT',
+      entityId: id,
+      entityName: `${target.fullName} (FİN: ${target.fin})`,
+      description: `Pasiyent kartı və tarixçəsi silindi: "${target.fullName}"`,
+      tenantId: target.tenantId,
+      snapshotBefore
+    });
+  }
   return db.patients.length < initialLen;
 }
 
@@ -1315,7 +1369,7 @@ export function createUser(data: {
   phone?: string;
   isActive?: boolean;
   createdBy?: string | null;
-}): { success: boolean; user?: User; error?: string } {
+}, actor?: ActorInfo): { success: boolean; user?: User; error?: string } {
   const db = readDb();
   const cleanUsername = data.username.toLowerCase().trim();
 
@@ -1359,6 +1413,23 @@ export function createUser(data: {
   db.users.push(newUser);
   writeDb(db);
 
+  const effectiveActor: ActorInfo = actor || {
+    id: 'admin',
+    name: 'Sistem Admini',
+    role: 'ADMIN',
+    tenantId: newUser.tenantId
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'USER_CREATE',
+    entityType: 'USER',
+    entityId: newUser.id,
+    entityName: `${newUser.fullName} (@${newUser.username})`,
+    description: `Yeni istifadəçi təyin edildi: "${newUser.fullName}" (@${newUser.username}, Rol: ${newUser.role})`,
+    tenantId: newUser.tenantId,
+    snapshotAfter: sanitizeUser(newUser)
+  });
+
   const tenant = newUser.tenantId ? db.tenants.find(t => t.id === newUser.tenantId) : null;
   return { 
     success: true, 
@@ -1366,11 +1437,13 @@ export function createUser(data: {
   };
 }
 
-export function updateUser(id: string, updates: Partial<User>): User | null {
+export function updateUser(id: string, updates: Partial<User>, actor?: ActorInfo): User | null {
   const db = readDb();
   if (!db.users) db.users = [];
   const index = db.users.findIndex(u => u.id === id);
   if (index === -1) return null;
+
+  const snapshotBefore = sanitizeUser(db.users[index]);
 
   // If changing username, check uniqueness
   if (updates.username) {
@@ -1405,15 +1478,55 @@ export function updateUser(id: string, updates: Partial<User>): User | null {
     updatedAt: new Date().toISOString()
   };
   writeDb(db);
+
+  const effectiveActor: ActorInfo = actor || {
+    id: 'admin',
+    name: 'Sistem Admini',
+    role: 'ADMIN',
+    tenantId: db.users[index].tenantId
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'USER_UPDATE',
+    entityType: 'USER',
+    entityId: id,
+    entityName: `${db.users[index].fullName} (@${db.users[index].username})`,
+    description: `İstifadəçi məlumatları yeniləndi: "${db.users[index].fullName}"`,
+    tenantId: db.users[index].tenantId,
+    snapshotBefore,
+    snapshotAfter: sanitizeUser(db.users[index])
+  });
+
   return sanitizeUser(db.users[index]) as User;
 }
 
-export function deleteUser(id: string): boolean {
+export function deleteUser(id: string, actor?: ActorInfo): boolean {
   const db = readDb();
   if (!db.users) return false;
+  const target = db.users.find(u => u.id === id);
+  if (!target) return false;
+  const snapshotBefore = sanitizeUser(target);
   const initialLen = db.users.length;
   db.users = db.users.filter(u => u.id !== id);
   writeDb(db);
+
+  const effectiveActor: ActorInfo = actor || {
+    id: 'admin',
+    name: 'Sistem Admini',
+    role: 'ADMIN',
+    tenantId: target.tenantId
+  };
+  logActivity({
+    actor: effectiveActor,
+    actionType: 'USER_DELETE',
+    entityType: 'USER',
+    entityId: id,
+    entityName: `${target.fullName} (@${target.username})`,
+    description: `İstifadəçi sistemdən silindi: "${target.fullName}" (@${target.username})`,
+    tenantId: target.tenantId,
+    snapshotBefore
+  });
+
   return db.users.length < initialLen;
 }
 
@@ -1564,7 +1677,7 @@ export function deleteFeedback(id: string): boolean {
 export function logActivity(params: {
   actor: ActorInfo;
   actionType: ActivityActionType;
-  entityType: 'SERVICE' | 'STAFF' | 'BOOKING' | 'CUSTOMER' | 'PATIENT';
+  entityType: 'SERVICE' | 'STAFF' | 'BOOKING' | 'CUSTOMER' | 'PATIENT' | 'TENANT' | 'USER';
   entityId: string;
   entityName: string;
   description: string;
@@ -1748,6 +1861,75 @@ export function revertActivity(logId: string, performedBy: ActorInfo): {
         db.blockedCustomers.push(targetLog.snapshotBefore);
       }
       revertSummary = `Müştəri təkrar bloklandı`;
+      break;
+    }
+
+    case 'BOOKING_CREATE': {
+      const idx = db.bookings.findIndex(b => b.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.bookings.splice(idx, 1);
+        revertSummary = `Əlavə edilmiş rezervasiya (${targetLog.entityName}) sistemdən ləğv edildi və silindi`;
+      } else {
+        revertSummary = `Rezervasiya artıq mövcud deyil`;
+      }
+      break;
+    }
+
+    case 'TENANT_UPDATE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'İlkin şirkət parametrləri tapılmadı' };
+      }
+      const idx = db.tenants.findIndex(t => t.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.tenants[idx] = { ...targetLog.snapshotBefore };
+        revertSummary = `Şirkətin ("${targetLog.entityName}") əvvəlki parametrləri bərpa edildi`;
+      } else {
+        return { success: false, message: 'Şirkət tapılmadı' };
+      }
+      break;
+    }
+
+    case 'TENANT_CREATE': {
+      const idx = db.tenants.findIndex(t => t.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.tenants.splice(idx, 1);
+        revertSummary = `Əlavə edilmiş şirkət ("${targetLog.entityName}") sistemdən ləğv edildi`;
+      } else {
+        revertSummary = `Şirkət artıq mövcud deyil`;
+      }
+      break;
+    }
+
+    case 'USER_CREATE': {
+      const idx = (db.users || []).findIndex(u => u.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.users.splice(idx, 1);
+        revertSummary = `Əlavə edilmiş istifadəçi ("${targetLog.entityName}") sistemdən silindi`;
+      } else {
+        revertSummary = `İstifadəçi artıq mövcud deyil`;
+      }
+      break;
+    }
+
+    case 'USER_UPDATE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'İlkin istifadəçi məlumatı tapılmadı' };
+      }
+      const idx = (db.users || []).findIndex(u => u.id === targetLog.entityId);
+      if (idx !== -1) {
+        db.users[idx] = { ...db.users[idx], ...targetLog.snapshotBefore };
+        revertSummary = `İstifadəçinin ("${targetLog.entityName}") əvvəlki məlumatları bərpa edildi`;
+      }
+      break;
+    }
+
+    case 'USER_DELETE': {
+      if (!targetLog.snapshotBefore) {
+        return { success: false, message: 'Bərpa üçün istifadəçi məlumatı tapılmadı' };
+      }
+      if (!db.users) db.users = [];
+      db.users.push(targetLog.snapshotBefore);
+      revertSummary = `Silinmiş istifadəçi ("${targetLog.entityName}") bərpa edildi`;
       break;
     }
 

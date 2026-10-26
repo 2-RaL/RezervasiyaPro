@@ -146,6 +146,11 @@ export async function POST(request: Request) {
       duration: bookingDuration,
       status: 'CONFIRMED',
       clientIp
+    }, {
+      id: 'cust-' + rawPhone.replace(/\D/g, ''),
+      name: rawName,
+      role: 'USER' as any,
+      tenantId: body.tenantId
     });
 
     let whatsappNotification = null;

@@ -52,6 +52,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId || tenantId
+    };
+
     // Rule 2: Super admin can create any user and assign company
     if (currentUser.role === 'SUPER_ADMIN') {
       const result = createUser({
@@ -63,7 +70,7 @@ export async function POST(request: Request) {
         fin: fin || '',
         phone: phone || '',
         createdBy: currentUser.id
-      });
+      }, actor);
 
       if (!result.success) {
         return NextResponse.json({ success: false, error: result.error }, { status: 400 });
@@ -110,7 +117,7 @@ export async function POST(request: Request) {
         fin: fin || '',
         phone: phone || '',
         createdBy: currentUser.id
-      });
+      }, actor);
 
       if (!result.success) {
         return NextResponse.json({ success: false, error: result.error }, { status: 400 });
@@ -156,7 +163,14 @@ export async function PATCH(request: Request) {
       if (password && password.trim() !== '') updates.password = password;
       if (isActive !== undefined) updates.isActive = isActive;
 
-      const updated = updateUser(id, updates);
+      const actor = {
+        id: currentUser.id,
+        name: currentUser.fullName,
+        role: currentUser.role,
+        tenantId: currentUser.tenantId || targetUser.tenantId
+      };
+
+      const updated = updateUser(id, updates, actor);
       if (!updated) {
         return NextResponse.json({ success: false, error: 'Yenilənmə alınmadı (İstifadəçi adı artıq mövcuddur və ya xətalı parametrlər)' }, { status: 400 });
       }
@@ -177,7 +191,14 @@ export async function PATCH(request: Request) {
       if (password && password.trim() !== '') updates.password = password;
       if (isActive !== undefined) updates.isActive = isActive;
 
-      const updated = updateUser(id, updates);
+      const actor = {
+        id: currentUser.id,
+        name: currentUser.fullName,
+        role: currentUser.role,
+        tenantId: currentUser.tenantId
+      };
+
+      const updated = updateUser(id, updates, actor);
       if (!updated) {
         return NextResponse.json({ success: false, error: 'Redaktor yenilənmədi' }, { status: 400 });
       }
@@ -214,16 +235,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'İstifadəçi tapılmadı' }, { status: 404 });
     }
 
+    const actor = {
+      id: currentUser.id,
+      name: currentUser.fullName,
+      role: currentUser.role,
+      tenantId: currentUser.tenantId || targetUser.tenantId
+    };
+
     // Super Admin can delete anyone except self
     if (currentUser.role === 'SUPER_ADMIN') {
-      deleteUser(targetUserId);
+      deleteUser(targetUserId, actor);
       return NextResponse.json({ success: true, message: 'İstifadəçi silindi' });
     }
 
     // Admin can ONLY delete their own company's editor
     if (currentUser.role === 'ADMIN') {
       if (targetUser.role === 'EDITOR' && targetUser.tenantId === currentUser.tenantId) {
-        deleteUser(targetUserId);
+        deleteUser(targetUserId, actor);
         return NextResponse.json({ success: true, message: 'Redaktor silindi' });
       } else {
         return NextResponse.json({ success: false, error: 'Bu istifadəçini silməyə icazəniz yoxdur' }, { status: 403 });
