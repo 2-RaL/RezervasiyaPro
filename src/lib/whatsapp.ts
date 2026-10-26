@@ -1,9 +1,11 @@
+import { Tenant, WhatsAppLogItem } from './types';
+
 /**
- * WhatsApp Avtomatik Bildiriş və Mesaj İnteqrasiya Modulu
+ * WhatsApp Avtomatik Bildiriş, Meta Cloud API və Gateway İnteqrasiya Modulu
  */
 
 export const DEFAULT_WHATSAPP_TEMPLATE =
-  'Rezervasiyanız uğurlu həyata keçirilmişdir. Saat {timeSlot} radələrində (+-10 dəqiqə)  "{tenantName}" ailəsi tərəfindən gözləniləcəksiniz. Sizi aramızda görməkdən məmnun olacayıq.';
+  'Rezervasiyanız müvəffəqiyyətlə qeydə alınmışdır. Gün: {date}, Saat: {timeSlot}. 10 dəqiqə gecikmə payı mövcuddur. Qeyd: 3 dəfə rezervasiya ləğv edildikdən sonra təkrar rezervasiya almaq mümkünsüzdür. Anlayışınız üçün təşəkkür edirik';
 
 /**
  * Nömrəni beynəlxalq WhatsApp formatına (məs. 994501234567) çevirir
@@ -33,7 +35,7 @@ export function isValidWhatsAppPhone(phone: string): boolean {
     return false;
   }
 
-  // Azərbaycan mobil operatorları prefiksləri: 99450, 99451, 99455, 99470, 99477, 99499, 99410
+  // Azərbaycan mobil operatorları prefiksləri: 99450, 99451, 99455, 99470, 99477, 99499, 99410, 99460
   if (cleaned.startsWith('994')) {
     const azPrefix = cleaned.substring(3, 5);
     const validAzPrefixes = ['50', '51', '55', '70', '77', '99', '10', '60'];
@@ -45,7 +47,7 @@ export function isValidWhatsAppPhone(phone: string): boolean {
 }
 
 /**
- * Şablon mətndəki {timeSlot}, {tenantName}, {customerName}, {date} dəyişənlərini əvəz edir
+ * Şablon mətndəki {timeSlot}, {tenantName}, {customerName}, {date}, {serviceName}, {staffName} dəyişənlərini əvəz edir
  */
 export function formatWhatsAppMessage(
   template: string | null | undefined,
@@ -55,6 +57,7 @@ export function formatWhatsAppMessage(
     customerName?: string;
     date?: string;
     serviceName?: string;
+    staffName?: string;
   }
 ): string {
   const tmpl = template && template.trim().length > 0 ? template.trim() : DEFAULT_WHATSAPP_TEMPLATE;
@@ -64,7 +67,8 @@ export function formatWhatsAppMessage(
     .replace(/{tenantName}/g, data.tenantName)
     .replace(/{customerName}/g, data.customerName || '')
     .replace(/{date}/g, data.date || '')
-    .replace(/{serviceName}/g, data.serviceName || '');
+    .replace(/{serviceName}/g, data.serviceName || '')
+    .replace(/{staffName}/g, data.staffName || '');
 }
 
 /**
@@ -75,65 +79,277 @@ export function generateWhatsAppLink(phone: string, message: string): string {
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * Meta WhatsApp Cloud API vasitəsilə mesajın birbaşa arxa fonda göndərilməsi
+ */
+export async function sendMetaCloudApiMessage(options: {
+  phoneNumberId: string;
+  accessToken: string;
+  recipientPhone: string;
+  message: string;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const cleanPhone = cleanPhoneForWhatsApp(options.recipientPhone);
+    const url = `https://graph.facebook.com/v20.0/${options.phoneNumberId}/messages`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${options.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: cleanPhone,
+        type: 'text',
+        text: {
+          preview_url: false,
+          body: options.message
+        }
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.messages?.[0]?.id) {
+      return { success: true, messageId: data.messages[0].id };
+    }
+
+    const errMsg = data.error?.message || (typeof data === 'string' ? data : JSON.stringify(data));
+    return { success: false, error: errMsg };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Meta API şəbəkə bağlantı xətası' };
+  }
+}
+
+/**
+ * Fərdi WhatsApp Gateway / Webhook vasitəsilə mesajın göndərilməsi (UltraMsg, GreenAPI və s.)
+ */
+export async function sendGatewayWhatsAppMessage(options: {
+  gatewayUrl: string;
+  recipientPhone: string;
+  message: string;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const cleanPhone = cleanPhoneForWhatsApp(options.recipientPhone);
+    const res = await fetch(options.gatewayUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: cleanPhone,
+        phone: cleanPhone,
+        message: options.message,
+        text: options.message,
+        body: options.message
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      return { success: true, messageId: data.id || data.messageId || 'gw-' + Date.now() };
+    }
+    return { success: false, error: data.error || data.message || `HTTP ${res.status}` };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Gateway bağlantı xətası' };
+  }
+}
+
 export interface WhatsAppNotificationResult {
   enabled: boolean;
   isWhatsAppValid: boolean;
   recipientPhone: string;
   formattedPhone: string;
   companyName: string;
+  companyWhatsApp: string;
   message: string;
   waLink: string;
   sentAt: string;
-  status: 'READY' | 'DISPATCHED' | 'INVALID_PHONE' | 'DISABLED';
+  status: 'SENT' | 'READY' | 'INVALID_PHONE' | 'DISABLED' | 'FAILED';
+  method: 'META_API' | 'DIRECT_LINK' | 'CUSTOM_GATEWAY';
+  directSendAttempted: boolean;
+  directSendSuccess: boolean;
+  errorDetails?: string;
+  metaMessageId?: string;
 }
 
 /**
- * Rezervasiya zamanı avtomatik WhatsApp bildirişini hazırlayır və göndərilməsini təmin edir
+ * Rezervasiya tamamlandıqda avtomatik WhatsApp göndərişi və ya link hazırlığı
  */
-export function prepareWhatsAppBookingNotification(options: {
-  tenantName: string;
-  tenantWhatsApp?: string | null;
-  tenantPhone?: string | null;
-  notificationEnabled?: boolean;
-  customTemplate?: string | null;
+export async function dispatchWhatsAppBookingNotification(options: {
+  tenant: Tenant;
   customerPhone: string;
   customerName: string;
   timeSlot: string;
   date: string;
   serviceName?: string;
-}): WhatsAppNotificationResult {
-  const isEnabled = options.notificationEnabled !== false;
+  staffName?: string;
+  logHandler?: (log: Omit<WhatsAppLogItem, 'id' | 'createdAt'>) => void;
+}): Promise<WhatsAppNotificationResult> {
+  const { tenant } = options;
+  const isEnabled = tenant.whatsappNotificationEnabled !== false;
   const isWhatsAppValid = isValidWhatsAppPhone(options.customerPhone);
-  const cleanPhone = cleanPhoneForWhatsApp(options.customerPhone);
+  const cleanRecipientPhone = cleanPhoneForWhatsApp(options.customerPhone);
 
-  const message = formatWhatsAppMessage(options.customTemplate, {
-    tenantName: options.tenantName,
+  const recordLog = (logData: Omit<WhatsAppLogItem, 'id' | 'createdAt'>) => {
+    try {
+      if (typeof options.logHandler === 'function') {
+        options.logHandler(logData);
+      }
+    } catch (e) {
+      // Ignore logging failures
+    }
+  };
+
+  const message = formatWhatsAppMessage(tenant.whatsappTemplate, {
+    tenantName: tenant.name,
     timeSlot: options.timeSlot,
     customerName: options.customerName,
     date: options.date,
-    serviceName: options.serviceName
+    serviceName: options.serviceName,
+    staffName: options.staffName
   });
 
-  const waLink = generateWhatsAppLink(cleanPhone, message);
+  const waLink = generateWhatsAppLink(cleanRecipientPhone, message);
+  const companyPhone = tenant.whatsapp || tenant.phone || '';
 
-  let status: WhatsAppNotificationResult['status'] = 'READY';
-  if (!isEnabled) {
-    status = 'DISABLED';
-  } else if (!isWhatsAppValid) {
-    status = 'INVALID_PHONE';
-  } else {
-    status = 'DISPATCHED';
-  }
-
-  return {
+  const result: WhatsAppNotificationResult = {
     enabled: isEnabled,
     isWhatsAppValid,
-    recipientPhone: cleanPhone,
+    recipientPhone: cleanRecipientPhone,
     formattedPhone: options.customerPhone,
-    companyName: options.tenantName,
+    companyName: tenant.name,
+    companyWhatsApp: companyPhone,
     message,
     waLink,
     sentAt: new Date().toISOString(),
-    status
+    status: 'READY',
+    method: 'DIRECT_LINK',
+    directSendAttempted: false,
+    directSendSuccess: false
   };
+
+  if (!isEnabled) {
+    result.status = 'DISABLED';
+    return result;
+  }
+
+  if (!isWhatsAppValid) {
+    result.status = 'INVALID_PHONE';
+    recordLog({
+      tenantId: tenant.id,
+      recipientPhone: options.customerPhone,
+      recipientName: options.customerName,
+      message,
+      method: 'DIRECT_LINK',
+      status: 'INVALID_PHONE',
+      errorDetails: 'Nömrə aktiv WhatsApp mobil formatına uyğun deyil'
+    });
+    return result;
+  }
+
+  // 1. Meta Cloud API mövcuddursa birbaşa göndər
+  if (tenant.whatsappPhoneNumberId && tenant.whatsappAccessToken) {
+    result.directSendAttempted = true;
+    result.method = 'META_API';
+
+    const metaRes = await sendMetaCloudApiMessage({
+      phoneNumberId: tenant.whatsappPhoneNumberId,
+      accessToken: tenant.whatsappAccessToken,
+      recipientPhone: cleanRecipientPhone,
+      message
+    });
+
+    if (metaRes.success) {
+      result.directSendSuccess = true;
+      result.status = 'SENT';
+      result.metaMessageId = metaRes.messageId;
+
+      recordLog({
+        tenantId: tenant.id,
+        recipientPhone: cleanRecipientPhone,
+        recipientName: options.customerName,
+        message,
+        method: 'META_API',
+        status: 'SENT',
+        metaMessageId: metaRes.messageId
+      });
+      return result;
+    } else {
+      result.directSendSuccess = false;
+      result.status = 'READY'; // Keep waLink ready for manual fallback
+      result.errorDetails = metaRes.error;
+
+      recordLog({
+        tenantId: tenant.id,
+        recipientPhone: cleanRecipientPhone,
+        recipientName: options.customerName,
+        message,
+        method: 'META_API',
+        status: 'FAILED',
+        errorDetails: metaRes.error
+      });
+      return result;
+    }
+  }
+
+  // 2. Custom Gateway / Webhook mövcuddursa
+  if (tenant.whatsappGatewayUrl) {
+    result.directSendAttempted = true;
+    result.method = 'CUSTOM_GATEWAY';
+
+    const gwRes = await sendGatewayWhatsAppMessage({
+      gatewayUrl: tenant.whatsappGatewayUrl,
+      recipientPhone: cleanRecipientPhone,
+      message
+    });
+
+    if (gwRes.success) {
+      result.directSendSuccess = true;
+      result.status = 'SENT';
+      result.metaMessageId = gwRes.messageId;
+
+      recordLog({
+        tenantId: tenant.id,
+        recipientPhone: cleanRecipientPhone,
+        recipientName: options.customerName,
+        message,
+        method: 'CUSTOM_GATEWAY',
+        status: 'SENT',
+        metaMessageId: gwRes.messageId
+      });
+      return result;
+    } else {
+      result.directSendSuccess = false;
+      result.status = 'READY';
+      result.errorDetails = gwRes.error;
+
+      recordLog({
+        tenantId: tenant.id,
+        recipientPhone: cleanRecipientPhone,
+        recipientName: options.customerName,
+        message,
+        method: 'CUSTOM_GATEWAY',
+        status: 'FAILED',
+        errorDetails: gwRes.error
+      });
+      return result;
+    }
+  }
+
+  // 3. Sadə rejim: Şirkətin WhatsApp nömrəsi ilə birbaşa Click to Chat linki
+  result.status = 'READY';
+  result.method = 'DIRECT_LINK';
+  result.directSendSuccess = true;
+
+  recordLog({
+    tenantId: tenant.id,
+    recipientPhone: cleanRecipientPhone,
+    recipientName: options.customerName,
+    message,
+    method: 'DIRECT_LINK',
+    status: 'READY'
+  });
+
+  return result;
 }

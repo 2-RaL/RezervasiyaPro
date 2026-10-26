@@ -47,7 +47,8 @@ import {
   History,
   Printer,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageSquare
 } from 'lucide-react';
 import { Tenant, Service, Staff, Booking, Patient, BookingStatus, User, UserRole, CustomerReview, FeedbackSuggestion, ActivityLog } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -61,6 +62,7 @@ import ServicesManagementTab from './components/ServicesManagementTab';
 import UsersManagementTab from './components/UsersManagementTab';
 import ReportsAnalyticsTab from './components/ReportsAnalyticsTab';
 import ActivityLogsTab from './components/ActivityLogsTab';
+import WhatsAppManagementTab from './components/WhatsAppManagementTab';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -71,7 +73,7 @@ export default function AdminDashboardPage() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'bookings' | 'reports' | 'activity' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'quality' | 'feedbacks' | 'settings'
+    'overview' | 'bookings' | 'reports' | 'activity' | 'tenants' | 'users' | 'editor' | 'services' | 'staff' | 'medical' | 'quality' | 'feedbacks' | 'whatsapp' | 'settings'
   >('overview');
 
   // Data states
@@ -1433,6 +1435,27 @@ export default function AdminDashboardPage() {
               </span>
             </button>
 
+            {/* NEW: WhatsApp Sistemi (Avtomatik Bildiriş & Meta API) */}
+            <button
+              onClick={() => setActiveTab('whatsapp')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'whatsapp'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <MessageSquare className="w-4 h-4 text-emerald-500" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+                <span>WhatsApp Sistemi</span>
+              </div>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-300">
+                API
+              </span>
+            </button>
+
             <button
               onClick={() => setActiveTab('settings')}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
@@ -1482,6 +1505,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'medical' && 'Tibbi Qeydiyyat və FİN Xəstəlik Tarixçəsi'}
               {activeTab === 'quality' && 'Xidmət Keyfiyyəti və Müştəri Rəyləri'}
               {activeTab === 'feedbacks' && (isSuperAdmin ? 'Daxil Olan Rəy və Təkliflər' : 'Super Adminə Rəy və Təklif')}
+              {activeTab === 'whatsapp' && 'WhatsApp Avtomatlaşdırma & Rəsmi API Mərkəzi'}
               {activeTab === 'settings' && (isSuperAdmin ? 'Sistem Parametrləri' : 'Şirkət və Səhifə Tənzimləmələri')}
             </h1>
 
@@ -2386,6 +2410,16 @@ export default function AdminDashboardPage() {
               currentUser={currentUser}
               onRefresh={() => loadData()}
               showToast={showToast}
+            />
+          )}
+
+          {/* ═══════════ TAB: WHATSAPP SİSTEMİ VƏ API MƏRKƏZİ ═══════════ */}
+          {activeTab === 'whatsapp' && (
+            <WhatsAppManagementTab
+              tenants={tenants}
+              currentUser={currentUser}
+              showToast={showToast}
+              onRefreshTenants={loadData}
             />
           )}
 

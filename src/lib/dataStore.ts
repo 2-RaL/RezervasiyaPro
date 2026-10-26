@@ -14,7 +14,8 @@ import {
   FeedbackSuggestion,
   BlockedCustomer,
   ActivityLog,
-  ActivityActionType
+  ActivityActionType,
+  WhatsAppLogItem
 } from './types';
 import { hashPassword, verifyPassword, isPasswordHashed, sanitizeUser } from './security';
 
@@ -37,6 +38,7 @@ interface DatabaseSchema {
   feedbacks: FeedbackSuggestion[];
   blockedCustomers?: BlockedCustomer[];
   activityLogs?: ActivityLog[];
+  whatsappLogs?: WhatsAppLogItem[];
 }
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -576,7 +578,8 @@ function readDb(): DatabaseSchema {
       reviews: parsed.reviews || defaultData.reviews,
       feedbacks: parsed.feedbacks || defaultData.feedbacks,
       blockedCustomers: parsed.blockedCustomers || defaultData.blockedCustomers || [],
-      activityLogs: parsed.activityLogs || defaultData.activityLogs || []
+      activityLogs: parsed.activityLogs || defaultData.activityLogs || [],
+      whatsappLogs: parsed.whatsappLogs || defaultData.whatsappLogs || []
     };
 
     if (hasUnhashed) {
@@ -1782,6 +1785,46 @@ export function revertActivity(logId: string, performedBy: ActorInfo): {
     message: revertSummary || 'Əməliyyat uğurla geri qaytarıldı',
     log: targetLog
   };
+}
+
+// ── WHATSAPP LOGS & DISPATCH HISTORY ───────────────────────────────────
+export function getWhatsAppLogs(tenantId?: string): WhatsAppLogItem[] {
+  const db = readDb();
+  const logs = db.whatsappLogs || [];
+  if (tenantId) {
+    return logs
+      .filter(l => l.tenantId === tenantId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  return [...logs].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export function addWhatsAppLog(log: Omit<WhatsAppLogItem, 'id' | 'createdAt'>): WhatsAppLogItem {
+  const db = readDb();
+  if (!db.whatsappLogs) db.whatsappLogs = [];
+  const newLog: WhatsAppLogItem = {
+    ...log,
+    id: 'walog-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    createdAt: new Date().toISOString()
+  };
+  db.whatsappLogs.unshift(newLog);
+  if (db.whatsappLogs.length > 500) {
+    db.whatsappLogs = db.whatsappLogs.slice(0, 500);
+  }
+  writeDb(db);
+  return newLog;
+}
+
+export function clearWhatsAppLogs(tenantId?: string): boolean {
+  const db = readDb();
+  if (!db.whatsappLogs) return true;
+  if (tenantId) {
+    db.whatsappLogs = db.whatsappLogs.filter(l => l.tenantId !== tenantId);
+  } else {
+    db.whatsappLogs = [];
+  }
+  writeDb(db);
+  return true;
 }
 
 

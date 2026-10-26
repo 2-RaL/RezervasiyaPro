@@ -34,6 +34,11 @@ export interface Tenant {
   whatsapp?: string | null;   // WhatsApp nömrəsi və ya linki
   whatsappNotificationEnabled?: boolean; // Avtomatik WhatsApp bildirişinin aktiv olması
   whatsappTemplate?: string | null;      // Avtomatik WhatsApp bildiriş şablonu
+  whatsappProvider?: 'DIRECT' | 'META' | 'CUSTOM_GATEWAY'; // Mesaj göndərmə metodu
+  whatsappPhoneNumberId?: string | null; // Meta WhatsApp Cloud API Phone Number ID
+  whatsappAccessToken?: string | null;   // Meta WhatsApp Cloud API Access Token
+  whatsappWabaId?: string | null;        // Meta WhatsApp Business Account ID
+  whatsappGatewayUrl?: string | null;    // Custom Gateway / Webhook URL
   instagram?: string | null;  // Instagram profili və ya linki
   facebook?: string | null;   // Facebook səhifəsi
   tiktok?: string | null;     // TikTok profili
@@ -212,5 +217,18 @@ export interface ActivityLog {
   isReverted?: boolean;
   revertedAt?: string;
   revertedBy?: string;
+}
+
+export interface WhatsAppLogItem {
+  id: string;
+  tenantId: string;
+  recipientPhone: string;
+  recipientName: string;
+  message: string;
+  method: 'META_API' | 'DIRECT_LINK' | 'CUSTOM_GATEWAY';
+  status: 'SENT' | 'READY' | 'FAILED' | 'INVALID_PHONE';
+  errorDetails?: string;
+  metaMessageId?: string;
+  createdAt: string;
 }
 

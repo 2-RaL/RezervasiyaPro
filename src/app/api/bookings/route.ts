@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createBooking, getBookings, isCustomerBlocked, getServices, getStaff, isTimeOverlapping, getTenantById } from '../../../lib/dataStore';
-import { prepareWhatsAppBookingNotification } from '../../../lib/whatsapp';
+import { createBooking, getBookings, isCustomerBlocked, getServices, getStaff, isTimeOverlapping, getTenantById, addWhatsAppLog } from '../../../lib/dataStore';
+import { dispatchWhatsAppBookingNotification } from '../../../lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -148,19 +148,19 @@ export async function POST(request: Request) {
       clientIp
     });
 
-    const tenantName = tenant?.name || 'Müəssisə';
-    const whatsappNotification = prepareWhatsAppBookingNotification({
-      tenantName,
-      tenantWhatsApp: tenant?.whatsapp,
-      tenantPhone: tenant?.phone,
-      notificationEnabled: tenant?.whatsappNotificationEnabled !== false,
-      customTemplate: tenant?.whatsappTemplate,
-      customerPhone: rawPhone,
-      customerName: rawName,
-      timeSlot: body.timeSlot,
-      date: body.date,
-      serviceName: service?.nameAz
-    });
+    let whatsappNotification = null;
+    if (tenant) {
+      whatsappNotification = await dispatchWhatsAppBookingNotification({
+        tenant,
+        customerPhone: rawPhone,
+        customerName: rawName,
+        timeSlot: body.timeSlot,
+        date: body.date,
+        serviceName: service?.nameAz,
+        staffName: staff?.name,
+        logHandler: addWhatsAppLog
+      });
+    }
 
     return NextResponse.json({
       success: true,

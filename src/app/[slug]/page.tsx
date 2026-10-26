@@ -800,20 +800,38 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
                         {lang === 'ru' ? 'WhatsApp Уведомление' : (lang === 'en' ? 'WhatsApp Notification' : 'Avtomatik WhatsApp Bildirişi')}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
-                        {confirmedWhatsAppNotification.isWhatsAppValid ? 'Aktiv Nömrə' : 'Mobil Format'}
-                      </span>
+                      {confirmedWhatsAppNotification.directSendSuccess ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold flex items-center gap-1 shadow-sm">
+                          <span>✓ Göndərildi</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                          {confirmedWhatsAppNotification.isWhatsAppValid ? 'Aktiv Nömrə' : 'Mobil Format'}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                      {lang === 'ru'
-                        ? 'Сообщение с подтверждением времени подготовлено для отправки на ваш номер:'
-                        : (lang === 'en'
-                          ? 'Confirmation message with your booking time is ready for your number:'
-                          : 'Rezervasiya saatınız qeyd olunaraq nömrəniz üçün rəsmi bildiriş mesajı hazırlandı:')}
+                      {confirmedWhatsAppNotification.directSendSuccess ? (
+                        <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                          {lang === 'ru'
+                            ? `Официальное уведомление успешно отправлено на номер ${confirmedWhatsAppNotification.formattedPhone}!`
+                            : (lang === 'en'
+                              ? `Official confirmation message successfully sent to ${confirmedWhatsAppNotification.formattedPhone}!`
+                              : `Təsdiq bildirişi şirkətin rəsmi WhatsApp hesabından nömrənizə (${confirmedWhatsAppNotification.formattedPhone}) birbaşa göndərildi!`)}
+                        </span>
+                      ) : (
+                        <span>
+                          {lang === 'ru'
+                            ? 'Сообщение с подтверждением времени подготовлено для отправки на ваш номер:'
+                            : (lang === 'en'
+                              ? 'Confirmation message with your booking time is ready for your number:'
+                              : 'Rezervasiya saatınız qeyd olunaraq nömrəniz üçün rəsmi bildiriş mesajı hazırlandı:')}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -834,9 +852,11 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
                   </svg>
                   <span>
-                    {lang === 'ru' 
-                      ? 'Открыть и отправить в WhatsApp' 
-                      : (lang === 'en' ? 'Open & Confirm via WhatsApp' : 'WhatsApp ilə Mesajı Aç və Təsdiqlə')}
+                    {confirmedWhatsAppNotification.directSendSuccess
+                      ? (lang === 'ru' ? 'Открыть чат в WhatsApp' : (lang === 'en' ? 'Open Chat in WhatsApp' : 'WhatsApp Çatını Aç'))
+                      : (lang === 'ru' 
+                        ? 'Открыть и отправить в WhatsApp' 
+                        : (lang === 'en' ? 'Open & Confirm via WhatsApp' : 'WhatsApp ilə Mesajı Aç və Təsdiqlə'))}
                   </span>
                 </a>
               </div>
