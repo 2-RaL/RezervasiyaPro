@@ -550,10 +550,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-900 dark:text-white transition-colors">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">{t('loading')}</p>
+      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] flex items-center justify-center text-[#1d1d1f] dark:text-[#f5f5f7] transition-colors">
+        <div className="apple-glass-card p-8 rounded-3xl text-center shadow-xl">
+          <div className="w-10 h-10 border-3 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6] font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -561,14 +561,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
   if (error || !tenant) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 text-slate-900 dark:text-white transition-colors">
-        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl">
+      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] flex items-center justify-center p-6 text-[#1d1d1f] dark:text-[#f5f5f7] transition-colors">
+        <div className="max-w-md w-full apple-glass-modal rounded-3xl p-8 text-center shadow-2xl">
           <AlertCircle className="w-14 h-14 text-rose-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">{t('notFound')}</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{error || t('notFoundDesc')}</p>
+          <h2 className="apple-headline text-2xl font-bold mb-2">{t('notFound')}</h2>
+          <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6] mb-6">{error || t('notFoundDesc')}</p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all"
+            className="apple-btn-primary apple-press inline-flex items-center gap-2 text-sm font-semibold"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{t('backToHome')}</span>
@@ -587,25 +587,25 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
   const selectedStaff = tenant.staff?.find(s => s.id === selectedStaffId);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 transition-colors duration-300">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] py-10 sm:py-12 px-4 sm:px-6 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         {/* Top Breadcrumb & Controls (Language Switcher, Theme Toggle, Login) */}
         <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+            className="apple-press-sm inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[#1d1d1f]/75 hover:text-[#1d1d1f] dark:text-[#f5f5f7]/75 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{t('home')}</span>
           </Link>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <LanguageSelector />
             <ThemeToggle />
 
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 text-xs text-indigo-700 dark:text-indigo-300 font-semibold bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-3.5 py-2 rounded-xl transition-all hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+              className="apple-press-sm inline-flex items-center gap-1.5 text-xs text-[#0071e3] dark:text-[#2997ff] font-semibold bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10 px-3.5 py-1.5 rounded-full transition-all hover:bg-black/10 dark:hover:bg-white/15"
             >
               <span>{t('login')}</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -613,53 +613,53 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
           </div>
         </div>
 
-        {/* Tenant Header Banner */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl mb-8 shadow-xl relative overflow-hidden transition-colors">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        {/* Tenant Header Banner — Apple Frosted Squircle Card */}
+        <div className="apple-glass-card rounded-3xl p-6 sm:p-8 backdrop-blur-2xl mb-8 shadow-xl relative overflow-hidden transition-all">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#0071e3]/10 rounded-full blur-3xl pointer-events-none"></div>
 
           {/* Cover Banner Image at the Top */}
           {tenant.coverImage && (
-            <div className="relative h-44 sm:h-60 -mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-6 overflow-hidden border-b border-slate-200 dark:border-white/10 group">
+            <div className="relative h-44 sm:h-64 -mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-6 overflow-hidden border-b border-black/5 dark:border-white/10 group">
               <img
                 src={tenant.coverImage}
                 alt={`${tenant.name} banner`}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"></div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
             <div className="flex items-start sm:items-center gap-4">
-              {/* Logo on the Left Side */}
+              {/* Logo on the Left Side with Apple Squircle */}
               {tenant.logo ? (
                 <img
                   src={tenant.logo}
                   alt={`${tenant.name} logo`}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-xl shrink-0 bg-white dark:bg-slate-800"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-white dark:border-[#2c2c2e] shadow-xl shrink-0 bg-white dark:bg-[#1c1c1e]"
                 />
               ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-center shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#0071e3]/10 text-[#0071e3] dark:text-[#2997ff] border border-black/5 dark:border-white/10 flex items-center justify-center shrink-0">
                   <Building2 className="w-8 h-8" />
                 </div>
               )}
 
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/20 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-500/30">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className="apple-caption font-semibold uppercase tracking-wider text-[#0071e3] dark:text-[#2997ff] bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full border border-black/5 dark:border-white/10">
                     {getCategoryName(tenant.sector)}
                   </span>
                   {tenant.medicalEnabled && (
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200 dark:border-emerald-500/30">
+                    <span className="apple-caption font-semibold uppercase tracking-wider text-[#34c759] dark:text-[#30d158] bg-[#34c759]/10 px-3 py-1 rounded-full flex items-center gap-1 border border-[#34c759]/20">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       {lang === 'ru' ? 'Медицинская интеграция' : (lang === 'en' ? 'Medical Integration' : 'Tibbi İnteqrasiya')}
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{tenant.name}</h1>
+                <h1 className="apple-headline text-2xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] tracking-tight">{tenant.name}</h1>
                 {tenant.address && (
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-slate-400" />
+                  <p className="apple-body text-xs sm:text-sm text-[#86868b] dark:text-[#a1a1a6] mt-1.5 flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-[#0071e3] dark:text-[#2997ff] shrink-0" />
                     <span>{tenant.address}</span>
                   </p>
                 )}
@@ -670,9 +670,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               {tenant.phone && (
                 <a
                   href={`tel:${tenant.phone}`}
-                  className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all shadow-sm"
+                  className="apple-press-sm inline-flex items-center gap-2 bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] transition-all shadow-sm"
                 >
-                  <Phone className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                  <Phone className="w-4 h-4 text-[#34c759] dark:text-[#30d158]" />
                   <span>{tenant.phone}</span>
                 </a>
               )}
@@ -685,7 +685,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   target="_blank"
                   rel="noopener noreferrer"
                   title={t('whatsappDirect')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/25 transition-transform hover:scale-105 active:scale-95"
+                  className="apple-press inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#34c759] hover:bg-[#30d158] text-white text-xs font-semibold shadow-md shadow-[#34c759]/25 transition-all"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
@@ -699,7 +699,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   target="_blank"
                   rel="noopener noreferrer"
                   title={t('instagramPage')}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-md shadow-rose-500/25 transition-transform hover:scale-110 active:scale-95"
+                  className="apple-press w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-md shadow-rose-500/25 transition-transform"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -712,7 +712,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   target="_blank"
                   rel="noopener noreferrer"
                   title={t('facebookPage')}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#1877F2] text-white shadow-md shadow-blue-500/25 transition-transform hover:scale-110 active:scale-95"
+                  className="apple-press w-8 h-8 rounded-full flex items-center justify-center bg-[#1877F2] text-white shadow-md shadow-blue-500/25 transition-transform"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -725,7 +725,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   target="_blank"
                   rel="noopener noreferrer"
                   title={t('tiktokProfile')}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-900 dark:bg-white/10 hover:bg-black text-white border border-slate-700/30 transition-transform hover:scale-110 active:scale-95"
+                  className="apple-press w-8 h-8 rounded-full flex items-center justify-center bg-black text-white border border-white/20 transition-transform"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.52a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.2a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.05a8.28 8.28 0 0 0 4.76 1.48V7.08a4.84 4.84 0 0 1-1-.39z"/>
@@ -738,7 +738,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   target="_blank"
                   rel="noopener noreferrer"
                   title={t('telegramChannel')}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#229ED9] text-white shadow-md shadow-sky-500/25 transition-transform hover:scale-110 active:scale-95"
+                  className="apple-press w-8 h-8 rounded-full flex items-center justify-center bg-[#229ED9] text-white shadow-md shadow-sky-500/25 transition-transform"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
@@ -750,73 +750,73 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         </div>
 
         {confirmedBooking ? (
-          /* Confirmation Success Ticket */
-          <div className="bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-3xl p-8 text-center backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in duration-300">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/20">
+          /* Confirmation Success Ticket — Apple Celebration Glass Card */
+          <div className="apple-glass-card rounded-3xl p-8 sm:p-10 text-center shadow-2xl relative overflow-hidden transition-all">
+            <div className="w-16 h-16 rounded-full bg-[#34c759]/15 text-[#34c759] dark:text-[#30d158] border border-[#34c759]/25 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-[#34c759]/20">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full">
+            <span className="apple-caption font-semibold text-[#34c759] dark:text-[#30d158] uppercase tracking-widest bg-[#34c759]/10 px-3.5 py-1 rounded-full">
               {t('confirmed')}
             </span>
 
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-3 mb-2">
+            <h2 className="apple-headline text-3xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mt-3 mb-2 tracking-tight">
               {lang === 'ru' ? `Спасибо, ${confirmedBooking.customerName}!` : (lang === 'en' ? `Thank you, ${confirmedBooking.customerName}!` : `Təşəkkür edirik, ${confirmedBooking.customerName}!`)}
             </h2>
-            <p className="text-slate-600 dark:text-slate-300 text-sm max-w-md mx-auto mb-8">
+            <p className="apple-body text-[#86868b] dark:text-[#a1a1a6] text-sm max-w-md mx-auto mb-8">
               {t('bookingSuccessDesc')}
             </p>
 
-            <div className="max-w-md mx-auto bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10 rounded-2xl p-6 text-left space-y-3 mb-8">
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">{t('bookingCode')}:</span>
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{confirmedBooking.id}</span>
+            <div className="max-w-md mx-auto apple-glass-card p-6 text-left space-y-3 mb-8 shadow-sm">
+              <div className="flex justify-between items-center border-b border-black/5 dark:border-white/10 pb-2 text-xs sm:text-sm">
+                <span className="text-[#86868b] dark:text-[#a1a1a6]">{t('bookingCode')}:</span>
+                <span className="font-mono font-bold text-[#0071e3] dark:text-[#2997ff]">{confirmedBooking.id}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">{t('service')}:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{selectedService ? getServiceName(selectedService) : ''}</span>
+              <div className="flex justify-between items-center border-b border-black/5 dark:border-white/10 pb-2 text-xs sm:text-sm">
+                <span className="text-[#86868b] dark:text-[#a1a1a6]">{t('service')}:</span>
+                <span className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">{selectedService ? getServiceName(selectedService) : ''}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">{t('specialist')}:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{selectedStaff?.name}</span>
+              <div className="flex justify-between items-center border-b border-black/5 dark:border-white/10 pb-2 text-xs sm:text-sm">
+                <span className="text-[#86868b] dark:text-[#a1a1a6]">{t('specialist')}:</span>
+                <span className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">{selectedStaff?.name}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-2 text-sm">
-                <span className="text-slate-500 dark:text-slate-400">{t('date')} & {t('time')}:</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{confirmedBooking.date} / {confirmedBooking.timeSlot}</span>
+              <div className="flex justify-between items-center border-b border-black/5 dark:border-white/10 pb-2 text-xs sm:text-sm">
+                <span className="text-[#86868b] dark:text-[#a1a1a6]">{t('date')} & {t('time')}:</span>
+                <span className="font-semibold text-[#34c759] dark:text-[#30d158]">{confirmedBooking.date} / {confirmedBooking.timeSlot}</span>
               </div>
-              <div className="flex justify-between items-center text-sm pt-1">
-                <span className="text-slate-500 dark:text-slate-400">{t('price')}:</span>
-                <span className="font-extrabold text-slate-900 dark:text-white text-base">{selectedService?.price} AZN</span>
+              <div className="flex justify-between items-center text-xs sm:text-sm pt-1">
+                <span className="text-[#86868b] dark:text-[#a1a1a6]">{t('price')}:</span>
+                <span className="apple-display font-bold text-[#1d1d1f] dark:text-[#f5f5f7] text-base">{selectedService?.price} AZN</span>
               </div>
             </div>
 
             {/* ─── AVTOMATİK WHATSAPP BİLDİRİŞİ ─── */}
             {confirmedWhatsAppNotification && confirmedWhatsAppNotification.enabled && (
-              <div className="max-w-md mx-auto mb-8 p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/30 text-left shadow-lg relative overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+              <div className="max-w-md mx-auto mb-8 p-5 rounded-3xl bg-gradient-to-br from-[#34c759]/10 via-[#34c759]/5 to-transparent border border-[#34c759]/30 text-left shadow-lg relative overflow-hidden">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/30">
+                  <div className="w-10 h-10 rounded-2xl bg-[#34c759] text-white flex items-center justify-center shrink-0 shadow-md shadow-[#34c759]/30">
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                       <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+                      <span className="apple-caption font-semibold text-[#34c759] dark:text-[#30d158] uppercase tracking-wide">
                         {lang === 'ru' ? 'WhatsApp Уведомление' : (lang === 'en' ? 'WhatsApp Notification' : 'Avtomatik WhatsApp Bildirişi')}
                       </span>
                       {confirmedWhatsAppNotification.directSendSuccess ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold flex items-center gap-1 shadow-sm">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#34c759] text-white font-semibold flex items-center gap-1 shadow-sm">
                           <span>✓ Göndərildi</span>
                         </span>
                       ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#34c759]/20 text-[#34c759] dark:text-[#30d158] font-semibold">
                           {confirmedWhatsAppNotification.isWhatsAppValid ? 'Aktiv Nömrə' : 'Mobil Format'}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                    <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6] mt-0.5">
                       {confirmedWhatsAppNotification.directSendSuccess ? (
-                        <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                        <span className="text-[#34c759] dark:text-[#30d158] font-medium">
                           {lang === 'ru'
                             ? `Официальное уведомление успешно отправлено на номер ${confirmedWhatsAppNotification.formattedPhone}!`
                             : (lang === 'en'
@@ -837,7 +837,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 </div>
 
                 {/* Mesaj qutusu */}
-                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/20 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium mb-3.5 shadow-sm">
+                <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-black/40 border border-black/5 dark:border-white/10 text-xs text-[#1d1d1f] dark:text-[#f5f5f7] leading-relaxed font-medium mb-3.5 shadow-sm">
                   💬 &ldquo;{confirmedWhatsAppNotification.message}&rdquo;
                 </div>
 
@@ -846,7 +846,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={confirmedWhatsAppNotification.waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="apple-press w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-[#34c759] hover:bg-[#30d158] text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#34c759]/25 transition-all"
                 >
                   <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
                     <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
@@ -863,8 +863,8 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             )}
 
             {/* Direct support / WhatsApp links on confirmation */}
-            <div className="max-w-md mx-auto mb-8 p-4 rounded-2xl bg-indigo-50/50 dark:bg-white/5 border border-indigo-100 dark:border-white/10 text-center">
-              <p className="text-xs text-slate-600 dark:text-slate-300 mb-3 font-medium">
+            <div className="max-w-md mx-auto mb-8 p-4 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 text-center">
+              <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6] mb-3 font-medium">
                 {lang === 'ru' 
                   ? 'Если у вас есть вопросы или пожелания по изменению бронирования, свяжитесь с нами:' 
                   : (lang === 'en' 
@@ -876,7 +876,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all hover:scale-105"
+                  className="apple-press inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#34c759] hover:bg-[#30d158] text-white text-xs font-semibold shadow-md shadow-[#34c759]/20 transition-all"
                 >
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                     <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm5.78 14.07c-.24.68-1.4 1.34-1.95 1.39-.51.05-1.18.07-3.79-.98-3.32-1.34-5.47-4.71-5.63-4.93-.17-.22-1.35-1.8-1.35-3.43 0-1.63.85-2.43 1.15-2.76.3-.33.66-.41.88-.41.22 0 .44 0 .63.01.21.01.48-.08.75.57.28.68.96 2.34 1.05 2.51.09.17.15.37.03.6-.12.22-.18.36-.36.56-.18.21-.37.47-.53.63-.18.18-.36.38-.16.73.21.36.92 1.51 1.97 2.45 1.35 1.2 2.49 1.57 2.85 1.75.36.18.57.15.78-.1.21-.24.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.09.99 2.45 1.17.36.18.6.27.69.42.09.15.09.87-.15 1.55z" />
@@ -886,9 +886,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 {tenant?.phone && (
                   <a
                     href={`tel:${tenant.phone}`}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-800 dark:text-white text-xs font-bold transition-all"
+                    className="apple-press inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-[#1d1d1f] dark:text-[#f5f5f7] text-xs font-semibold transition-all"
                   >
-                    <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                    <Phone className="w-3.5 h-3.5 text-[#34c759]" />
                     <span>{t('call')}</span>
                   </a>
                 )}
@@ -896,7 +896,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   href={getInstagramUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white text-xs font-bold transition-all hover:scale-105"
+                  className="apple-press inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white text-xs font-semibold transition-all"
                 >
                   <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -918,7 +918,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     loadBookedSlots(tenant.id, selectedDate, selectedStaffId);
                   }
                 }}
-                className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+                className="apple-btn-primary apple-press px-8 py-3.5 rounded-full text-sm font-semibold flex items-center gap-2 shadow-lg shadow-[#0071e3]/25"
               >
                 <Calendar className="w-4 h-4" />
                 <span>{t('newBooking')}</span>
@@ -928,13 +928,13 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         ) : (
           /* Interactive Booking Form */
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Step 1: Select Service */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
+            {/* Step 1: Select Service — Apple Squircle Grid */}
+            <div className="apple-glass-card rounded-3xl p-6 sm:p-8 shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">1</div>
+                <div className="w-8 h-8 rounded-2xl bg-black/5 dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] font-bold flex items-center justify-center text-sm">1</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step1Title')}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('step1Subtitle')}</p>
+                  <h3 className="apple-headline text-lg font-bold text-[#1d1d1f] dark:text-[#f5f5f7]">{t('step1Title')}</h3>
+                  <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6]">{t('step1Subtitle')}</p>
                 </div>
               </div>
 
@@ -958,21 +958,21 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           setSelectedStaffId(matches[0].id);
                         }
                       }}
-                      className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+                      className={`apple-press cursor-pointer rounded-2xl p-4 sm:p-5 border transition-all ${
                         isSelected 
-                          ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
-                          : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-100/50 dark:hover:bg-white/10'
+                          ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/15 ring-2 ring-[#0071e3]/25 shadow-md' 
+                          : 'border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] hover:border-black/15 dark:hover:border-white/20'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                        <span className="apple-caption font-semibold px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7]">
                           {localizedCategory}
                         </span>
-                        <span className="text-base font-extrabold text-indigo-600 dark:text-indigo-400">{srv.price} AZN</span>
+                        <span className="apple-display text-base font-bold text-[#0071e3] dark:text-[#2997ff]">{srv.price} AZN</span>
                       </div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-base mb-1">{localizedServiceName}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      <h4 className="font-bold text-[#1d1d1f] dark:text-[#f5f5f7] text-base mb-1">{localizedServiceName}</h4>
+                      <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#0071e3] dark:text-[#2997ff]" />
                         <span>{t('duration')}: {formatDuration(srv.duration)}</span>
                       </p>
                     </div>
@@ -982,12 +982,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             </div>
 
             {/* Step 2: Select Specialist (Filtered by Selected Service) */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
+            <div className="apple-glass-card rounded-3xl p-6 sm:p-8 shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">2</div>
+                <div className="w-8 h-8 rounded-2xl bg-black/5 dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] font-bold flex items-center justify-center text-sm">2</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step2Title')}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <h3 className="apple-headline text-lg font-bold text-[#1d1d1f] dark:text-[#f5f5f7]">{t('step2Title')}</h3>
+                  <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6]">
                     {t('step2Subtitle')}
                   </p>
                 </div>
@@ -1001,19 +1001,19 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       <div
                         key={stf.id}
                         onClick={() => setSelectedStaffId(stf.id)}
-                        className={`cursor-pointer rounded-2xl p-4 border transition-all text-center ${
+                        className={`apple-press cursor-pointer rounded-2xl p-5 border transition-all text-center ${
                           isSelected 
-                            ? 'border-indigo-600 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-600/20 shadow-md' 
-                            : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                            ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/15 ring-2 ring-[#0071e3]/25 shadow-md' 
+                            : 'border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] hover:border-black/15 dark:hover:border-white/20'
                         }`}
                       >
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-bold text-base mx-auto mb-3 shadow-md">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-b from-[#0071e3] to-[#0051a8] flex items-center justify-center text-white font-bold text-base mx-auto mb-3 shadow-md shadow-[#0071e3]/20">
                           {stf.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{stf.name}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{stf.role}</p>
+                        <h4 className="font-bold text-[#1d1d1f] dark:text-[#f5f5f7] text-sm">{stf.name}</h4>
+                        <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1">{stf.role}</p>
                         {stf.slotDuration ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full mt-2 border border-emerald-200 dark:border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#34c759] dark:text-[#30d158] bg-[#34c759]/10 px-2.5 py-0.5 rounded-full mt-2 border border-[#34c759]/20">
                             <Clock className="w-2.5 h-2.5" />
                             {formatDuration(stf.slotDuration)} {lang === 'ru' ? 'интервал' : (lang === 'en' ? 'interval' : 'aralıq')}
                           </span>
@@ -1023,39 +1023,39 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   })}
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>{t('noStaffForService')}</span>
                 </div>
               )}
             </div>
 
-            {/* Step 3: Date & Time Slot */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
+            {/* Step 3: Date & Time Slot (Apple Calendar + Segmented Slot Filter) */}
+            <div className="apple-glass-card rounded-3xl p-6 sm:p-8 shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">3</div>
+                <div className="w-8 h-8 rounded-2xl bg-black/5 dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] font-bold flex items-center justify-center text-sm">3</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step3Title')}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('step3Subtitle')}</p>
+                  <h3 className="apple-headline text-lg font-bold text-[#1d1d1f] dark:text-[#f5f5f7]">{t('step3Title')}</h3>
+                  <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6]">{t('step3Subtitle')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
-                {/* Sol Tərəf: İnteraktiv Aylıq Təqvim (Bloklanmış günlər Qırmızı, seçilməz) */}
-                <div className="lg:col-span-6 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5">
+                {/* Sol Tərəf: İnteraktiv Apple Aylıq Təqvim */}
+                <div className="lg:col-span-6 apple-glass-card p-4 sm:p-5 shadow-none border border-black/5 dark:border-white/10">
                   
                   {/* Təqvim Başlığı: Ay, İl və Keçid Düymələri */}
-                  <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-white/10">
+                  <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-black/5 dark:border-white/10">
                     <div>
-                      <h4 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      <h4 className="text-base font-bold text-[#1d1d1f] dark:text-[#f5f5f7] flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#0071e3] dark:text-[#2997ff]" />
                         <span>
                           {MONTH_NAMES[lang]?.[calendarData.month] || MONTH_NAMES.az[calendarData.month]} {calendarData.year}
                         </span>
                       </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        {t('bookingDate')}: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{selectedDate}</strong>
+                      <p className="apple-body text-[11px] text-[#86868b] dark:text-[#a1a1a6] mt-0.5">
+                        {t('bookingDate')}: <strong className="text-[#0071e3] dark:text-[#2997ff] font-bold">{selectedDate}</strong>
                       </p>
                     </div>
 
@@ -1063,7 +1063,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       <button
                         type="button"
                         onClick={goToToday}
-                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition-colors"
+                        className="apple-press-sm px-2.5 py-1 text-[11px] font-semibold rounded-full bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/10 transition-colors"
                       >
                         Bugün
                       </button>
@@ -1071,7 +1071,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         type="button"
                         onClick={prevMonth}
                         aria-label="Əvvəlki ay"
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        className="apple-press-sm p-1.5 rounded-full border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -1079,7 +1079,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         type="button"
                         onClick={nextMonth}
                         aria-label="Növbəti ay"
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        className="apple-press-sm p-1.5 rounded-full border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -1089,7 +1089,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   {/* Həftənin Günləri Başlığı (B.e - Baz) */}
                   <div className="grid grid-cols-7 gap-1 text-center mb-2">
                     {(WEEKDAY_NAMES[lang] || WEEKDAY_NAMES.az).map((wd, idx) => (
-                      <div key={idx} className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-1">
+                      <div key={idx} className="apple-caption font-semibold uppercase tracking-wider text-[#86868b] dark:text-[#a1a1a6] py-1">
                         {wd}
                       </div>
                     ))}
@@ -1101,7 +1101,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     {calendarData.prevDays.map((p, i) => (
                       <div
                         key={`prev-${i}`}
-                        className="h-12 rounded-xl flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none opacity-40"
+                        className="h-12 rounded-2xl flex items-center justify-center text-xs text-neutral-300 dark:text-neutral-700 select-none opacity-40"
                       >
                         {p.day}
                       </div>
@@ -1114,10 +1114,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           <div
                             key={item.dateStr}
                             title="Keçmiş tarix"
-                            className="h-12 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-100/50 dark:bg-slate-800/20 text-slate-400 dark:text-slate-600 flex flex-col items-center justify-center text-xs cursor-not-allowed select-none"
+                            className="h-12 rounded-2xl border border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] text-neutral-400 dark:text-neutral-600 flex flex-col items-center justify-center text-xs cursor-not-allowed select-none"
                           >
                             <span className="font-medium">{item.day}</span>
-                            <span className="text-[8px] text-slate-400">{t('pastDaysLegend')}</span>
+                            <span className="text-[8px] text-neutral-400">{t('pastDaysLegend')}</span>
                           </div>
                         );
                       }
@@ -1127,10 +1127,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           <div
                             key={item.dateStr}
                             title="Bu gün admin və ya redaktor tərəfindən bloklanıb və qapalıdır"
-                            className="h-12 rounded-xl border-2 border-rose-300 dark:border-rose-700/80 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex flex-col items-center justify-center text-xs font-black cursor-not-allowed select-none shadow-sm relative group"
+                            className="h-12 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400 flex flex-col items-center justify-center text-xs font-bold cursor-not-allowed select-none relative group"
                           >
                             <span className="line-through">{item.day}</span>
-                            <span className="text-[8px] font-black uppercase text-rose-600 dark:text-rose-400 tracking-tighter">
+                            <span className="text-[8px] font-bold uppercase tracking-tighter">
                               {t('closedDay')}
                             </span>
                             <Ban className="w-2.5 h-2.5 text-rose-500 absolute top-1 right-1" />
@@ -1144,14 +1144,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           key={item.dateStr}
                           type="button"
                           onClick={() => setSelectedDate(item.dateStr)}
-                          className={`h-12 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer select-none ${
+                          className={`apple-press-sm h-12 rounded-2xl border text-xs font-semibold transition-all flex flex-col items-center justify-center cursor-pointer select-none ${
                             item.isSelected
-                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-400 scale-105 z-10'
-                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-100 hover:border-emerald-500 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/30'
+                              ? 'bg-[#0071e3] text-white border-[#0071e3] shadow-md ring-2 ring-[#0071e3]/30 scale-105 z-10'
+                              : 'bg-white dark:bg-black/30 border-black/5 dark:border-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] hover:border-[#0071e3]/40 hover:bg-[#0071e3]/5'
                           }`}
                         >
                           <span>{item.day}</span>
-                          <span className={`text-[8px] font-bold ${item.isSelected ? 'text-indigo-200' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          <span className={`text-[8px] font-medium ${item.isSelected ? 'text-white/80' : 'text-[#34c759] dark:text-[#30d158]'}`}>
                             {item.isSelected ? t('selectedDay') : t('openDay')}
                           </span>
                         </button>
@@ -1162,7 +1162,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     {calendarData.nextDays.map((n, i) => (
                       <div
                         key={`next-${i}`}
-                        className="h-12 rounded-xl flex items-center justify-center text-xs text-slate-300 dark:text-slate-700 select-none opacity-40"
+                        className="h-12 rounded-2xl flex items-center justify-center text-xs text-neutral-300 dark:text-neutral-700 select-none opacity-40"
                       >
                         {n.day}
                       </div>
@@ -1170,12 +1170,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   </div>
 
                   {/* Təqvim İzahı (Legend) */}
-                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                    <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                  <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 font-medium text-[#34c759] dark:text-[#30d158]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#34c759] shrink-0"></span>
                       <span>{t('openDaysLegend')}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 font-bold text-rose-600 dark:text-rose-400">
+                    <div className="flex items-center gap-1.5 font-medium text-rose-500">
                       <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
                       <span>{t('blockedDaysLegend')}</span>
                     </div>
@@ -1183,86 +1183,70 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 </div>
 
-                {/* Sağ Tərəf: Seçilmiş Günün Saatları (Yalnız açıq saatlar) */}
+                {/* Sağ Tərəf: Seçilmiş Günün Saatları (Apple iOS Segmented Control & Spring Pills) */}
                 <div className="lg:col-span-6 space-y-4">
                   
                   {isCurrentDateBlocked ? (
-                    <div className="p-6 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-center">
+                    <div className="p-6 rounded-3xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-center">
                       <Ban className="w-8 h-8 text-rose-500 mx-auto mb-2" />
                       <h4 className="font-bold text-sm mb-1">{t('dayBlockedWarning')}</h4>
-                      <p className="text-xs text-rose-600 dark:text-rose-400">
-                        Admin və ya redaktor bu günü qapalı elan edib. Zəhmət olmasa təqvimdə yaşıl rəngdə göstərilən açıq günlərdən birini seçin.
+                      <p className="apple-body text-xs">
+                        Admin və ya redaktor bu günü qapalı elan edib. Zəhmət olmasa təqvimdə açıq günlərdən birini seçin.
                       </p>
                     </div>
                   ) : (
                     <>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          <label className="apple-caption font-semibold uppercase tracking-wider text-[#1d1d1f] dark:text-[#f5f5f7] flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-[#0071e3] dark:text-[#2997ff]" />
                             <span>{t('availableHours')}</span>
                           </label>
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
-                            <span>{t('slotInterval')}: {formatDuration(activeInterval)}</span>
+                          <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#34c759]/10 text-[#34c759] dark:text-[#30d158] border border-[#34c759]/20">
+                            {t('slotInterval')}: {formatDuration(activeInterval)}
                           </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                          <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-300">
                             {workStartTime} - {workEndTime}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                        <div className="flex items-center gap-3 text-[11px] text-[#86868b] dark:text-[#a1a1a6]">
                           <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {t('free')}
+                            <span className="w-2 h-2 rounded-full bg-[#34c759]"></span> {t('free')}
                           </span>
                           <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> {t('booked')}
+                            <span className="w-2 h-2 rounded-full bg-rose-500"></span> {t('booked')}
                           </span>
                         </div>
                       </div>
 
-                      {/* Vaxt Filtrləri */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* iOS Segmented Vaxt Filtrləri */}
+                      <div className="apple-segmented-container inline-flex flex-wrap items-center gap-1">
                         <button
                           type="button"
                           onClick={() => setTimeFilter('ALL')}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                            timeFilter === 'ALL'
-                              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                          }`}
+                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'ALL' ? 'active' : ''}`}
                         >
                           {t('allHours')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setTimeFilter('MORNING')}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                            timeFilter === 'MORNING'
-                              ? 'bg-amber-500 text-white shadow-sm'
-                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                          }`}
+                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'MORNING' ? 'active' : ''}`}
                         >
                           {t('morning')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setTimeFilter('AFTERNOON')}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                            timeFilter === 'AFTERNOON'
-                              ? 'bg-indigo-600 text-white shadow-sm'
-                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                          }`}
+                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'AFTERNOON' ? 'active' : ''}`}
                         >
                           {t('afternoon')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setTimeFilter('EVENING')}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                            timeFilter === 'EVENING'
-                              ? 'bg-purple-600 text-white shadow-sm'
-                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
-                          }`}
+                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'EVENING' ? 'active' : ''}`}
                         >
                           {t('evening')}
                         </button>
@@ -1270,7 +1254,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                       {/* Yalnız Açıq Qoyulmuş Saatlar Qridi */}
                       {filteredTimeSlots.length === 0 ? (
-                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-center text-xs text-slate-500">
+                        <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] text-center text-xs text-[#86868b] dark:text-[#a1a1a6]">
                           {t('noSlotsAvailable')}
                         </div>
                       ) : (
@@ -1286,10 +1270,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                                   type="button"
                                   disabled={true}
                                   title={t('booked')}
-                                  className="py-2.5 px-2 rounded-xl text-xs font-bold transition-all bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/40 text-rose-500 dark:text-rose-400 line-through cursor-not-allowed opacity-70 flex flex-col items-center justify-center gap-0.5"
+                                  className="py-2.5 px-2 rounded-2xl text-xs font-semibold transition-all bg-rose-500/10 border border-rose-500/30 text-rose-500 line-through cursor-not-allowed opacity-60 flex flex-col items-center justify-center gap-0.5"
                                 >
                                   <span>{time}</span>
-                                  <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 no-underline">
+                                  <span className="text-[9px] font-medium no-underline">
                                     {t('bookedShort')}
                                   </span>
                                 </button>
@@ -1301,10 +1285,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                                 key={time}
                                 type="button"
                                 onClick={() => setSelectedTime(time)}
-                                className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                                className={`apple-press-sm py-2.5 px-3 rounded-2xl text-xs font-semibold transition-all ${
                                   isSelected
-                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400'
-                                    : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                                    ? 'bg-[#0071e3] text-white shadow-md shadow-[#0071e3]/30 ring-2 ring-[#0071e3]/30'
+                                    : 'bg-black/[0.03] dark:bg-white/[0.05] text-[#1d1d1f] dark:text-[#f5f5f7] border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10'
                                 }`}
                               >
                                 {time}
@@ -1314,9 +1298,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                         </div>
                       )}
 
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 pt-1">
-                        <span className="font-semibold">{t('selectedTime')}:</span>
-                        <span className="font-black text-indigo-600 dark:text-indigo-400 text-xs">
+                      <div className="text-[11px] text-[#86868b] dark:text-[#a1a1a6] flex items-center gap-1.5 pt-1">
+                        <span className="font-medium">{t('selectedTime')}:</span>
+                        <span className="font-bold text-[#0071e3] dark:text-[#2997ff] text-xs">
                           {selectedDate} / {selectedTime}
                         </span>
                       </div>
@@ -1328,19 +1312,19 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               </div>
             </div>
 
-            {/* Step 4: Contact & Identity Info */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors">
+            {/* Step 4: Contact & Identity Info — Apple Smooth Inputs */}
+            <div className="apple-glass-card rounded-3xl p-6 sm:p-8 shadow-sm transition-all">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold flex items-center justify-center text-sm">4</div>
+                <div className="w-8 h-8 rounded-2xl bg-black/5 dark:bg-white/10 text-[#0071e3] dark:text-[#2997ff] font-bold flex items-center justify-center text-sm">4</div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('step4Title')}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('step4Subtitle')}</p>
+                  <h3 className="apple-headline text-lg font-bold text-[#1d1d1f] dark:text-[#f5f5f7]">{t('step4Title')}</h3>
+                  <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6]">{t('step4Subtitle')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
                     {t('fullName')} * ({t('onlyLetters')})
                   </label>
                   <input
@@ -1349,12 +1333,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     placeholder={t('fullNamePlaceholder')}
                     value={customerName}
                     onChange={(e) => handleCustomerNameChange(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/15 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-white focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
                     {t('phone')} * ({t('onlyDigits')})
                   </label>
                   <input
@@ -1363,13 +1347,13 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     placeholder="+994 50 123 45 67"
                     value={customerPhone}
                     onChange={(e) => handleCustomerPhoneChange(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
+                    className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/15 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-white focus:outline-none focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/20 text-sm transition-all"
                   />
                 </div>
 
                 {tenant.medicalEnabled && (
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-semibold text-[#34c759] dark:text-[#30d158] mb-1.5 flex items-center gap-1.5">
                       <ShieldCheck className="w-4 h-4" />
                       <span>{t('finCode')} ({t('optional')})</span>
                     </label>
@@ -1379,9 +1363,9 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       placeholder={t('finPlaceholder')}
                       value={customerFin}
                       onChange={(e) => setCustomerFin(e.target.value.toUpperCase())}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-emerald-500/40 rounded-xl px-4 py-3 text-slate-900 dark:text-white uppercase focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                      className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-[#34c759]/40 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-white uppercase focus:outline-none focus:border-[#34c759] text-sm font-mono transition-all"
                     />
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{t('secureNotice')}</p>
+                    <p className="apple-caption text-[#86868b] dark:text-[#a1a1a6] mt-1">{t('secureNotice')}</p>
                   </div>
                 )}
               </div>
@@ -1389,10 +1373,10 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
             {/* Booking Error or Block Alert */}
             {bookingError && (
-              <div className={`p-4 rounded-2xl border flex items-start gap-3 animate-in fade-in ${
+              <div className={`p-4 rounded-3xl border flex items-start gap-3 ${
                 bookingError.isBlocked 
-                  ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-500/40 text-rose-900 dark:text-rose-200' 
-                  : 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
+                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300' 
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
               }`}>
                 <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <div className="text-xs">
@@ -1406,23 +1390,23 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   {bookingError.isBlocked && tenant?.phone && (
                     <div className="mt-2 text-xs font-semibold">
                       {lang === 'ru' ? 'Прямая связь с филиалом: ' : (lang === 'en' ? 'Direct contact with branch: ' : 'Müəssisə ilə birbaşa əlaqə: ')}
-                      <a href={`tel:${tenant.phone}`} className="underline font-bold text-indigo-600 dark:text-indigo-400">{tenant.phone}</a>
+                      <a href={`tel:${tenant.phone}`} className="underline font-bold text-[#0071e3] dark:text-[#2997ff]">{tenant.phone}</a>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Submit Action */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/30 rounded-2xl p-6 shadow-md transition-colors">
+            {/* Submit Action — Apple Floating Glass Confirmation Bar */}
+            <div className="apple-glass-card rounded-3xl p-6 sm:p-7 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 transition-all">
               <div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="apple-caption font-semibold uppercase tracking-wider text-[#86868b] dark:text-[#a1a1a6]">
                   {lang === 'ru' ? 'Итоговая услуга:' : (lang === 'en' ? 'Selected Service:' : 'Yekun Xidmət:')}
                 </span>
-                <p className="font-bold text-slate-900 dark:text-white text-base">
-                  {selectedService ? getServiceName(selectedService) : ''} — <span className="text-emerald-600 dark:text-emerald-400">{selectedService?.price} AZN</span>
+                <p className="apple-headline font-bold text-[#1d1d1f] dark:text-[#f5f5f7] text-lg">
+                  {selectedService ? getServiceName(selectedService) : ''} — <span className="text-[#34c759] dark:text-[#30d158]">{selectedService?.price} AZN</span>
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="apple-body text-xs text-[#86868b] dark:text-[#a1a1a6] mt-0.5">
                   {selectedDate} / {selectedTime} • {selectedStaff?.name}
                 </p>
               </div>
@@ -1430,7 +1414,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="apple-btn-primary apple-press w-full sm:w-auto px-8 py-4 rounded-full text-base font-semibold shadow-xl shadow-[#0071e3]/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <span>{t('confirming')}</span>
@@ -1446,20 +1430,20 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
         )}
 
         {/* ═══════════ KEYFİYYƏT ÖLÇÜMÜ & MÜŞTƏRİ RƏYLƏRİ BÖLMƏSİ ═══════════ */}
-        <section id="keyfiyyet-rey" className="mt-16 pt-10 border-t border-slate-200 dark:border-slate-800">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm transition-colors">
+        <section id="keyfiyyet-rey" className="mt-16 pt-10 border-t border-black/10 dark:border-white/10">
+          <div className="apple-glass-card rounded-[28px] p-6 sm:p-10 transition-colors">
             
             {/* Header & Quality Score */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-black/5 dark:border-white/10">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold tracking-tight mb-2">
                   <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                   <span>{t('reviewsSubtitle')}</span>
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                <h3 className="text-2xl font-semibold tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7]">
                   {t('leaveReviewTitle')}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
+                <p className="text-xs sm:text-sm text-[#86868b] mt-1 max-w-xl font-normal leading-relaxed">
                   {lang === 'ru' 
                     ? `Оставьте ваш отзыв и оценку для филиала ${tenant.name}. Ваш отзыв помогает улучшить качество обслуживания.`
                     : (lang === 'en' 
@@ -1469,8 +1453,8 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               </div>
 
               {/* Dynamic Overall Rating Pill */}
-              <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-center shrink-0 min-w-[170px]">
-                <div className="flex items-center justify-center gap-1.5 text-3xl font-black text-slate-900 dark:text-white">
+              <div className="apple-glass-card rounded-2xl p-4 text-center shrink-0 min-w-[170px]">
+                <div className="flex items-center justify-center gap-1.5 text-3xl font-semibold tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7]">
                   <span>
                     {reviews.length > 0 
                       ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
@@ -1483,7 +1467,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                <p className="text-[11px] text-[#86868b] mt-1 font-medium">
                   {reviews.length} {t('basedOnReviews')}
                 </p>
               </div>
@@ -1493,8 +1477,8 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
             <form onSubmit={handleReviewSubmit} className="mt-8 space-y-6">
               
               {/* Star Selection Row */}
-              <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+              <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-2xl p-5 border border-black/[0.06] dark:border-white/10">
+                <label className="block text-xs font-semibold tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7] mb-3">
                   {lang === 'ru' ? 'Оценка услуги (Выберите звёзды) *' : (lang === 'en' ? 'Service Rating (Select Stars) *' : 'Xidmət Balı (Ulduz Seçin) *')}
                 </label>
                 <div className="flex flex-wrap items-center gap-4">
@@ -1508,14 +1492,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           onClick={() => setReviewRating(star)}
                           onMouseEnter={() => setHoverRating(star)}
                           onMouseLeave={() => setHoverRating(0)}
-                          className="p-1 rounded-lg transition-transform hover:scale-125 focus:outline-none"
+                          className="apple-press p-1 rounded-xl transition-transform hover:scale-110 active:scale-95 focus:outline-none"
                           title={`${star} ${t('star')}`}
                         >
                           <Star
                             className={`w-8 h-8 transition-colors ${
                               isFilled 
                                 ? 'fill-amber-400 text-amber-500 drop-shadow-sm' 
-                                : 'text-slate-300 dark:text-slate-600'
+                                : 'text-black/20 dark:text-white/20'
                             }`}
                           />
                         </button>
@@ -1524,7 +1508,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   </div>
                   
                   {/* Rating Description Label */}
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40">
+                  <span className="text-xs font-medium px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
                     {(hoverRating || reviewRating) === 5 && (lang === 'ru' ? '⭐⭐⭐⭐⭐ 5/5 — Отлично и идеально!' : (lang === 'en' ? '⭐⭐⭐⭐⭐ 5/5 — Excellent & Perfect!' : '⭐⭐⭐⭐⭐ 5/5 — Əla və Mükəmməl!'))}
                     {(hoverRating || reviewRating) === 4 && (lang === 'ru' ? '⭐⭐⭐⭐ 4/5 — Очень хорошее обслуживание' : (lang === 'en' ? '⭐⭐⭐⭐ 4/5 — Very Good Service' : '⭐⭐⭐⭐ 4/5 — Çox Yaxşı Xidmət'))}
                     {(hoverRating || reviewRating) === 3 && (lang === 'ru' ? '⭐⭐⭐ 3/5 — Удовлетворительно / Средне' : (lang === 'en' ? '⭐⭐⭐ 3/5 — Satisfactory / Average' : '⭐⭐⭐ 3/5 — Qənaətbəxş / Orta'))}
@@ -1537,7 +1521,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               {/* Input Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
                     {t('yourName')} ({t('onlyLetters')})
                   </label>
                   <input
@@ -1546,12 +1530,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     placeholder={t('fullNamePlaceholder')}
                     value={reviewName}
                     onChange={(e) => handleReviewNameChange(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
+                    className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
                     {t('yourPhone')} ({t('optional')})
                   </label>
                   <input
@@ -1559,12 +1543,12 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     placeholder="+994 50 123 45 67"
                     value={reviewPhone}
                     onChange={(e) => handleReviewPhoneChange(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
+                    className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
                     {t('serviceUsed')}
                   </label>
                   <input
@@ -1572,14 +1556,14 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     placeholder={lang === 'ru' ? 'Напр: Стрижка, Консультация...' : (lang === 'en' ? 'E.g: Consultation, Haircut...' : 'Məs: Həkim qəbulu, Saç kəsimi...')}
                     value={reviewServiceName}
                     onChange={(e) => setReviewServiceName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm"
+                    className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm transition-all"
                   />
                 </div>
               </div>
 
               {/* Review Textarea */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
                   {t('yourExperience')}
                 </label>
                 <textarea
@@ -1588,7 +1572,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   placeholder={t('reviewPlaceholder')}
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/15 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-xs sm:text-sm leading-relaxed"
+                  className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm leading-relaxed transition-all"
                 />
               </div>
 
@@ -1596,15 +1580,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   {hasReviewed ? (
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs font-semibold">
-                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                       <span>{t('alreadyReviewed')}</span>
                     </div>
                   ) : (
                     <button
                       type="submit"
                       disabled={reviewSubmitting}
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                      className="apple-press inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#0071e3] hover:bg-[#0077ed] active:bg-[#0062c4] text-white font-medium text-xs sm:text-sm shadow-md transition-all disabled:opacity-50"
                     >
                       <Send className="w-4 h-4" />
                       <span>{reviewSubmitting ? t('loading') : t('sendReview')}</span>
@@ -1612,7 +1596,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                   )}
 
                   {reviewSuccess && (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-semibold animate-in fade-in">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium animate-in fade-in">
                       <Check className="w-4 h-4 text-emerald-500" />
                       <span>{t('reviewSentSuccess')}</span>
                     </div>
@@ -1620,7 +1604,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                 </div>
 
                 {reviewError && (
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold animate-in fade-in">
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium animate-in fade-in">
                     <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
                     <span>{reviewError}</span>
                   </div>
@@ -1630,28 +1614,26 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
             {/* List of Existing Reviews */}
             {reviews.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
+              <div className="mt-12 pt-8 border-t border-black/5 dark:border-white/10">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-indigo-500" />
+                  <h4 className="text-base font-semibold tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7] flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-[#0071e3]" />
                     <span>{t('reviewsTitle')} ({reviews.length})</span>
                   </h4>
 
-                  {/* Ulduz ilə Filterləmə Düymələri */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Ulduz ilə Filterləmə Segmented Control */}
+                  <div className="apple-segmented-container inline-flex p-1 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] flex-wrap">
                     <button
                       type="button"
                       onClick={() => setReviewStarFilter('ALL')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      className={`apple-segmented-item apple-press px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
                         reviewStarFilter === 'ALL'
-                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                          : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                          ? 'active shadow-sm text-[#1d1d1f] dark:text-white'
+                          : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7]'
                       }`}
                     >
                       <span>{t('allStars')}</span>
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                        reviewStarFilter === 'ALL' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-slate-900' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300'
-                      }`}>
+                      <span className="text-[10px] opacity-70">
                         {reviews.length}
                       </span>
                     </button>
@@ -1664,17 +1646,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                           key={starCount}
                           type="button"
                           onClick={() => setReviewStarFilter(starCount as 1 | 2 | 3 | 4 | 5)}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                          className={`apple-segmented-item apple-press px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${
                             isActive
-                              ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-2 ring-amber-300 dark:ring-amber-600'
-                              : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                              ? 'active shadow-sm text-amber-500'
+                              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7]'
                           }`}
                         >
-                          <Star className={`w-3.5 h-3.5 ${isActive ? 'fill-white text-white' : 'fill-amber-400 text-amber-400'}`} />
+                          <Star className={`w-3.5 h-3.5 ${isActive ? 'fill-amber-400 text-amber-400' : 'text-amber-400/60'}`} />
                           <span>{starCount}</span>
-                          <span className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] ${
-                            isActive ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400'
-                          }`}>
+                          <span className="text-[10px] opacity-70">
                             {count}
                           </span>
                         </button>
@@ -1688,53 +1668,53 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     {filteredReviews.map((r) => (
                       <div
                         key={r.id}
-                        className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 flex flex-col justify-between transition-all hover:border-slate-300 dark:hover:border-white/20"
+                        className="apple-glass-card rounded-2xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01]"
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0071e3] to-[#5856d6] text-white font-semibold text-xs flex items-center justify-center shadow-sm">
                                 {r.customerName.charAt(0)}
                               </div>
                               <div>
-                                <h5 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+                                <h5 className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] text-xs sm:text-sm tracking-tight">
                                   {r.customerName}
                                 </h5>
                                 {r.serviceName && (
-                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  <span className="text-[10px] text-[#86868b]">
                                     {r.serviceName}
                                   </span>
                                 )}
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-0.5 shrink-0 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded-lg border border-amber-200/50 dark:border-amber-800/40">
+                            <div className="flex items-center gap-0.5 shrink-0 bg-amber-500/10 px-2 py-1 rounded-full border border-amber-500/20">
                               {[1, 2, 3, 4, 5].map((st) => (
                                 <Star
                                   key={st}
                                   className={`w-3.5 h-3.5 ${
                                     st <= r.rating 
                                       ? 'fill-amber-400 text-amber-400' 
-                                      : 'text-slate-300 dark:text-slate-600'
+                                      : 'text-black/15 dark:text-white/15'
                                   }`}
                                 />
                               ))}
-                              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 ml-1">
+                              <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 ml-1">
                                 {r.rating}.0
                               </span>
                             </div>
                           </div>
 
-                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                          <p className="text-xs text-[#515154] dark:text-[#a1a1a6] mt-2 leading-relaxed">
                             "{r.comment}"
                           </p>
                         </div>
 
-                        <div className="mt-3 pt-2 text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-between border-t border-slate-200/50 dark:border-white/5">
+                        <div className="mt-3 pt-2 text-[10px] text-[#86868b] flex items-center justify-between border-t border-black/5 dark:border-white/5">
                           <span>
                             {new Date(r.createdAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : (lang === 'en' ? 'en-US' : 'az-AZ'))}
                           </span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" />
                             {lang === 'ru' ? 'Подтвержденный клиент' : (lang === 'en' ? 'Verified Client' : 'Təsdiqlənmiş Müştəri')}
                           </span>
@@ -1743,15 +1723,15 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                     ))}
                   </div>
                 ) : (
-                  <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/10 rounded-2xl">
+                  <div className="p-8 text-center apple-glass-card rounded-2xl">
                     <Star className="w-8 h-8 text-amber-400/40 mx-auto mb-2" />
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    <p className="text-xs font-medium text-[#86868b]">
                       {t('noReviewsForStar')}
                     </p>
                     <button
                       type="button"
                       onClick={() => setReviewStarFilter('ALL')}
-                      className="mt-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
+                      className="mt-3 text-xs text-[#0071e3] font-medium hover:underline"
                     >
                       {lang === 'ru' ? `Показать все отзывы (${reviews.length})` : (lang === 'en' ? `Show all reviews (${reviews.length})` : `Bütün rəyləri göstər (${reviews.length})`)}
                     </button>

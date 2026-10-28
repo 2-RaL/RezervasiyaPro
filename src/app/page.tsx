@@ -173,139 +173,150 @@ export default function HomePage() {
     : DEMO_TENANTS.filter(t => t.sectorCategory === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] transition-colors duration-300">
       
-      {/* Top Corporate Navbar */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/80 dark:border-slate-800 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      {/* Apple Translucent Floating Glass Navigation Bar */}
+      <nav className="sticky top-0 z-50 apple-glass-nav transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
           
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-              <CalendarCheck className="w-6 h-6 text-white" />
+          {/* Apple Brand Logo with Spring Touch */}
+          <Link href="/" className="flex items-center space-x-3 group apple-press-sm">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-b from-[#0071e3] to-[#0051a8] flex items-center justify-center shadow-md shadow-[#0071e3]/25 group-hover:scale-105 transition-transform duration-300">
+              <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Rezervasiya<span className="text-indigo-600 dark:text-indigo-400">Pro</span>
+                <span className="text-xl sm:text-2xl font-bold apple-headline tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7]">
+                  Rezervasiya<span className="text-[#0071e3] dark:text-[#2997ff]">Pro</span>
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
+                <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-black/5 dark:border-white/10">
                   Universal
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-[11px] text-[#86868b] dark:text-[#a1a1a6] font-normal leading-tight">
                 {lang === 'ru' ? 'Система бронирования для любого бизнеса' : (lang === 'en' ? 'Online Booking System for Any Business' : 'Bütün Sektorlar Üçün Rezervasiya Sistemi')}
               </p>
             </div>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            <a href="#sektorlar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          {/* Desktop Apple-Style Nav Links */}
+          <div className="hidden md:flex items-center space-x-1 text-sm font-medium text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80">
+            <a 
+              href="#sektorlar" 
+              className="px-3.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] transition-all apple-press-sm"
+            >
               {lang === 'ru' ? 'Секторы' : (lang === 'en' ? 'Sectors' : 'Sektorlar')}
             </a>
-            <a href="#filiallar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <a 
+              href="#filiallar" 
+              className="px-3.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] transition-all apple-press-sm"
+            >
               {lang === 'ru' ? 'Филиалы' : (lang === 'en' ? 'Branches' : 'Filiallar')}
             </a>
-            <a href="#imkanlar" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <a 
+              href="#imkanlar" 
+              className="px-3.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] transition-all apple-press-sm"
+            >
               {lang === 'ru' ? 'Возможности' : (lang === 'en' ? 'Features' : 'İmkanlar')}
             </a>
-            <a href="#nece-isleyir" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <a 
+              href="#nece-isleyir" 
+              className="px-3.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] transition-all apple-press-sm"
+            >
               {lang === 'ru' ? 'Как это работает?' : (lang === 'en' ? 'How it works?' : 'Necə İşləyir?')}
             </a>
           </div>
 
           {/* Action Bar (Language Switcher + Theme Toggle + Login Button) */}
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <LanguageSelector />
             <ThemeToggle />
 
             <Link 
               href="/login" 
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-sm px-4 sm:px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="apple-press text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#0071e3] hover:bg-[#0077ED] text-white shadow-md shadow-[#0071e3]/30 transition-all inline-flex items-center gap-2"
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-3.5 h-3.5" />
               <span>{t('login')}</span>
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header className="relative pt-16 sm:pt-24 pb-20 sm:pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100/70 via-transparent to-transparent dark:from-indigo-900/20 pointer-events-none"></div>
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-indigo-500/10 dark:bg-indigo-500/5 blur-3xl pointer-events-none rounded-full"></div>
-
+      {/* Hero Section — Apple Minimalist Immersion & Optical Sizing */}
+      <header className="relative pt-16 sm:pt-28 pb-20 sm:pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Soft Ambient Depth Background */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-[#0071e3]/15 via-[#5856d6]/10 to-transparent blur-3xl pointer-events-none rounded-full" />
+        
         <div className="max-w-5xl mx-auto text-center relative z-10">
           
-          {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-slate-800/80 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6 shadow-sm">
-            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          {/* Apple Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.12] text-xs font-semibold tracking-tight text-neutral-800 dark:text-neutral-200 mb-8 shadow-sm">
+            <Sparkles className="w-4 h-4 text-[#0071e3] dark:text-[#2997ff]" />
             <span>{t('heroBadge')}</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12] mb-6 text-slate-900 dark:text-white">
+          {/* Main Headline with Apple Optical Typography */}
+          <h1 className="apple-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-[#1d1d1f] dark:text-[#f5f5f7]">
             {t('heroTitle1')} <br className="hidden sm:inline" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 dark:from-indigo-400 dark:via-blue-300 dark:to-cyan-300">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0071e3] via-[#5856d6] to-[#0071e3] dark:from-[#2997ff] dark:via-[#af52de] dark:to-[#2997ff]">
               {t('heroTitle2')}
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="max-w-3xl mx-auto text-lg sm:text-xl text-slate-600 dark:text-slate-300 font-normal leading-relaxed mb-10">
+          <p className="apple-body max-w-2xl mx-auto text-lg sm:text-xl text-[#86868b] dark:text-[#a1a1a6] font-normal leading-relaxed mb-10">
             {t('heroDesc')}
           </p>
 
-          {/* Call to Actions */}
+          {/* Apple Style CTAs with Tactile Press Response */}
           <div className="flex flex-wrap items-center justify-center gap-4">
             <a
               href="#filiallar"
-              className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:translate-y-[-2px] flex items-center gap-3"
+              className="apple-btn-primary apple-press text-base font-semibold px-8 py-3.5 rounded-full shadow-lg shadow-[#0071e3]/25 flex items-center gap-2.5"
             >
               <CalendarCheck className="w-5 h-5" />
               <span>{t('tryDemo')}</span>
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </a>
 
             <Link
               href="/login"
-              className="px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-base border border-slate-300 dark:border-slate-700 shadow-md transition-all flex items-center gap-2"
+              className="apple-btn-secondary apple-press text-base font-semibold px-8 py-3.5 rounded-full flex items-center gap-2"
             >
-              <Lock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <Lock className="w-4 h-4 text-[#0071e3] dark:text-[#2997ff]" />
               <span>{t('login')}</span>
             </Link>
           </div>
 
-          {/* Key Metrics Banner */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
-              <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400">100%</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+          {/* Apple Bento Metrics Cards with Specular Highlights */}
+          <div className="mt-16 sm:mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div className="apple-glass-card apple-press-sm p-6 text-left">
+              <div className="apple-display text-3xl sm:text-4xl font-bold text-[#0071e3] dark:text-[#2997ff]">100%</div>
+              <div className="apple-caption font-medium text-[#86868b] dark:text-[#a1a1a6] mt-2 uppercase tracking-wider">
                 {lang === 'ru' ? 'Для всех отраслей' : (lang === 'en' ? 'For all sectors' : 'Hər Sektora Uyğun')}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
-              <div className="text-3xl font-black text-slate-900 dark:text-white">24/7</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+            <div className="apple-glass-card apple-press-sm p-6 text-left">
+              <div className="apple-display text-3xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7]">24/7</div>
+              <div className="apple-caption font-medium text-[#86868b] dark:text-[#a1a1a6] mt-2 uppercase tracking-wider">
                 {lang === 'ru' ? 'Автоматическая очередь' : (lang === 'en' ? 'Automated queue' : 'Avtomatlaşdırılmış Növbə')}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
-              <div className="text-3xl font-black text-slate-900 dark:text-white">0 {lang === 'ru' ? 'мин' : (lang === 'en' ? 'min' : 'dəq')}</div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+            <div className="apple-glass-card apple-press-sm p-6 text-left">
+              <div className="apple-display text-3xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7]">0 {lang === 'ru' ? 'мин' : (lang === 'en' ? 'min' : 'dəq')}</div>
+              <div className="apple-caption font-medium text-[#86868b] dark:text-[#a1a1a6] mt-2 uppercase tracking-wider">
                 {lang === 'ru' ? 'Без задержек и ошибок' : (lang === 'en' ? 'Zero delay & errors' : 'Vaxt İtkisi və Xəta')}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left">
-              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+            <div className="apple-glass-card apple-press-sm p-6 text-left">
+              <div className="apple-display text-3xl sm:text-4xl font-bold text-[#34c759] dark:text-[#30d158]">
                 {lang === 'ru' ? 'Онлайн' : (lang === 'en' ? 'Live' : 'Canlı')}
               </div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+              <div className="apple-caption font-medium text-[#86868b] dark:text-[#a1a1a6] mt-2 uppercase tracking-wider">
                 {lang === 'ru' ? 'График специалистов' : (lang === 'en' ? 'Specialist schedule' : 'Mütəxəssis Qrafiki')}
               </div>
             </div>
@@ -314,17 +325,17 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Universal Sectors Banner */}
-      <section id="sektorlar" className="py-16 bg-slate-100/70 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+      {/* Universal Sectors Showcase — Apple Squircle Grid */}
+      <section id="sektorlar" className="py-20 px-4 sm:px-6 lg:px-8 border-y border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <span className="apple-caption font-semibold uppercase tracking-widest text-[#0071e3] dark:text-[#2997ff]">
               {lang === 'ru' ? 'Универсальные сферы применения' : (lang === 'en' ? 'Universal Business Sectors' : 'Universal Tətbiq Sahələri')}
             </span>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white mt-2">
+            <h2 className="apple-headline text-3xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mt-3">
               {lang === 'ru' ? 'Простая интеграция для любого бизнеса' : (lang === 'en' ? 'Seamless integration for every service sector' : 'İstənilən Xidmət Sektoruna Rahat İnteqrasiya')}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+            <p className="apple-body text-sm sm:text-base text-[#86868b] dark:text-[#a1a1a6] mt-3">
               {lang === 'ru' 
                 ? 'Система спроектирована с гибкими параметрами для любых сервисных организаций, салонов и клиник.' 
                 : (lang === 'en' 
@@ -335,81 +346,81 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             
-            {/* Sector 1 */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            {/* Sector 1: Beauty */}
+            <div className="apple-glass-card apple-press p-6 text-center group cursor-pointer">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-rose-500/10 text-rose-500 dark:text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Sparkles className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-sm text-[#1d1d1f] dark:text-[#f5f5f7]">
                 {lang === 'ru' ? 'Красота и SPA' : (lang === 'en' ? 'Beauty & Spa' : 'Gözəllik & Spa')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {lang === 'ru' ? 'Косметология, уход, лазер' : (lang === 'en' ? 'Cosmetology, care, laser' : 'Kosmetologiya, baxım, lazer')}
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1.5 leading-snug">
+                {lang === 'ru' ? 'Косметология, уход' : (lang === 'en' ? 'Cosmetology, laser' : 'Kosmetologiya, baxım')}
               </p>
             </div>
 
-            {/* Sector 2 */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            {/* Sector 2: Health */}
+            <div className="apple-glass-card apple-press p-6 text-center group cursor-pointer">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[#0071e3]/10 text-[#0071e3] dark:text-[#2997ff] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <HeartPulse className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-sm text-[#1d1d1f] dark:text-[#f5f5f7]">
                 {lang === 'ru' ? 'Клиника и здоровье' : (lang === 'en' ? 'Clinic & Health' : 'Klinika & Səhiyyə')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {lang === 'ru' ? 'Врачи, стоматологи, терапия' : (lang === 'en' ? 'Doctors, dentists, therapy' : 'Həkim, stomatoloq, tibb')}
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1.5 leading-snug">
+                {lang === 'ru' ? 'Врачи, терапия' : (lang === 'en' ? 'Doctors, therapy' : 'Həkim, stomatoloq')}
               </p>
             </div>
 
-            {/* Sector 3 */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            {/* Sector 3: Barber */}
+            <div className="apple-glass-card apple-press p-6 text-center group cursor-pointer">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Scissors className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-sm text-[#1d1d1f] dark:text-[#f5f5f7]">
                 {lang === 'ru' ? 'Барбершоп и стиль' : (lang === 'en' ? 'Barbershop & Style' : 'Bərbər & Stil')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {lang === 'ru' ? 'Мужские стрижки, уход' : (lang === 'en' ? 'Men haircuts, beard style' : 'Kişi salonları, saç dizaynı')}
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1.5 leading-snug">
+                {lang === 'ru' ? 'Мужские стрижки' : (lang === 'en' ? 'Men haircuts' : 'Kişi salonları, saç')}
               </p>
             </div>
 
-            {/* Sector 4 */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            {/* Sector 4: Auto */}
+            <div className="apple-glass-card apple-press p-6 text-center group cursor-pointer">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Car className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-sm text-[#1d1d1f] dark:text-[#f5f5f7]">
                 {lang === 'ru' ? 'Автосервис' : (lang === 'en' ? 'Auto Service' : 'Avto Servis')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {lang === 'ru' ? 'Детейлинг, ТО, ремонт' : (lang === 'en' ? 'Detailing, repair, checkup' : 'Detailing, təmir, texniki baxış')}
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1.5 leading-snug">
+                {lang === 'ru' ? 'Детейлинг, ТО' : (lang === 'en' ? 'Detailing, repair' : 'Detailing, təmir')}
               </p>
             </div>
 
-            {/* Sector 5 */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            {/* Sector 5: Fitness */}
+            <div className="apple-glass-card apple-press p-6 text-center group cursor-pointer">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-[#34c759]/10 text-[#34c759] dark:text-[#30d158] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Dumbbell className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-sm text-[#1d1d1f] dark:text-[#f5f5f7]">
                 {lang === 'ru' ? 'Фитнес и Йога' : (lang === 'en' ? 'Fitness & Yoga' : 'İdman & Yoga')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {lang === 'ru' ? 'Персональные тренировки' : (lang === 'en' ? 'Personal coaching, gym' : 'Fərdi məşq, pilates, zal')}
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1.5 leading-snug">
+                {lang === 'ru' ? 'Тренировки, зал' : (lang === 'en' ? 'Gym, pilates' : 'Fərdi məşq, zal')}
               </p>
             </div>
 
-            {/* Sector 6 */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            {/* Sector 6: Education */}
+            <div className="apple-glass-card apple-press p-6 text-center group cursor-pointer">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-purple-500/10 text-purple-500 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h3 className="font-semibold text-sm text-[#1d1d1f] dark:text-[#f5f5f7]">
                 {lang === 'ru' ? 'Образование и курсы' : (lang === 'en' ? 'Education & Courses' : 'Təhsil & Kurslar')}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {lang === 'ru' ? 'Репетиторы, уроки, IT' : (lang === 'en' ? 'Tutoring, lessons, IT' : 'Fərdi dərslər, repetitor, İT')}
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1.5 leading-snug">
+                {lang === 'ru' ? 'Уроки, IT курсы' : (lang === 'en' ? 'Lessons, IT' : 'Fərdi dərslər, İT')}
               </p>
             </div>
 
@@ -417,20 +428,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Live Branches Section with Interactive Sector Filter */}
+      {/* Live Branches Section with iOS Segmented Control */}
       <section id="filiallar" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-8">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-2">
-                <Building2 className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                <Building2 className="w-3.5 h-3.5 text-[#0071e3] dark:text-[#2997ff]" />
                 <span>{lang === 'ru' ? 'Примеры филиалов' : (lang === 'en' ? 'Live Branch Examples' : 'Canlı Filial Nümunələri')}</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              <h2 className="apple-headline text-3xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] tracking-tight">
                 {lang === 'ru' ? 'Организации и страницы бронирования' : (lang === 'en' ? 'Enterprises & Booking Portals' : 'Müəssisələr və Rezervasiya Səhifələri')}
               </h2>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mt-2 max-w-xl">
+              <p className="apple-body text-[#86868b] dark:text-[#a1a1a6] text-sm sm:text-base mt-2 max-w-xl">
                 {lang === 'ru'
                   ? 'Индивидуальный портал для каждого филиала. Клиенты выбирают услугу, мастера и время за считанные секунды.'
                   : (lang === 'en'
@@ -439,25 +450,21 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-2">
+            {/* Apple iOS-Style Segmented Control */}
+            <div className="apple-segmented-container inline-flex flex-wrap items-center gap-1">
               {[
                 { id: 'all', label: t('allSectors') },
                 { id: 'beauty', label: lang === 'ru' ? 'Красота' : (lang === 'en' ? 'Beauty' : 'Gözəllik') },
                 { id: 'health', label: lang === 'ru' ? 'Здоровье' : (lang === 'en' ? 'Healthcare' : 'Səhiyyə') },
                 { id: 'barber', label: lang === 'ru' ? 'Барбер' : (lang === 'en' ? 'Barbershop' : 'Bərbərxana') },
-                { id: 'auto', label: lang === 'ru' ? 'Автосервис' : (lang === 'en' ? 'Auto Service' : 'Avto Servis') },
+                { id: 'auto', label: lang === 'ru' ? 'Авто' : (lang === 'en' ? 'Auto' : 'Avto') },
                 { id: 'fitness', label: lang === 'ru' ? 'Спорт' : (lang === 'en' ? 'Fitness' : 'İdman') },
                 { id: 'education', label: lang === 'ru' ? 'Образование' : (lang === 'en' ? 'Education' : 'Təhsil') },
               ].map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all ${
-                    selectedCategory === cat.id
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
-                  }`}
+                  className={`apple-segmented-item apple-press-sm ${selectedCategory === cat.id ? 'active' : ''}`}
                 >
                   {cat.label}
                 </button>
@@ -465,44 +472,43 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Tenants Grid */}
+          {/* Tenants Bento Grid with Apple Glass Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTenants.map((item) => (
               <div 
                 key={item.id}
-                className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between hover:border-indigo-500/60 dark:hover:border-indigo-500/60 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group"
+                className="apple-glass-card apple-press-sm overflow-hidden flex flex-col justify-between group transition-all duration-300 hover:shadow-2xl"
               >
                 <div>
                   {/* Top Cover Banner */}
-                  <div className="relative h-36 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div className="relative h-44 w-full bg-slate-200 dark:bg-neutral-800 overflow-hidden">
                     {item.coverImage ? (
                       <img 
                         src={item.coverImage} 
                         alt={item.name} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
                       />
                     ) : (
-                      <div className={`w-full h-full bg-gradient-to-r ${item.accentColor} opacity-80`} />
+                      <div className={`w-full h-full bg-gradient-to-r ${item.accentColor} opacity-90`} />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
                     
-                    {/* Badges on Banner */}
+                    {/* Apple Frosted Badges on Cover */}
                     <div className="absolute top-3 inset-x-3 flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-white bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                      <span className="text-[11px] font-semibold text-white bg-black/40 backdrop-blur-xl px-3 py-1 rounded-full border border-white/20">
                         {getCategoryName(item.sector)}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 text-xs text-white bg-emerald-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full font-semibold">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-white bg-[#34c759]/90 backdrop-blur-xl px-2.5 py-0.5 rounded-full font-semibold">
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                         {lang === 'ru' ? 'Активен' : (lang === 'en' ? 'Active' : 'Aktiv')}
                       </span>
                     </div>
                   </div>
 
-                  {/* Card Content & Left Logo */}
+                  {/* Card Content & Apple Squircle Logo */}
                   <div className="p-6 pt-0">
-                    {/* Logo on the Left overlapping Cover Banner */}
-                    <div className="flex items-end justify-between -mt-9 mb-4 relative z-10">
-                      <div className="w-16 h-16 rounded-2xl border-4 border-white dark:border-slate-900 bg-white dark:bg-slate-800 shadow-md overflow-hidden flex items-center justify-center shrink-0">
+                    <div className="flex items-end justify-between -mt-10 mb-4 relative z-10">
+                      <div className="w-16 h-16 rounded-2xl border-2 border-white dark:border-[#2c2c2e] bg-white dark:bg-[#1c1c1e] shadow-xl overflow-hidden flex items-center justify-center shrink-0">
                         {item.logo ? (
                           <img src={item.logo} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
@@ -513,26 +519,26 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
+                    <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] group-hover:text-[#0071e3] dark:group-hover:text-[#2997ff] transition-colors mb-2">
                       {item.name}
                     </h3>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-5">
-                      <MapPin className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
+                    <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] flex items-center gap-1.5 mb-5">
+                      <MapPin className="w-3.5 h-3.5 shrink-0 text-[#0071e3] dark:text-[#2997ff]" />
                       <span>{item.address}</span>
                     </p>
 
                     {/* Featured Services Preview */}
                     <div className="space-y-2 mb-6">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <div className="apple-caption font-semibold uppercase tracking-wider text-[#86868b] dark:text-[#a1a1a6]">
                         {t('featuredServices')}:
                       </div>
                       {item.featuredServices.map((srv, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs">
-                          <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[190px]">{srv.name}</span>
-                          <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white shrink-0">
+                        <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] text-xs">
+                          <span className="text-[#1d1d1f] dark:text-[#f5f5f7] font-medium truncate max-w-[190px]">{srv.name}</span>
+                          <div className="flex items-center gap-1.5 font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] shrink-0">
                             <span>{srv.price} ₼</span>
-                            <span className="text-[10px] text-slate-400 font-normal">({formatDuration(srv.duration)})</span>
+                            <span className="text-[10px] text-[#86868b] dark:text-[#a1a1a6] font-normal">({formatDuration(srv.duration)})</span>
                           </div>
                         </div>
                       ))}
@@ -540,12 +546,12 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Card Action Link */}
+                {/* Card Action Link with Apple Press Touch */}
                 <div className="p-6 pt-0">
-                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
                     <Link
                       href={`/${item.slug}`}
-                      className="w-full py-3 px-4 rounded-xl bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 hover:text-white dark:hover:text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 group-hover:shadow-md"
+                      className="apple-press w-full py-3 px-4 rounded-full bg-[#0071e3] hover:bg-[#0077ED] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
                     >
                       <span>{t('bookNow')}</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -559,18 +565,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Corporate Features / Platform Advantages */}
-      <section id="imkanlar" className="py-24 bg-slate-100/70 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Corporate Features / Platform Advantages (Apple Bento Showcase) */}
+      <section id="imkanlar" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto">
           
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+            <span className="apple-caption font-semibold uppercase tracking-widest text-[#0071e3] dark:text-[#2997ff]">
               {lang === 'ru' ? 'Корпоративные стандарты' : (lang === 'en' ? 'Enterprise Standards' : 'Korporativ Standartlar')}
             </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white mt-2 tracking-tight">
+            <h2 className="apple-headline text-3xl sm:text-5xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mt-3 tracking-tight">
               {lang === 'ru' ? 'Полный контроль над вашим бизнесом' : (lang === 'en' ? 'Keep Your Business Fully Under Control' : 'Biznesinizi Tam Nəzarətdə Saxlayın')}
             </h2>
-            <p className="text-base text-slate-600 dark:text-slate-400 mt-4 leading-relaxed">
+            <p className="apple-body text-base text-[#86868b] dark:text-[#a1a1a6] mt-4 leading-relaxed">
               {lang === 'ru'
                 ? 'Мощные инструменты управления, повышающие удовлетворенность клиентов, исключающие простои и наводящие идеальный порядок в расписании.'
                 : (lang === 'en'
@@ -579,17 +585,17 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             
             {/* Feature 1 */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6">
+            <div className="apple-glass-card apple-press-sm p-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#0071e3]/10 text-[#0071e3] dark:text-[#2997ff] flex items-center justify-center mb-6">
                 <Layers className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Мульти-филиальность и отрасли' : (lang === 'en' ? 'Multi-branch & Multi-sector' : 'Çoxfiliallı və Çoxsahəli')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Управляйте несколькими филиалами в разных отраслях, их услугами и персоналом из одной централизованной платформы.'
                   : (lang === 'en'
@@ -599,14 +605,14 @@ export default function HomePage() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-6">
+            <div className="apple-glass-card apple-press-sm p-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#34c759]/10 text-[#34c759] dark:text-[#30d158] flex items-center justify-center mb-6">
                 <Clock className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Умное расписание реального времени' : (lang === 'en' ? 'Real-Time Smart Schedule' : 'Real-vaxtda Ağıllı Cədvəl')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Свободные интервалы рассчитываются автоматически, наложения и двойные бронирования полностью исключены.'
                   : (lang === 'en'
@@ -616,14 +622,14 @@ export default function HomePage() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6">
+            <div className="apple-glass-card apple-press-sm p-8">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 flex items-center justify-center mb-6">
                 <Users className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Управление специалистами' : (lang === 'en' ? 'Specialist & Staff Management' : 'Mütəxəssis & İşçi İdarəsi')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Назначайте персональные рабочие часы, интервалы приёма и привязывайте услуги для каждого специалиста.'
                   : (lang === 'en'
@@ -633,14 +639,14 @@ export default function HomePage() {
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-6">
+            <div className="apple-glass-card apple-press-sm p-8">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 dark:text-purple-400 flex items-center justify-center mb-6">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Клиентская база и FIN-история' : (lang === 'en' ? 'Customer Base & FIN History' : 'Müştəri & FİN Tarixçəsi')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Сохраняйте историю записей клиентов, контакты, медицинские FIN-номера и внутренние заметки в защищённой базе.'
                   : (lang === 'en'
@@ -650,14 +656,14 @@ export default function HomePage() {
             </div>
 
             {/* Feature 5 */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-6">
+            <div className="apple-glass-card apple-press-sm p-8">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-6">
                 <TrendingUp className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Аналитика и выручка' : (lang === 'en' ? 'Revenue & Booking Analytics' : 'Gəlir və Rezervasiya Analitikası')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Отслеживайте самые востребованные процедуры, нагрузку специалистов и общие финансовые показатели.'
                   : (lang === 'en'
@@ -667,14 +673,14 @@ export default function HomePage() {
             </div>
 
             {/* Feature 6 */}
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-6">
+            <div className="apple-glass-card apple-press-sm p-8">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 flex items-center justify-center mb-6">
                 <Globe2 className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Адаптивность для любых устройств' : (lang === 'en' ? 'Responsive on All Devices' : 'Bütün Cihazlara Uyğun')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Молниеносный, удобный и интуитивный интерфейс на смартфонах, планшетах и компьютерах.'
                   : (lang === 'en'
@@ -687,18 +693,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Workflow: How It Works */}
+      {/* Workflow: How It Works (Apple 3-Step Physical Progression) */}
       <section id="nece-isleyir" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+            <span className="apple-caption font-semibold uppercase tracking-widest text-[#0071e3] dark:text-[#2997ff]">
               {lang === 'ru' ? 'Простой процесс' : (lang === 'en' ? 'Simple Process' : 'Sadə Proses')}
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mt-2">
+            <h2 className="apple-headline text-3xl sm:text-4xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mt-3">
               {lang === 'ru' ? 'Бронирование в 3 шага' : (lang === 'en' ? 'Booking in 3 Steps' : '3 Addımda Rezervasiya')}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+            <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] mt-2">
               {lang === 'ru'
                 ? 'Клиенты записываются без очередей и телефонных звонков всего за 30 секунд.'
                 : (lang === 'en'
@@ -709,15 +715,15 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 relative">
-              <div className="text-5xl font-black text-indigo-600/10 dark:text-indigo-400/10 absolute top-6 right-6">01</div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-indigo-600/30">
+            <div className="apple-glass-card apple-press-sm p-8 relative">
+              <div className="apple-display text-5xl font-black text-black/5 dark:text-white/5 absolute top-6 right-6 select-none">01</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#0071e3] text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-[#0071e3]/30">
                 1
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Выберите филиал и услугу' : (lang === 'en' ? 'Select Branch & Service' : 'Filial və Xidməti Seçin')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Выберите нужную процедуру и ознакомьтесь с актуальной стоимостью и длительностью.'
                   : (lang === 'en'
@@ -726,15 +732,15 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 relative">
-              <div className="text-5xl font-black text-indigo-600/10 dark:text-indigo-400/10 absolute top-6 right-6">02</div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-indigo-600/30">
+            <div className="apple-glass-card apple-press-sm p-8 relative">
+              <div className="apple-display text-5xl font-black text-black/5 dark:text-white/5 absolute top-6 right-6 select-none">02</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#0071e3] text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-[#0071e3]/30">
                 2
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Назначьте мастера и время' : (lang === 'en' ? 'Pick Specialist & Time' : 'Mütəxəssis və Saat Təyin Edin')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Определите удобный интервал времени в живом 24-часовом графике выбранного специалиста.'
                   : (lang === 'en'
@@ -743,15 +749,15 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 relative">
-              <div className="text-5xl font-black text-indigo-600/10 dark:text-indigo-400/10 absolute top-6 right-6">03</div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-indigo-600/30">
+            <div className="apple-glass-card apple-press-sm p-8 relative">
+              <div className="apple-display text-5xl font-black text-black/5 dark:text-white/5 absolute top-6 right-6 select-none">03</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#0071e3] text-white flex items-center justify-center font-bold text-lg mb-6 shadow-md shadow-[#0071e3]/30">
                 3
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-xl font-bold apple-headline text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
                 {lang === 'ru' ? 'Получите мгновенное подтверждение' : (lang === 'en' ? 'Get Instant Confirmation' : 'Dərhal Təsdiq Alın')}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="apple-body text-sm text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
                 {lang === 'ru'
                   ? 'Запись мгновенно отправляется в систему филиала и генерирует электронный талон бронирования.'
                   : (lang === 'en'
@@ -764,19 +770,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Enterprise CTA Banner */}
+      {/* Enterprise Apple Depth Banner */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white p-10 sm:p-14 text-center relative overflow-hidden shadow-2xl border border-indigo-700/50">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="max-w-5xl mx-auto rounded-3xl bg-gradient-to-b from-[#1c1c1e] to-[#000000] text-white p-10 sm:p-14 text-center relative overflow-hidden shadow-2xl border border-white/10">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#0071e3]/20 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="relative z-10 max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-300 bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-400/30">
+            <span className="apple-caption font-semibold uppercase tracking-widest text-[#2997ff] bg-white/10 px-3 py-1 rounded-full border border-white/10">
               {lang === 'ru' ? 'Цифровое управление очередями' : (lang === 'en' ? 'Digital Queue Management' : 'Rəqəmsal Növbə İdarəetməsi')}
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold mt-4 mb-4">
+            <h2 className="apple-headline text-3xl sm:text-5xl font-bold mt-4 mb-4">
               {lang === 'ru' ? 'Управляйте предприятием с RezervasiyaPro' : (lang === 'en' ? 'Manage Your Business with RezervasiyaPro' : 'Müəssisənizi RezervasiyaPro ilə İdarə Edin')}
             </h2>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8">
+            <p className="apple-body text-neutral-300 text-sm sm:text-base leading-relaxed mb-8">
               {lang === 'ru'
                 ? 'Отслеживайте все ваши филиалы, персонал, список услуг и бронирования из единой корпоративной панели.'
                 : (lang === 'en'
@@ -787,14 +793,14 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link
                 href="/login"
-                className="px-8 py-3.5 rounded-xl bg-white text-indigo-950 font-bold text-sm shadow-xl hover:bg-slate-100 transition-all flex items-center gap-2"
+                className="apple-press px-8 py-3.5 rounded-full bg-white text-black font-semibold text-sm shadow-xl hover:bg-neutral-100 transition-all flex items-center gap-2"
               >
-                <Lock className="w-4 h-4 text-indigo-600" />
+                <Lock className="w-4 h-4 text-[#0071e3]" />
                 <span>{t('login')}</span>
               </Link>
               <a
                 href="#filiallar"
-                className="px-8 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 transition-all"
+                className="apple-press px-8 py-3.5 rounded-full bg-white/10 hover:bg-white/15 text-white font-semibold text-sm border border-white/15 transition-all"
               >
                 {lang === 'ru' ? 'Смотреть филиалы' : (lang === 'en' ? 'Explore Branches' : 'Filialları İncələ')}
               </a>
@@ -803,33 +809,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Corporate Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500 dark:text-slate-400">
+      {/* Apple Minimalist Frosted Footer */}
+      <footer className="border-t border-black/[0.06] dark:border-white/[0.08] apple-glass-nav py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-[#86868b] dark:text-[#a1a1a6]">
           
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black">
+            <div className="w-8 h-8 rounded-xl bg-[#0071e3] flex items-center justify-center text-white font-black shadow-sm">
               R
             </div>
             <div>
-              <span className="font-bold text-slate-900 dark:text-white">RezervasiyaPro</span>
-              <p className="text-[11px] text-slate-400">
+              <span className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7]">RezervasiyaPro</span>
+              <p className="text-[11px] text-[#86868b] dark:text-[#a1a1a6]">
                 {lang === 'ru' ? 'Универсальная система бронирования и управления' : (lang === 'en' ? 'Universal Booking & Management Platform' : 'Universal Rezervasiya və İdarəetmə Sistemi')}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-6 font-semibold">
-            <a href="#sektorlar" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+          <div className="flex items-center space-x-6 font-medium">
+            <a href="#sektorlar" className="hover:text-[#0071e3] dark:hover:text-[#2997ff] transition-colors">
               {lang === 'ru' ? 'Секторы' : (lang === 'en' ? 'Sectors' : 'Sektorlar')}
             </a>
-            <a href="#filiallar" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+            <a href="#filiallar" className="hover:text-[#0071e3] dark:hover:text-[#2997ff] transition-colors">
               {lang === 'ru' ? 'Филиалы' : (lang === 'en' ? 'Branches' : 'Filiallar')}
             </a>
-            <a href="#imkanlar" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+            <a href="#imkanlar" className="hover:text-[#0071e3] dark:hover:text-[#2997ff] transition-colors">
               {lang === 'ru' ? 'Возможности' : (lang === 'en' ? 'Features' : 'İmkanlar')}
             </a>
-            <Link href="/login" className="hover:text-indigo-600 dark:hover:text-indigo-400">{t('login')}</Link>
+            <Link href="/login" className="hover:text-[#0071e3] dark:hover:text-[#2997ff] transition-colors">{t('login')}</Link>
           </div>
 
           <div>
