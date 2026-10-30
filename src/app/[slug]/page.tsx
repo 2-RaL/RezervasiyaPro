@@ -1227,32 +1227,32 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                       </div>
 
                       {/* iOS Segmented Vaxt Filtrləri */}
-                      <div className="apple-segmented-container inline-flex flex-wrap items-center gap-1">
+                      <div className="w-full sm:w-auto apple-segmented-container grid grid-cols-2 sm:inline-flex sm:flex-wrap items-center gap-1.5 sm:gap-1 p-1.5 sm:p-1 rounded-2xl sm:rounded-full border border-black/5 dark:border-white/10">
                         <button
                           type="button"
                           onClick={() => setTimeFilter('ALL')}
-                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'ALL' ? 'active' : ''}`}
+                          className={`apple-segmented-item apple-press-sm w-full sm:w-auto text-center justify-center rounded-xl sm:rounded-full ${timeFilter === 'ALL' ? 'active' : ''}`}
                         >
                           {t('allHours')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setTimeFilter('MORNING')}
-                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'MORNING' ? 'active' : ''}`}
+                          className={`apple-segmented-item apple-press-sm w-full sm:w-auto text-center justify-center rounded-xl sm:rounded-full ${timeFilter === 'MORNING' ? 'active' : ''}`}
                         >
                           {t('morning')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setTimeFilter('AFTERNOON')}
-                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'AFTERNOON' ? 'active' : ''}`}
+                          className={`apple-segmented-item apple-press-sm w-full sm:w-auto text-center justify-center rounded-xl sm:rounded-full ${timeFilter === 'AFTERNOON' ? 'active' : ''}`}
                         >
                           {t('afternoon')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setTimeFilter('EVENING')}
-                          className={`apple-segmented-item apple-press-sm ${timeFilter === 'EVENING' ? 'active' : ''}`}
+                          className={`apple-segmented-item apple-press-sm w-full sm:w-auto text-center justify-center rounded-xl sm:rounded-full ${timeFilter === 'EVENING' ? 'active' : ''}`}
                         >
                           {t('evening')}
                         </button>
@@ -1276,7 +1276,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                                   type="button"
                                   disabled={true}
                                   title={t('booked')}
-                                  className="py-2.5 px-2 rounded-2xl text-xs font-semibold transition-all bg-rose-500/10 border border-rose-500/30 text-rose-500 line-through cursor-not-allowed opacity-60 flex flex-col items-center justify-center gap-0.5"
+                                  className="py-2.5 px-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all bg-rose-500/10 border border-rose-500/30 text-rose-500 line-through cursor-not-allowed opacity-60 flex flex-col items-center justify-center gap-0.5"
                                 >
                                   <span>{time}</span>
                                   <span className="text-[9px] font-medium no-underline">
@@ -1291,7 +1291,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
                                 key={time}
                                 type="button"
                                 onClick={() => setSelectedTime(time)}
-                                className={`apple-press-sm py-2.5 px-3 rounded-2xl text-xs font-semibold transition-all ${
+                                className={`apple-press-sm py-2.5 px-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all ${
                                   isSelected
                                     ? 'bg-[#0071e3] text-white shadow-md shadow-[#0071e3]/30 ring-2 ring-[#0071e3]/30'
                                     : 'bg-black/[0.03] dark:bg-white/[0.05] text-[#1d1d1f] dark:text-[#f5f5f7] border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10'

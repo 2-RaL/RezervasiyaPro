@@ -151,9 +151,15 @@ body {
 .apple-segmented-container {
   background: rgba(0, 0, 0, 0.05);
   padding: 4px;
-  border-radius: 9999px;
+  border-radius: 1rem;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+}
+
+@media (min-width: 640px) {
+  .apple-segmented-container {
+    border-radius: 9999px;
+  }
 }
 
 .dark .apple-segmented-container {
@@ -161,13 +167,25 @@ body {
 }
 
 .apple-segmented-item {
-  border-radius: 9999px;
-  padding: 8px 18px;
-  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #636366;
   transition: all 0.25s var(--apple-spring);
   -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .apple-segmented-item {
+    border-radius: 9999px;
+    padding: 8px 18px;
+    font-size: 0.875rem;
+  }
 }
 
 .dark .apple-segmented-item {
