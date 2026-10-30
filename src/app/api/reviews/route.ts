@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     // Stored XSS defense: Sanitize text inputs
     const cleanCustomerName = sanitizeInputText(customerName.trim());
-    const cleanComment = sanitizeInputText(comment.trim());
+    const cleanComment = sanitizeInputText(comment.trim()).slice(0, 200);
     const cleanServiceName = serviceName ? sanitizeInputText(serviceName.trim()) : undefined;
 
     const review = createReview({

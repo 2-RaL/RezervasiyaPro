@@ -23,7 +23,8 @@ import {
   MessageSquare,
   Send,
   ThumbsUp,
-  Check
+  Check,
+  ChevronDown
 } from 'lucide-react';
 import { Tenant, Service, Staff, CustomerReview } from '../../lib/types';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -444,8 +445,13 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
     e.preventDefault();
     if (!tenant) return;
 
-    if (!reviewName.trim() || !reviewComment.trim()) {
+    if (!reviewName.trim() || !reviewServiceName.trim() || !reviewComment.trim()) {
       setReviewError(t('requiredFieldsError'));
+      return;
+    }
+
+    if (reviewComment.trim().length > 200) {
+      setReviewError(lang === 'ru' ? 'Текст отзыва не может превышать 200 символов' : (lang === 'en' ? 'Review cannot exceed 200 characters' : 'Rəy mətni 200 simvoldan çox ola bilməz'));
       return;
     }
 
@@ -1479,7 +1485,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               {/* Star Selection Row */}
               <div className="bg-black/[0.02] dark:bg-white/[0.03] rounded-2xl p-5 border border-black/[0.06] dark:border-white/10">
                 <label className="block text-xs font-semibold tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7] mb-3">
-                  {lang === 'ru' ? 'Оценка услуги (Выберите звёзды) *' : (lang === 'en' ? 'Service Rating (Select Stars) *' : 'Xidmət Balı (Ulduz Seçin) *')}
+                  {lang === 'ru' ? 'Оценка услуги (Выберите звёзды)' : (lang === 'en' ? 'Service Rating (Select Stars)' : 'Xidmət Balı (Ulduz Seçin)')} <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-1.5">
@@ -1522,7 +1528,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
-                    {t('yourName')} ({t('onlyLetters')})
+                    {t('yourName')} <span className="text-red-500 font-bold ml-0.5">*</span> <span className="text-[#86868b] font-normal">({t('onlyLetters')})</span>
                   </label>
                   <input
                     type="text"
@@ -1536,7 +1542,7 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 <div>
                   <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
-                    {t('yourPhone')} ({t('optional')})
+                    {t('yourPhone')} <span className="text-[#86868b] font-normal">({t('optional')})</span>
                   </label>
                   <input
                     type="tel"
@@ -1549,29 +1555,61 @@ export default function TenantBookingPage({ params }: { params: { slug: string }
 
                 <div>
                   <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
-                    {t('serviceUsed')}
+                    {t('serviceUsed')} <span className="text-red-500 font-bold ml-0.5">*</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder={lang === 'ru' ? 'Напр: Стрижка, Консультация...' : (lang === 'en' ? 'E.g: Consultation, Haircut...' : 'Məs: Həkim qəbulu, Saç kəsimi...')}
-                    value={reviewServiceName}
-                    onChange={(e) => setReviewServiceName(e.target.value)}
-                    className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm transition-all"
-                  />
+                  <div className="relative">
+                    <select
+                      required
+                      value={reviewServiceName}
+                      onChange={(e) => setReviewServiceName(e.target.value)}
+                      className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm transition-all appearance-none cursor-pointer pr-10"
+                    >
+                      <option value="" className="text-slate-500 dark:bg-[#1c1c1e]">
+                        {lang === 'ru' ? 'Выберите услугу из списка...' : (lang === 'en' ? 'Select a service from the list...' : 'Faydalandığınız xidməti seçin...')}
+                      </option>
+                      {tenant.services && tenant.services.length > 0 ? (
+                        tenant.services.filter(s => s.isActive !== false).map((s) => {
+                          const sName = getServiceName(s);
+                          return (
+                            <option key={s.id} value={sName} className="dark:bg-[#1c1c1e] text-slate-900 dark:text-white">
+                              {sName} {s.price ? `(${s.price} AZN)` : ''}
+                            </option>
+                          );
+                        })
+                      ) : (
+                        <option value={tenant.name} className="dark:bg-[#1c1c1e] text-slate-900 dark:text-white">
+                          {tenant.name} - {lang === 'ru' ? 'Общее обслуживание' : (lang === 'en' ? 'General service' : 'Ümumi xidmət')}
+                        </option>
+                      )}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-[#86868b]">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Review Textarea */}
+              {/* Review Textarea with Live 200-char counter */}
               <div>
-                <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7] mb-1.5">
-                  {t('yourExperience')}
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-[#1d1d1f] dark:text-[#f5f5f7]">
+                    {t('yourExperience')} <span className="text-red-500 font-bold ml-0.5">*</span>
+                  </label>
+                  <span className={`text-[11px] font-medium transition-colors ${
+                    reviewComment.length >= 200 
+                      ? 'text-red-500 font-bold' 
+                      : 'text-[#86868b]'
+                  }`}>
+                    {reviewComment.length}/200 {lang === 'ru' ? 'символов' : (lang === 'en' ? 'characters' : 'simvol')}
+                  </span>
+                </div>
                 <textarea
                   required
                   rows={3}
+                  maxLength={200}
                   placeholder={t('reviewPlaceholder')}
                   value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
+                  onChange={(e) => setReviewComment(e.target.value.slice(0, 200))}
                   className="w-full bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/10 dark:border-white/10 rounded-2xl px-4 py-3 text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] text-xs sm:text-sm leading-relaxed transition-all"
                 />
               </div>
