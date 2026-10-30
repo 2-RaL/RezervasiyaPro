@@ -31,7 +31,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] dark:bg-[#000000] dark:text-[#f5f5f7] font-sans antialiased selection:bg-[#0071e3] selection:text-white transition-colors duration-300">
+      <body className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] dark:bg-[#000000] dark:text-[#f5f5f7] font-sans antialiased selection:bg-[#0071e3] selection:text-white transition-colors duration-300 overflow-x-hidden">
         <LanguageProvider>
           {children}
         </LanguageProvider>

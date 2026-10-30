@@ -177,23 +177,23 @@ export default function HomePage() {
       
       {/* Apple Translucent Floating Glass Navigation Bar */}
       <nav className="sticky top-0 z-50 apple-glass-nav transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Apple Brand Logo with Spring Touch */}
-          <Link href="/" className="flex items-center space-x-3 group apple-press-sm">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-b from-[#0071e3] to-[#0051a8] flex items-center justify-center shadow-md shadow-[#0071e3]/25 group-hover:scale-105 transition-transform duration-300">
+          <Link href="/" className="flex items-center space-x-2 sm:space-x-3 group apple-press-sm shrink-0 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-b from-[#0071e3] to-[#0051a8] flex items-center justify-center shadow-md shadow-[#0071e3]/25 group-hover:scale-105 transition-transform duration-300 shrink-0">
               <CalendarCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-bold apple-headline tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-lg sm:text-2xl font-bold apple-headline tracking-tight text-[#1d1d1f] dark:text-[#f5f5f7] whitespace-nowrap">
                   Rezervasiya<span className="text-[#0071e3] dark:text-[#2997ff]">Pro</span>
                 </span>
-                <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-black/5 dark:border-white/10">
+                <span className="hidden sm:inline-flex text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 border border-black/5 dark:border-white/10">
                   Universal
                 </span>
               </div>
-              <p className="text-[11px] text-[#86868b] dark:text-[#a1a1a6] font-normal leading-tight">
+              <p className="hidden sm:block text-[11px] text-[#86868b] dark:text-[#a1a1a6] font-normal leading-tight">
                 {lang === 'ru' ? 'Система бронирования для любого бизнеса' : (lang === 'en' ? 'Online Booking System for Any Business' : 'Bütün Sektorlar Üçün Rezervasiya Sistemi')}
               </p>
             </div>
@@ -228,13 +228,13 @@ export default function HomePage() {
           </div>
 
           {/* Action Bar (Language Switcher + Theme Toggle + Login Button) */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <LanguageSelector />
             <ThemeToggle />
 
             <Link 
               href="/login" 
-              className="apple-press text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#0071e3] hover:bg-[#0077ED] text-white shadow-md shadow-[#0071e3]/30 transition-all inline-flex items-center gap-2"
+              className="apple-press text-xs sm:text-sm font-semibold px-3 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#0071e3] hover:bg-[#0077ED] text-white shadow-md shadow-[#0071e3]/30 transition-all inline-flex items-center gap-1.5 sm:gap-2 shrink-0"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>{t('login')}</span>
